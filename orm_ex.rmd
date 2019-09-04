@@ -1,0 +1,379 @@
+---
+title: "orm() examples using Stan"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+<!-- 
+file based on orm_ex_with_rstanarm.rmd in orise_ra > rstanarm folder 
+modify so more generic Stan code (still based on stan_polr) is used
+in addition to stan_polr
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "ordinal","MASS")
+invisible(lapply(libs, library, character.only = TRUE))
+
+# repro & update these functions for general Stan output
+#dir<-getwd()
+#source(file.path(dir,"rstanarm_ord_functions.r"))
+
+set.seed(24834)
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+## orm() example 0
+
+example with no covariates
+
+```{r ex0, cache=TRUE}
+set.seed(473)
+n <- 100
+y <- round(runif(n), 2)
+
+dat0<-data.frame(y)
+
+f <- lrm(y ~ 1, eps=1e-5)
+f2 <- clm(factor(y) ~ 1, data=dat0) # from ordinal package
+# g <- orm(y ~ 1, eps=1e-5)
+# above doesn't work, get error
+# Error in fitter(X, Y, offset = offs, penalty.matrix = penalty.matrix,  : #  object 'kof' not found
+
+# doesn't work with no covariates
+# b <- stan_polr(ordered(y) ~ 1, data = dat0, 
+#               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+#               adapt_delta = 0.99)
+```
+
+## orm() example 1
+
+```{r ex1, cache=TRUE}
+set.seed(1)
+n <- 100
+y <- round(runif(n), 2)
+x1 <- sample(c(-1,0,1), n, TRUE)
+x2 <- sample(c(-1,0,1), n, TRUE)
+
+dat1 <- data.frame(y,x1,x2)
+
+f <- lrm(y ~ x1 + x2, eps=1e-5)
+f2 <- clm(factor(y) ~ x1 + x2, data=dat1) # from ordinal package
+g <- orm(y ~ x1 + x2, eps=1e-5)
+
+p <- polr(factor(y) ~ x1 + x2, data=dat1)
+
+b <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
+               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+               adapt_delta = 0.99)
+#rstan::get_stanmodel(b$stanfit)
+
+#! need to get this working
+polr_mod_file<-read_file(file.path(getwd(),"stan_polr.stan"))
+polr_mod <- stan_model(model_code = polr_mod_file)
+
+#
+ord_mod_file<-read_file(file.path(getwd(),"ordinal_model.stan"))
+ord_mod <- stan_model(model_code = ord_mod_file)
+
+mod_data <- list(N=nrow(dat1),
+                 ncat=length(unique(dat1$y)),
+                 Ylev=as.numeric(ordered(dat1$y)),
+                 link=1,
+                 K=ncol(dat1[,c("x1","x2")]),
+                 Q=dat1[,c("x1","x2")],
+                 alpha=1)
+
+options(mc.cores = parallel::detectCores())
+
+fit_ord <- sampling(ord_mod, data=mod_data, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord,pars=c("b[1]","b[2]"))$summary
+
+
+if (0){ #prior predictive dist
+b_pri <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
+               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+               adapt_delta = 0.99, prior_PD = TRUE)
+
+b_pri2 <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
+               prior=NULL, prior_counts = dirichlet(2), method="logistic",
+               adapt_delta = 0.99, prior_PD = TRUE)
+}
+
+plot(b_pri)
+plot(b_pri2)
+
+# try with diff priors for counts
+b2 <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
+               prior=NULL, prior_counts = dirichlet(2), method="logistic",
+               adapt_delta = 0.99)
+
+b3 <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
+               prior=NULL, prior_counts = dirichlet(0.5), method="logistic",
+               adapt_delta = 0.99)
+
+p_summ<-summary(p)
+
+prior_summary(b)
+
+b_summ <- summary(b)
+b2_summ <- summary(b2)
+b3_summ <- summary(b3)
+num_y<-length(unique(dat1$y))
+num_par<-2
+
+```
+
+Using equal counts for prior (dirichlet(1)), the estimated posterior means for intercepts are reasonably well calibrated compared to `orm()` intercepts.
+
+```{r ex1.1}
+# compare intercepts from lrm, orm, ordinal (clm), polr, and stan_polr
+ints<-cbind(coef(f)[1:(num_y-1)],
+      coef(g)[1:(num_y-1)],
+      coef(f2)[1:(num_y-1)],
+      coef(p_summ)[(num_par+1):(num_y+1),1],
+      b_summ[(num_par+1):(num_y+1),1],
+      b2_summ[(num_par+1):(num_y+1),1])
+
+# coefs for rstanarm are negative of coefs from lrm, orm 
+qplot(coef(g)[1:(num_y-1)], -1*b_summ[(num_par+1):(num_y+1),1],
+      xlim=c(-5.5,5.5), ylim=c(-5.5,5.5)) + 
+  xlab("orm intercept coefs") + ylab("-1 * rstanarm intercept coefs") +
+  geom_abline(slope=1,intercept=0)
+
+
+# compare intercepts for all 5 mods
+colnames(ints)<-c("lrm","orm","clm","polr","stan","stan2")
+
+ints_plt <- ints %>% as_tibble() %>% 
+  mutate(row=1:nrow(ints),lrm=-lrm,orm=-orm) %>% 
+  gather(colnames(ints),key="mod",value="value") 
+
+# all are identical except 
+ints_plt %>% ggplot(aes(x=row,y=value, color=mod)) + geom_point()
+
+
+# covariates
+coef(f)[67:68] # lrm
+coef(g)[67:68] # orm
+coef(f2)[67:68] # ordinal
+coef(p) # polr
+fixef(b) # stan_polr (conc=1)
+fixef(b2) # stan_polr (conc=2)
+fixef(b3) # stan_polr (conc=0.5)
+
+sum(abs(coef(p)-fixef(b2)))
+sum(abs(coef(p)-fixef(b3)))
+```
+
+```{r}
+# check Dirichlet density
+library(plotly)
+library(MCMCpack)
+
+mat<-rdirichlet(10,c(1,1,1))
+
+s<-seq(0,1,by=0.05)
+sg<-expand.grid(s,s)
+sgm<-sg[rowSums(sg)<=1,]
+
+sdiff <- 1-rowSums(sgm)
+
+mat<-cbind(sgm,sdiff)
+
+z<-ddirichlet(mat,c(2,2,2))
+
+dat<-cbind(x=mat[,1],y=mat[,3],z) %>% as_tibble()
+
+plot_ly(dat, x=~x, y=~y, z= ~z, type="scatter3d", mode="markers", color=~z, size=1)
+
+```
+
+## orm() example 2a
+
+```{r ex2a.1}
+set.seed(1)
+n <- 300
+x1 <- c(rep(0,150), rep(1,150))
+y <- rnorm(n) + 3*x1
+dat2<-data.frame(y,x1)
+
+g <- orm(y ~ x1, data=dat2)
+k <- coef(g)
+i <- num.intercepts(g)
+h <- orm(y ~ x1, family=probit, data=dat2)
+ll <- orm(y ~ x1, family=loglog, data=dat2)
+cll <- orm(y ~ x1, family=cloglog, data=dat2)
+cau <- orm(y ~ x1, family=cauchit, data=dat2)
+x <- 1:i
+z <- list(logistic=list(x=x, y=coef(g)[1:i]),
+          probit  =list(x=x, y=coef(h)[1:i]),
+          loglog  =list(x=x, y=coef(ll)[1:i]),
+          cloglog =list(x=x, y=coef(cll)[1:i]))
+labcurve(z, pl=TRUE, col=1:4, ylab='Intercept')
+```
+
+```{r ex2a.2, cache=TRUE}
+b2 <- stan_polr(ordered(y) ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+               adapt_delta = 0.99)
+```
+
+```{r ex2a.3, cache=TRUE}
+bp <- stan_polr(ordered(y) ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(1), method="probit",
+               adapt_delta = 0.99)
+```
+
+```{r ex2a.4, cache=TRUE}
+bll <- stan_polr(ordered(y) ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(1), method="loglog",
+               adapt_delta = 0.99)
+```
+
+```{r ex2a.5, cache=TRUE, eval=FALSE}
+bcll <- stan_polr(ordered(y) ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(1), method="cloglog",
+               adapt_delta = 0.99)
+```
+
+
+```{r ex2a.6, cache=TRUE, eval=FALSE}
+bcau <- stan_polr(ordered(y) ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(1), method="cauchit",
+               adapt_delta = 0.99)
+```
+
+```{r ex2a.7}
+num_y2<-length(unique(dat2$y))
+x2<-1:(num_y2 - 1)
+num_p2<-1
+
+#z <- list(logistic=list(x=x, y=coef(g)[1:i]),
+#          probit  =list(x=x, y=coef(h)[1:i]),
+#          loglog  =list(x=x, y=coef(ll)[1:i]),
+#          cloglog =list(x=x, y=coef(cll)[1:i]))
+
+z2 <- list(logistic=list(x=x2, y=-1*summary(b2)[x2+num_p2,1]),
+           probit=list(x=x2, y=-1*summary(bp)[x2+num_p2,1]),
+           loglog=list(x=x2, y=-1*summary(bll)[x2+num_p2,1])
+          )
+
+labcurve(z2, pl=TRUE, col=1:4, ylab='Intercept')
+
+```
+
+
+## orm() example 2b
+
+```{r ex2b.1}
+tapply(y, x1, mean)
+
+# not sure what this code does
+m <- Mean(g)
+m(w <- k[1] + k['x1']*c(0,1))
+mh <- Mean(h)
+wh <- coef(h)[1] + coef(h)['x1']*c(0,1)
+mh(wh)
+# 
+
+
+getMean(b2, newdata=data.frame(x1=c(0,1)))
+
+```
+
+```{ex2b.2, eval=FALSE}
+qu <- Quantile(g)
+# Compare model estimated and empirical quantiles
+cq <- function(y) {
+  cat(qu(.1, w), tapply(y, x1, quantile, probs=.1), '\n')
+  cat(qu(.5, w), tapply(y, x1, quantile, probs=.5), '\n')
+  cat(qu(.9, w), tapply(y, x1, quantile, probs=.9), '\n')
+}
+cq(y)
+
+getQuantile(b2,newdata = data.frame(x1=c(0,1)),q=0.5)
+
+```
+
+
+## orm() example 3
+
+```{r ex3, eval=FALSE}
+# Try on log-normal model
+g <- orm(exp(y) ~ x1)
+g
+k <- coef(g)
+plot(k[1:i])
+m <- Mean(g)
+m(w <- k[1] + k['x1']*c(0,1))
+tapply(exp(y), x1, mean)
+
+qu <- Quantile(g)
+cq(exp(y))
+```
+
+
+## orm() example 4a
+
+```{r ex4a, eval=FALSE}
+# Compare predicted mean with ols for a continuous x
+set.seed(3)
+n <- 200
+x1 <- rnorm(n)
+y <- x1 + rnorm(n)
+dd <- datadist(x1); options(datadist='dd')
+f <- ols(y ~ x1)
+g <- orm(y ~ x1, family=probit)
+h <- orm(y ~ x1, family=logistic)
+w <- orm(y ~ x1, family=cloglog)
+mg <- Mean(g); mh <- Mean(h); mw <- Mean(w)
+r <- rbind(ols      = Predict(f, conf.int=FALSE),
+           probit   = Predict(g, conf.int=FALSE, fun=mg),
+           logistic = Predict(h, conf.int=FALSE, fun=mh),
+           cloglog  = Predict(w, conf.int=FALSE, fun=mw))
+plot(r, groups='.set.')
+```
+
+## orm example 4b
+
+```{r ex4b, eval=FALSE}
+# Compare predicted 0.8 quantile with quantile regression
+qu <- Quantile(g)
+qu80 <- function(lp) qu(.8, lp)
+f <- Rq(y ~ x1, tau=.8)
+r <- rbind(probit   = Predict(g, conf.int=FALSE, fun=qu80),
+           quantreg = Predict(f, conf.int=FALSE))
+plot(r, groups='.set.')
+```
+
+## orm() example 5
+
+```{r ex5, eval=FALSE}
+# Verify transformation invariance of ordinal regression
+ga <- orm(exp(y) ~ x1, family=probit)
+qua <- Quantile(ga)
+qua80 <- function(lp) log(qua(.8, lp))
+r <- rbind(logprobit = Predict(ga, conf.int=FALSE, fun=qua80),
+           probit    = Predict(g,  conf.int=FALSE, fun=qu80))
+plot(r, groups='.set.')
+
+# Try the same with quantile regression.  Need to transform x1
+fa <- Rq(exp(y) ~ rcs(x1,5), tau=.8)
+r <- rbind(qr    = Predict(f, conf.int=FALSE),
+           logqr = Predict(fa, conf.int=FALSE, fun=log))
+plot(r, groups='.set.')
+options(datadist=NULL)
+```
