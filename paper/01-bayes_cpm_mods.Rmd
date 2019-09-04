@@ -15,13 +15,15 @@ repeated ordinal w/ terminating event and censoring
 -->
 
 
-## Background
+<!-- ## Background -->
 
 Models for ordinal outcomes (refs) and extensions of these models using the Bayesian paradigm have a long history (even more refs).  Liu et al. [@liu_modeling_2017] describe the use of ordinal cumulative probability models for continuous outcomes using non-parametric maximum likelihood estimation (NPMLE), however the idea of using Bayesian ordinal outcome models for continuous data has not been thoroughly explored.
 
-# Cumulative Probability Models
+# Methods
 
-[The model benefits, including Bayesian benefits]
+## Cumulative Probability Models
+
+<!--The model benefits, including Bayesian benefits-->
 
 Cumulative Probability Models (CPM) are typically used for ordinal categorical outcomes. However, continuous outcomes are also ordinal. Using Bayesian CPM models has several advantages including invariance to monotonic transformations and modeling the full conditional CDF which also estimates of means and quantiles to be calculated from a single model. CPMs can also handle an ordered mix of discrete/continuous outcome values, e.g. lower limit of detection (Bayes extension hierarchical model/data augmentation for multiple censoring limits, etc?)
 
@@ -31,8 +33,7 @@ In addition, the Bayesian paradigm also allows several generalizations that [mak
 
 [other advantages]
 
-[comparison to other Bayesian nonparametric models, e.g. Dirichlet process - what are advantages of this model - computation efficiency?? other]
-
+[comparison to other Bayesian nonparametric approach, e.g. Dirichlet process - what are advantages of this model? - computation efficiency?? other? !! need to research these more ]
 
 The Bayesian cumulative ordinal regression model was described by Albert and Chib [@albert_bayesian_1993; @albert_bayesian_nodate]. Let $y_1 \le y_2 \le \cdots \le y_n$ be observed ordered outcomes $y_i$ with associated covariates $x_i=(x_{i1},\ldots,x_{i1p})$. The cumulative probability model is:
 \begin{gather*}
@@ -49,22 +50,23 @@ p(\boldsymbol{\gamma},\boldsymbol{\beta}|\boldsymbol{X},\boldsymbol{Y}) \propto 
 \end{gather*} 
 For $Y$ with no ties, each category has one observation. 
 
-
 The likelihood of $P(Y \le y_i|X)$ is (estimated empirical?):
-
 \begin{gather*}
+p(X,Y|\gamma,\beta)
 \end{gather*}
 
 This is the kernel of a multinomial likelihood, so a natural choice for the prior distribution on the $\gamma_i$ is the conjugate Dirichlet prior (ref):
 
-\begin{gather*}
-f(p_1, p_2, \ldots, p_n)=..., p_i \in (0,1), \sum_{i=1}^{n}p_i =1
-\end{gather*}
+\begin{itemize}
+\item let $\boldsymbol{\pi}$ be a simplex variable with $\pi_i=P(y=y_i|\bar{x})$ and Dirichlet pdf $\propto \prod_{i=1}^{n}\pi_i^{\gamma_i-1}$ then $\alpha_i=G^{-1}\left(\sum_{j=1}^{i} \pi_j \right)$. By default, $\gamma_i=1\, \forall i$ (i.e., prior count of 1 in each bin)
+allow $\gamma \sim ??$ (ie hyperprior on concentration param)
+\end{itemize}
 
 The Dirichlet is parameterized by $n$ parameters, $\alpha_1,\ldots, \alpha_n$ and a symmetric Dirichlet distribution $\alpha_1 = \alpha_2 = \cdots = \alpha_n$
 
+Explanation of Dirichlet posterior as Dirichlet prior $\alpha$ plus observed cell count for that category. For example using a symmetric Dirichlet distribution with $\alpha=1$ implies a posterior distribution of $Dirichlet(1+n_1,1+n_2,\ldots,1+n_n)$ applying the link function $G(\cdot)$ ...
 
-explanation of Dirichlet posterior as dirichlet prior $\alpha$ plus observed cell count for that category. For example using a symmetric Dirichlet distribution with $\alpha=1$ implies a posterior distribution of $Dirichlet(1+n_1,1+n_2,\ldots,1+n_n)$ applying the link function $G(\cdot)$ ...
+Priors for covariates (flat, weakly informative, other?)
 
 ```{r}
 # ordinal regression model with 10 categories and symmetric Dirichlet with alpha=1
@@ -74,10 +76,9 @@ explanation of Dirichlet posterior as dirichlet prior $\alpha$ plus observed cel
 
 
 # posterior distribution
-
 ```
 
-## CPM model extensions
+## CPM extensions
 
 <!--
 describe how Bayesian CPM can be used to get parameter ests. - shifts in distribution and also for other quantities of interest, e.g. Mean, Quantiles, Exceedance probabilities using a single model
@@ -85,9 +86,7 @@ describe how Bayesian CPM can be used to get parameter ests. - shifts in distrib
 
 In the usual ordinal CPM, many of the $j=1,\ldots,J$ categories contain multiple observations, however for continuous data with no ties the number of categories is equal to the number of observed data points. [Speculative statement: This implies that information supplied by the Dirichlet prior has higher weight since each cell is a combination of 'prior count' and a single observation - need to show this]. (Is Dir. with $\alpha=1$ the equivalent of noninformative prior for multinomial?? - see BDA3 chap on Bayesian histogram)
 
-
 1) continuous outcome extension
-
 
 Following Albert and Chib, we 
 
@@ -95,7 +94,7 @@ $p(\gamma) \sim Dirichlet()$
 
 ?assume symmetric Dirichlet
 
-add hyperprior so $\alpha \sim ?$ (some sort of diffuse, positive distribution)
+add hyperprior so $\alpha \sim ?$ (some sort of diffuse, positive distribution such as gamma or lognormal, center around 1?)
 
 ```{r}
 library(gtools)
@@ -126,49 +125,14 @@ $F_3 \sim cloglog$
 
 $F_{mix}=w_1F_1 + w_2F_2 + (1-w_1-w_2)F_3$
 
+priors for weights $w_1$, $w_2$, $w_3$
 
---> also consider using some sort of DP over normal distributions to get nonparametric 
+--> also consider using some sort of DP prior over normal distributions to get nonparametric 
 estimate of link (lose interpretability and computational efficiency, but might have more robustness)
  
 One or the other might be better depending on the sample size, complexity of outcome, etc 
 
 4) longitudinal model extension
-
-
-## Prior Distributions
-
-<!-- Definition, , example -->
-
-### Intercepts
-
-Dirichlet
-
-\begin{itemize}
-\item let $\boldsymbol{\pi}$ be a simplex variable with $\pi_i=P(y=y_i|\bar{x})$ and Dirichlet pdf $\propto \prod_{i=1}^{n}\pi_i^{\gamma_i-1}$ then $\alpha_i=G^{-1}\left(\sum_{j=1}^{i} \pi_j \right)$. By default, $\gamma_i=1\, \forall i$ (i.e., prior count of 1 in each bin)
-allow $\gamma \sim ??$ (ie hyperprior on concentration param)
-\item Flat (improper) priors used for $\beta$
-\end{itemize}
-
-other NP approach? DP or GP !! need to research these more 
-
-### Link function
-
-Mixture link
-
-priors for weights $w_1$, $w_2$, $w_3$
-
-or Dirichlet process prior
-
-
-
-### Covariates
-
-flat
-
-weakly informative (recommendation from BDA3?)
-
-PO vs NPO selection
-
 
 # Results
 
@@ -185,7 +149,7 @@ Hyp. However, when the number of ordinal categories increases and the number of 
 Hyp. there is some sort of shrinkage or regularization going on that is too strong with fixed parameter.
 
 
-### Model 1 - continuous extension 
+### Model 1 - continuous outcome 
 \begin{itemize}
 \item Data for $n=50$ observations generated from $Y =\beta X+\varepsilon$ with $\beta=3$, $X \sim Bernoulli(0.5)$, and $\varepsilon \sim Logistic(0,1)$\\ 
 \item 10,000 posterior MCMC draws produced using CPM with logit link [$G(p)=\log(\frac{p}{1-p})$]
@@ -200,12 +164,12 @@ knitr::include_graphics(file.path(wd,"fig","cdf1.pdf"))
 knitr::include_graphics(file.path(wd,"fig","mean_qtile1.pdf"))
 ```
 
-## Model 2 - PPO vs. NPO type model and mixture links using continuous data
+### Model 2 - PPO vs. NPO type model and mixture links with continuous outcome
 
 Compare model selection (i.e. choose most likely link) to mixture link
 
 
-## Data Example: Glycohemoglobin in Diabetes
+### Case Study: Glycohemoglobin in Diabetes
 
 Include comparison to other Bayesian non-parametric models
 
