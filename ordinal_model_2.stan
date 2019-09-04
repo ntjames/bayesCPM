@@ -60,14 +60,14 @@ data {
   int K;
   matrix[N, K] Q;
   //matrix[K, K] R_inv;
-  real<lower=0> alpha;
+  //real<lower=0> alpha;
 }
 
 parameters {
   simplex[ncat] pi;
   vector[K] b;
   //estimate alpha parameter
- // real<lower=0> alpha; 
+  real<lower=0> alpha; 
 }
 
 transformed parameters {
@@ -84,7 +84,8 @@ transformed parameters {
 
 model {
   // priors
-  //alpha ~ exponential(1);
+  // gamma w/ mean around 1
+  alpha ~ gamma(2,2);
   
   target += student_t_lpdf(b | 3, 0, 10);
   target += log_lik;
