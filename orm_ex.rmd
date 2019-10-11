@@ -11,7 +11,7 @@ output:
 
 <!-- 
 file based on orm_ex_with_rstanarm.rmd in orise_ra > rstanarm folder 
-modify so more generic Stan code (still based on stan_polr) is used
+modified to us more generic Stan code (still based on stan_polr)
 in addition to stan_polr
 -->
 
@@ -34,25 +34,204 @@ options(mc.cores=parallel::detectCores())
 
 ## orm() example 0
 
-example with no covariates
+```{r}
+# compile ordinal models
+
+# concentration (alpha) is unspecified, default is ???
+if (0){
+ord_mod_file0<-read_file(file.path(getwd(),"ordinal_model_0.stan"))
+ord_mod0 <- stan_model(model_code = ord_mod_file0)
+saveRDS(ord_mod0, file = file.path(getwd(),"ordinal_model_0.rds"))
+}
+
+ord_mod0<-readRDS(file.path(getwd(),"ordinal_model_0.rds"))
+
+# concentration (alpha) is given as a scalar parameter along with in data
+if (0){
+ord_mod_file1<-read_file(file.path(getwd(),"ordinal_model_1.stan"))
+ord_mod1 <- stan_model(model_code = ord_mod_file1)
+saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
+}
+
+ord_mod1 <-readRDS(file.path(getwd(),"ordinal_model_1.rds"))
+
+# concentration (alpha) is estimated with gamma(2,2) prior or exp(1) prior
+if (0){
+ord_mod_file2<-read_file(file.path(getwd(),"ordinal_model_2.stan"))
+ord_mod2 <- stan_model(model_code = ord_mod_file2)
+saveRDS(ord_mod2, file = file.path(getwd(),"ordinal_model_2.rds"))
+
+ord_mod_file2b<-read_file(file.path(getwd(),"ordinal_model_2b.stan"))
+ord_mod2b <- stan_model(model_code = ord_mod_file2b)
+saveRDS(ord_mod2b, file = file.path(getwd(),"ordinal_model_2b.rds"))
+
+ord_mod_file2c<-read_file(file.path(getwd(),"ordinal_model_2c.stan"))
+ord_mod2c <- stan_model(model_code = ord_mod_file2c)
+saveRDS(ord_mod2c, file = file.path(getwd(),"ordinal_model_2c.rds"))
+}
+
+ord_mod2 <-readRDS(file.path(getwd(),"ordinal_model_2.rds"))
+ord_mod2b <-readRDS(file.path(getwd(),"ordinal_model_2b.rds"))
+ord_mod2c <-readRDS(file.path(getwd(),"ordinal_model_2c.rds"))
+
+```
+
+
+## example with no covariates
 
 ```{r ex0, cache=TRUE}
 set.seed(473)
 n <- 100
-y <- round(runif(n), 2)
+y <- round(runif(n), 4)
+x <- rep(1,n)
 
-dat0<-data.frame(y)
+# number unique values; no ties
+n_uniq<-length(unique(y))
+cuts <- n_uniq - 1
 
-f <- lrm(y ~ 1, eps=1e-5)
-f2 <- clm(factor(y) ~ 1, data=dat0) # from ordinal package
-# g <- orm(y ~ 1, eps=1e-5)
-# above doesn't work, get error
-# Error in fitter(X, Y, offset = offs, penalty.matrix = penalty.matrix,  : #  object 'kof' not found
+
+dat0<-data.frame(y,x)
+
+# using lrm
+# NOTE: f_lrm_alt <- lrm(y ~ x, eps=1e-5) doesn't work with x as constant
+f_lrm <- lrm(y ~ 1, eps=1e-5)
+
+y2 <- y-100
+f_lrm2 <- lrm(y2 ~ 1, eps=1e-5)
+
+y3 <- log(y)
+f_lrm3 <- lrm(y3 ~ 1, eps=1e-5)
+
+# intercepts are the same regardless of shift and transformation
+
+
+
+# using cumulative link model (clm) from ordinal package
+f_clm <- clm(factor(y) ~ 1, data=dat0) 
+#!! f_clm_alt <- clm(factor(y) ~ x, data=dat0)
+
+#!! all.equal(summary(f_clm)$alpha, summary(f_clm_alt)$alpha)
+
+cbind(-coef(f_lrm),-coef(f_lrm2), -coef(f_lrm3), summary(f_clm)$alpha)
+
+# using orm doesn't work w/ no covars
+# f_orm <- orm(y ~ 1, eps=1e-5) # doesn't work with only 'intercept'
+
+#f_orm_alt <- orm(y ~ x, eps=1e-5)
+
+#cbind(-coef(f_orm_alt)[1:cuts], -coef(f_lrm),
+#      summary(f_clm)$alpha, summary(f_clm_alt)$alpha)
 
 # doesn't work with no covariates
-# b <- stan_polr(ordered(y) ~ 1, data = dat0, 
+# b <- stan_polr(ordered(y) ~ 1, data = dat0,
 #               prior=NULL, prior_counts = dirichlet(1), method="logistic",
 #               adapt_delta = 0.99)
+
+# only expect Bayes model MAP to match MLE for intercepts if use noninformative prior 
+# for intercepts and betas AND number of observations in each cell is moderate 
+# see Johnson & Albert, Chp 4, pg 132
+mod_data0 <- list(N=nrow(dat0),
+                 ncat=length(unique(dat0$y)),
+                 Ylev=as.numeric(ordered(dat0$y)),
+                 link=1,
+                 K=ncol(dat0[,c("x"),drop=FALSE]),
+                 Q=dat0[,c("x"),drop=FALSE],
+                 alpha=1)
+
+f_stan0 <- optimizing(ord_mod0, data=mod_data0, seed=12345)
+
+f_stan0$par[paste0("cutpoints[",1:cuts,"]")]
+
+f_stan1 <- sampling(ord_mod1, data=mod_data0, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan1_mn <- summary(f_stan1, pars=paste0("cutpoints[",1:cuts,"]"), probs=c(0.5))$summary[,'mean']
+
+f_stan1_md <-summary(f_stan1, pars=paste0("cutpoints[",1:cuts,"]"), probs=c(0.5))$summary[,'50%']
+```
+
+```{r, eval=FALSE, echo=FALSE}
+#print(f_stan1, pars=paste0("cutpoints[",1:cuts,"]"), probs=c(0.5))
+
+plot(f_stan1, pars=paste0("cutpoints[",1:25,"]"))
+
+# mean
+#plot(-coef(f_lrm),1:99)
+#points(f_stan1_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan1_mn)
+
+# median
+#plot(-coef(f_lrm),1:99)
+#points(f_stan1_md,1:99, col="green")
+
+# ecdf?
+plot(-coef(f_lrm),sort(y)[1:99])
+
+# difference alpha MLEs vs. alpha post. median
+plot(1:99, -coef(f_lrm)-f_stan1_md)
+
+# specify larger concentration (alpha)
+mod_data1 <- list(N=nrow(dat0),
+                 ncat=length(unique(dat0$y)),
+                 Ylev=as.numeric(ordered(dat0$y)),
+                 link=1,
+                 K=ncol(dat0[,c("x"),drop=FALSE]),
+                 Q=dat0[,c("x"),drop=FALSE],
+                 alpha=5)
+
+f_stan_alp5 <- sampling(ord_mod1, data=mod_data1, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan_alp5_mn <- summary(f_stan_alp5, pars=paste0("cutpoints[",1:cuts,"]"))$summary[,'mean']
+
+plot(-coef(f_lrm),1:99)
+points(f_stan_alp5_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan_alp5_mn)
+
+# specify smaller concentration (alpha) 
+
+#!! alpha = 0 is like uninformative (flat) prior, right?
+#!! make model with unassigned prior for alpha  --> might not have proper posterior
+mod_data2 <- list(N=nrow(dat0),
+                 ncat=length(unique(dat0$y)),
+                 Ylev=as.numeric(ordered(dat0$y)),
+                 link=1,
+                 K=ncol(dat0[,c("x"),drop=FALSE]),
+                 Q=dat0[,c("x"),drop=FALSE],
+                 alpha=0.1)
+
+f_stan_alp01 <- sampling(ord_mod1, data=mod_data2, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan_alp01_mn <- summary(f_stan_alp01, pars=paste0("cutpoints[",1:cuts,"]"))$summary[,'mean']
+
+plot(-coef(f_lrm),1:99)
+points(f_stan_alp01_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan_alp01_mn)
+
+
+# estimate alpha
+f_stan2 <- sampling(ord_mod2, data=mod_data0, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan2_mn <- summary(f_stan2, pars=paste0("cutpoints[",1:cuts,"]"))$summary[,'mean']
+
+plot(-coef(f_lrm),1:99)
+points(f_stan2_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan2_mn)
+
 ```
 
 ## orm() example 1
@@ -64,42 +243,74 @@ y <- round(runif(n), 2)
 x1 <- sample(c(-1,0,1), n, TRUE)
 x2 <- sample(c(-1,0,1), n, TRUE)
 
-dat1 <- data.frame(y,x1,x2)
+dat1 <- data.frame(y=ordered(y),x1,x2)
 
-f <- lrm(y ~ x1 + x2, eps=1e-5)
-f2 <- clm(factor(y) ~ x1 + x2, data=dat1) # from ordinal package
+#!f <- lrm(y ~ x1 + x2, eps=1e-5)
+#!f2 <- clm(factor(y) ~ x1 + x2, data=dat1) # from ordinal package
 g <- orm(y ~ x1 + x2, eps=1e-5)
 
-p <- polr(factor(y) ~ x1 + x2, data=dat1)
+g
 
-b <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
-               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+#location shift
+#!y2<-y-50
+#!g2 <- orm(y2 ~ x1 + x2, eps=1e-5)
+
+#!p <- polr(factor(y) ~ x1 + x2, data=dat1)
+
+
+# Compare stan_polr implementation to hardcoded stan model 1 (fixed alpha) & hardcoded stan model 2 (estimated alpha)
+b <- stan_polr(y ~ x1 + x2, data = dat1, 
+               prior=NULL, prior_counts = dirichlet(2), method="logistic",
                adapt_delta = 0.99)
+
+summary(b,pars=c("x1","x2"), digits=4)
+
+#!b2 <- stan_polr(ordered(y2) ~ x1 + x2, data = dat1, 
+#!               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+#!               adapt_delta = 0.99)
+#!summary(b2,par=c("x1","x2"),digits=3)
+
+mod_data1 <- list(N=nrow(dat1),
+                 ncat=length(unique(dat1$y)),
+                 Ylev=as.numeric(dat1$y),
+                 link=1,
+                 K=ncol(dat1[,c("x1","x2")]),
+                 Q=dat1[,c("x1","x2")],
+                 alpha=2)
+
+fit_ord1 <- sampling(ord_mod1, data=mod_data1, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord1,pars=c("b[1]","b[2]"))$summary
+
+#! stan_polr and ord_mod1 similar and match orm w/ dirchlet(1) and alpha=1, respectively
+#! Don't match using other values, e.g dirchlet(1/2) and alpha=1/2, dirchlet(2) and alpha=2
+
+if(0){
 #rstan::get_stanmodel(b$stanfit)
 
-#! need to get this working
+summary(b,par=c("x1","x2"),digits=3)
+
+# need to get this working
 polr_mod_file<-read_file(file.path(getwd(),"stan_polr.stan"))
 polr_mod <- stan_model(model_code = polr_mod_file)
+}
 
-#
-ord_mod_file<-read_file(file.path(getwd(),"ordinal_model.stan"))
-ord_mod <- stan_model(model_code = ord_mod_file)
 
-mod_data <- list(N=nrow(dat1),
+mod_data2 <- list(N=nrow(dat1),
                  ncat=length(unique(dat1$y)),
                  Ylev=as.numeric(ordered(dat1$y)),
                  link=1,
                  K=ncol(dat1[,c("x1","x2")]),
-                 Q=dat1[,c("x1","x2")],
-                 alpha=1)
+                 Q=dat1[,c("x1","x2")])
 
-options(mc.cores = parallel::detectCores())
-
-fit_ord <- sampling(ord_mod, data=mod_data, seed=12345, 
-                 iter=3000, warmup=1500, chains=2,
+fit_ord2 <- sampling(ord_mod2, data=mod_data2, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
                  control = list(adapt_delta = 0.8))
 
-summary(fit_ord,pars=c("b[1]","b[2]"))$summary
+summary(fit_ord2,pars=c("b[1]","b[2]","alpha"))$summary
+
 
 
 if (0){ #prior predictive dist
@@ -110,12 +321,14 @@ b_pri <- stan_polr(ordered(y) ~ x1 + x2, data = dat1,
 b_pri2 <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
                prior=NULL, prior_counts = dirichlet(2), method="logistic",
                adapt_delta = 0.99, prior_PD = TRUE)
-}
 
 plot(b_pri)
 plot(b_pri2)
+}
 
-# try with diff priors for counts
+
+if (0){
+# try with diff priors for counts??
 b2 <- stan_polr(ordered(y) ~ x1 + x2, data = dat1, 
                prior=NULL, prior_counts = dirichlet(2), method="logistic",
                adapt_delta = 0.99)
@@ -133,12 +346,19 @@ b2_summ <- summary(b2)
 b3_summ <- summary(b3)
 num_y<-length(unique(dat1$y))
 num_par<-2
+}
 
 ```
 
-Using equal counts for prior (dirichlet(1)), the estimated posterior means for intercepts are reasonably well calibrated compared to `orm()` intercepts.
+<!--
+Using equal counts for prior (dirichlet(1)), the estimated posterior means for intercepts are reasonably well calibrated compared to `orm()` intercepts. 
 
-```{r ex1.1}
+Don't necessarily care about intercepts and won't be the same except for very specific circumstance, see above. Focus is on estimation of betas
+
+Only place where this might matter is estimation of functionals (ie. mean, quantiles) since they involve intercepts and betas
+-->
+
+```{r ex1.1, eval=FALSE, echo=FALSE}
 # compare intercepts from lrm, orm, ordinal (clm), polr, and stan_polr
 ints<-cbind(coef(f)[1:(num_y-1)],
       coef(g)[1:(num_y-1)],
@@ -153,7 +373,6 @@ qplot(coef(g)[1:(num_y-1)], -1*b_summ[(num_par+1):(num_y+1),1],
   xlab("orm intercept coefs") + ylab("-1 * rstanarm intercept coefs") +
   geom_abline(slope=1,intercept=0)
 
-
 # compare intercepts for all 5 mods
 colnames(ints)<-c("lrm","orm","clm","polr","stan","stan2")
 
@@ -163,7 +382,6 @@ ints_plt <- ints %>% as_tibble() %>%
 
 # all are identical except 
 ints_plt %>% ggplot(aes(x=row,y=value, color=mod)) + geom_point()
-
 
 # covariates
 coef(f)[67:68] # lrm
@@ -178,10 +396,14 @@ sum(abs(coef(p)-fixef(b2)))
 sum(abs(coef(p)-fixef(b3)))
 ```
 
-```{r}
-# check Dirichlet density
+```{r, eval=FALSE}
+# check Dirichlet density?
 library(plotly)
 library(MCMCpack)
+
+rdirichlet(10,c(1,1,1,1,1))
+rdirichlet(10,c(10,10,10,10,10))
+rdirichlet(10,c(0.1,0.1,0.1,0.1,0.1))
 
 mat<-rdirichlet(10,c(1,1,1))
 
@@ -208,10 +430,11 @@ set.seed(1)
 n <- 300
 x1 <- c(rep(0,150), rep(1,150))
 y <- rnorm(n) + 3*x1
-dat2<-data.frame(y,x1)
+dat2<-data.frame(y=ordered(y),x1)
 
 g <- orm(y ~ x1, data=dat2)
-k <- coef(g)
+
+# k <- coef(g)
 i <- num.intercepts(g)
 h <- orm(y ~ x1, family=probit, data=dat2)
 ll <- orm(y ~ x1, family=loglog, data=dat2)
@@ -225,11 +448,96 @@ z <- list(logistic=list(x=x, y=coef(g)[1:i]),
 labcurve(z, pl=TRUE, col=1:4, ylab='Intercept')
 ```
 
+
+--> !! Need to get betas from Bayesian CPMs to match beta from orm !! <--
+
+want small value of alpha, try exp(n) where n is sample size? how to justify? what sort of prior puts most weight around 0?
+
+http://mc-stan.org/rstanarm/reference/priors.html
+
+- try hs() prior
+- try dirchlet(1/n)
+
 ```{r ex2a.2, cache=TRUE}
-b2 <- stan_polr(ordered(y) ~ x1, data = dat2, 
+# try stan_polr with different dirichlet specs and look at posterior checks 
+b2a <- stan_polr(y ~ x1, data = dat2, 
                prior=NULL, prior_counts = dirichlet(1), method="logistic",
                adapt_delta = 0.99)
+
+summary(b2a,pars=c("x1"), digits=4)
+
+# NOTE: pp_check doesn't look right because y data are factor levels (1:300) while y_rep are actual data points (-2.2: 5.64)
+pp_check(b2a)  
+
+b2b <- stan_polr(y ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(1/300), method="logistic",
+               adapt_delta = 0.99)
+
+summary(b2b,pars=c("x1"), digits=4)
+
+pp_check(b2b)
+
+
+b2c <- stan_polr(y ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(5), method="logistic",
+               adapt_delta = 0.99)
+
+summary(b2c,pars=c("x1"), digits=4)
+
+pp_check(b2c)
+
+
+y_rep<-posterior_predict(b2c, draws=10)
 ```
+
+
+```{r}
+# try hardcoded models
+mod_data3 <- list(N=nrow(dat2),
+                 ncat=length(unique(dat2$y)),
+                 Ylev=as.numeric(dat2$y),
+                 link=1,
+                 K=ncol(dat2[,c("x1"),drop=FALSE]),
+                 Q=dat2[,c("x1"),drop=FALSE],
+                 alpha=1/300)
+
+fit_ord3 <- sampling(ord_mod1, data=mod_data3, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord3,pars=c("b[1]"))$summary
+
+
+mod_data4 <- list(N=nrow(dat2),
+                 ncat=length(unique(dat2$y)),
+                 Ylev=as.numeric(ordered(dat2$y)),
+                 link=1,
+                 K=ncol(dat2[,c("x1"),drop=FALSE]),
+                 Q=dat2[,c("x1"),drop=FALSE])
+
+fit_ord4 <- sampling(ord_mod2, data=mod_data4, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord4,pars=c("b[1]","alpha"))$summary
+
+fit_ord4b <- sampling(ord_mod2b, data=mod_data4, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord4b,pars=c("b[1]","alpha"))$summary
+
+
+fit_ord4c <- sampling(ord_mod2c, data=mod_data4, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord4c,pars=c("b[1]","alpha"))$summary
+```
+
+
+
+
 
 ```{r ex2a.3, cache=TRUE}
 bp <- stan_polr(ordered(y) ~ x1, data = dat2, 
@@ -266,10 +574,14 @@ num_p2<-1
 #          loglog  =list(x=x, y=coef(ll)[1:i]),
 #          cloglog =list(x=x, y=coef(cll)[1:i]))
 
+# z2 <- list(logistic=list(x=x2, y=-1*summary(b2)[x2+num_p2,1]),
+#            probit=list(x=x2, y=-1*summary(bp)[x2+num_p2,1]),
+#            loglog=list(x=x2, y=-1*summary(bll)[x2+num_p2,1])
+#           )
+
 z2 <- list(logistic=list(x=x2, y=-1*summary(b2)[x2+num_p2,1]),
-           probit=list(x=x2, y=-1*summary(bp)[x2+num_p2,1]),
-           loglog=list(x=x2, y=-1*summary(bll)[x2+num_p2,1])
-          )
+            probit=list(x=x2, y=-1*summary(bp)[x2+num_p2,1])
+)
 
 labcurve(z2, pl=TRUE, col=1:4, ylab='Intercept')
 
@@ -311,8 +623,28 @@ getQuantile(b2,newdata = data.frame(x1=c(0,1)),q=0.5)
 
 ## orm() example 3
 
-```{r ex3, eval=FALSE}
+```{r ex3.1, eval=FALSE}
 # Try on log-normal model
+g <- orm(exp(y) ~ x1)
+g
+k <- coef(g)
+plot(k[1:i])
+m <- Mean(g)
+m(w <- k[1] + k['x1']*c(0,1))
+tapply(exp(y), x1, mean)
+
+qu <- Quantile(g)
+cq(exp(y))
+```
+
+
+```{r ex3.2, eval=FALSE}
+# Try on log-normal model
+stan_polr(ordered(exp(y)) ~ x1, data = dat2, 
+               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+               adapt_delta = 0.99)
+
+#fix below here
 g <- orm(exp(y) ~ x1)
 g
 k <- coef(g)
