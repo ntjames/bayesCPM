@@ -1,6 +1,6 @@
 S4 class stanmodel 'polr' coded as follows:
-#include /pre/Columbia_copyright.stan
-#include /pre/license.stan
+//#include /pre/Columbia_copyright.stan
+//#include /pre/license.stan
 
 // GLM for an ordinal outcome with coherent priors
 functions {
