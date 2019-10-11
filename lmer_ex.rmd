@@ -1,0 +1,147 @@
+---
+title: "lmer() examples using Stan"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+<!-- 
+file based on orm_ex_with_rstanarm.rmd in orise_ra > rstanarm folder 
+modified to us more generic Stan code (still based on stan_polr)
+in addition to stan_polr
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "ordinal", "MASS", "lme4")
+invisible(lapply(libs, library, character.only = TRUE))
+
+# repro & update these functions for general Stan output
+#dir<-getwd()
+#source(file.path(dir,"rstanarm_ord_functions.r"))
+
+set.seed(24834)
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+## lmer example 1
+
+```{r}
+# compile ordinal models
+
+
+# concentration (alpha) is estimated with gamma(2,2) prior
+# random intercepts
+if (0){
+ord_mod_file4<-read_file(file.path(getwd(),"ordinal_model_4.stan"))
+ord_mod4 <- stan_model(model_code = ord_mod_file4)
+saveRDS(ord_mod4, file = file.path(getwd(),"ordinal_model_4.rds"))
+}
+
+readRDS(file.path(getwd(),"ordinal_model_4.rds"))
+```
+
+Use lmer example with random intercepts only
+
+```{r}
+fm1 <- lmer(Reaction ~ Days + (1 | Subject), sleepstudy)
+summary(fm1)
+
+# random intercepts and slopes
+#fm2 <- lmer(Reaction ~ Days + (Days | Subject), sleepstudy)
+```
+
+fit model with stan_lmer
+
+```{r}
+stan_fm1<-stan_lmer(Reaction ~ Days + (1| Subject), data=sleepstudy)
+summary(stan_fm1)
+```
+
+
+```{r}
+#cat(get_stancode(stan_fm1$stanfit))
+```
+
+
+fit model with stan_glmer
+
+```{r}
+stan_gm1<-stan_glmer(Reaction ~ Days + (1| Subject), data=sleepstudy, family=gaussian)
+summary(stan_gm1)
+```
+
+
+
+fit model with brms
+
+```{r}
+stan_brm1<-brm(Reaction ~ Days + (1| Subject), data=sleepstudy, family=gaussian)
+summary(stan_brm1)
+```
+
+```{r}
+make_stancode(Reaction ~ Days + (1| Subject), data=sleepstudy, family=gaussian)
+```
+
+
+fit model with CPM
+
+```{r}
+
+# format data
+
+if(0){
+# int N; // num individuals
+# int ncat; // num categories
+# int Ylev[N]; // ordered individual outcome
+# int link; // link function
+# int K; // num ind predictors
+# matrix[N, K] Q; // individual predictors
+# int J; // num groups
+# int L; //num group predictors
+# int<lower=1, upper=J> ll[N]; //group for individual
+# row_vector[L] u[J]; // group predictors
+}
+
+
+ngrps<-length(unique(sleepstudy[,c("Subject")]))
+ndays<-length(unique(sleepstudy[,c("Days")]))
+  
+#grp_eff<-data.frame(grp=sort(rep(1:ngrps,ndays)),day=rep(0:9,ngrps))
+
+grp_eff<-data.frame(grp=1:ngrps)
+
+
+stan_dat <- list(N=nrow(sleepstudy),
+                 ncat=length(unique(sleepstudy$Reaction)),
+                 Ylev=as.numeric(ordered(sleepstudy$Reaction)),
+                 link=1,
+                 K=ncol( sleepstudy[,c("Days"),drop=FALSE] ),
+                 Q=sleepstudy[,c("Days"),drop=FALSE],
+                 J=ngrps,
+                 L=ncol(grp_eff),
+                 jj=as.numeric(sleepstudy[,c("Subject")]),
+                 u=grp_eff)
+
+
+#not quite right, want random intercepts AND random slopes
+
+stan_cpm1 <- sampling(ord_mod4, data=stan_dat, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(stan_cpm1, pars=c("bet","b","u_b"))$summary
+
+## need to use functions to get Mean, Quantile etc
+# see brms_ord_functions.r in /home/nathan/Dropbox/njames/school/PhD/orise_ra/brms 
+# and rstanarm_ord_functions.r (more updated) in /home/nathan/Dropbox/njames/school/PhD/orise_ra/rstanarm
+```

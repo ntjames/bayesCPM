@@ -1,0 +1,552 @@
+---
+title: "CPM checks"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "ordinal","MASS")
+invisible(lapply(libs, library, character.only = TRUE))
+
+# repro & update these functions for general Stan output
+#dir<-getwd()
+#source(file.path(dir,"rstanarm_ord_functions.r"))
+
+set.seed(24834)
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+Read in CPM models
+
+```{r}
+# compile ordinal models
+
+# concentration (alpha) is unspecified, default is ???
+if (0){
+ord_mod_file0<-read_file(file.path(getwd(),"ordinal_model_0.stan"))
+ord_mod0 <- stan_model(model_code = ord_mod_file0)
+saveRDS(ord_mod0, file = file.path(getwd(),"ordinal_model_0.rds"))
+}
+
+ord_mod0<-readRDS(file.path(getwd(),"ordinal_model_0.rds"))
+
+# concentration (alpha) is given as a scalar parameter along with in data
+if (0){
+ord_mod_file1<-read_file(file.path(getwd(),"ordinal_model_1.stan"))
+ord_mod1 <- stan_model(model_code = ord_mod_file1)
+saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
+}
+
+ord_mod1 <-readRDS(file.path(getwd(),"ordinal_model_1.rds"))
+
+# concentration (alpha) is estimated with gamma(2,2) prior or exp(1) prior
+if (0){
+ord_mod_file2<-read_file(file.path(getwd(),"ordinal_model_2.stan"))
+ord_mod2 <- stan_model(model_code = ord_mod_file2)
+saveRDS(ord_mod2, file = file.path(getwd(),"ordinal_model_2.rds"))
+
+# ord_mod_file2b<-read_file(file.path(getwd(),"ordinal_model_2b.stan"))
+# ord_mod2b <- stan_model(model_code = ord_mod_file2b)
+# saveRDS(ord_mod2b, file = file.path(getwd(),"ordinal_model_2b.rds"))
+# 
+# ord_mod_file2c<-read_file(file.path(getwd(),"ordinal_model_2c.stan"))
+# ord_mod2c <- stan_model(model_code = ord_mod_file2c)
+# saveRDS(ord_mod2c, file = file.path(getwd(),"ordinal_model_2c.rds"))
+}
+
+ord_mod2 <-readRDS(file.path(getwd(),"ordinal_model_2.rds"))
+# ord_mod2b <-readRDS(file.path(getwd(),"ordinal_model_2b.rds"))
+# ord_mod2c <-readRDS(file.path(getwd(),"ordinal_model_2c.rds"))
+
+```
+
+
+## orm() example 1
+
+```{r ex1, cache=TRUE}
+set.seed(3758)
+n <- 100
+y <- round(runif(n), 2)
+x1 <- sample(c(-1,0,1), n, TRUE)
+x2 <- sample(c(-1,0,1), n, TRUE)
+
+dat_a <- data.frame(y=ordered(y),x1,x2)
+
+# orm
+fit_orm_a <- orm(y ~ x1 + x2, eps=1e-5)
+
+
+## Compare stan_polr to hardcoded stan model 1 (fixed alpha) and 2 (estimate alpha)
+
+# stan_polr
+fit_polr_a <- stan_polr(y ~ x1 + x2, data = dat_a, seed=23145, 
+                       iter=3500, warmup=1500, chains=2,
+                       prior=NULL, prior_counts = dirichlet(1), method="logistic",
+                       adapt_delta = 0.8)
+
+# hardcoded stan model 1
+mod_data_a <- list(N=nrow(dat_a),
+                 ncat=length(unique(dat_a$y)),
+                 Ylev=as.numeric(dat_a$y),
+                 link=1,
+                 K=ncol(dat_a[,c("x1","x2")]),
+                 Q=dat_a[,c("x1","x2")],
+                 alpha=1)
+
+fit_ord1_a <- sampling(ord_mod1, data=mod_data_a, seed=23145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+fit_ord2_a <- sampling(ord_mod2, data=mod_data_a, seed=23145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+mcmc_trace(fit_polr_a, pars=c("x1","x2"))
+traceplot(fit_ord1_a, pars=c("b[1]","b[2]"))
+traceplot(fit_ord2_a, pars=c("b[1]","b[2]","alpha"))
+
+#! stan_polr, ord_mod1 similar (and also match orm) w/ dirchlet(1) and alpha=1, respectively
+#! ord_mod2 is a bit off and alpha est is higher than 1 (approx 4)
+#! is gamma prior too strong??
+# hist(extract(fit_ord2_a,pars="alpha")$alpha)
+
+
+# check other values e.g dirchlet(1/2) and alpha=1/2, dirchlet(2) and alpha=2
+
+fit_polr_b <- stan_polr(y ~ x1 + x2, data = dat_a, seed=3145, iter=3500, 
+                       warmup=1500, chains=2,
+               prior=NULL, prior_counts = dirichlet(1/2), method="logistic",
+               adapt_delta = 0.9)
+
+fit_polr_c <- stan_polr(y ~ x1 + x2, data = dat_a, seed=1745, iter=3500, 
+                       warmup=1500, chains=2,
+               prior=NULL, prior_counts = dirichlet(2), method="logistic",
+               adapt_delta = 0.9)
+
+mod_data_b <- list(N=nrow(dat_a),
+                 ncat=length(unique(dat_a$y)),
+                 Ylev=as.numeric(dat_a$y),
+                 link=1,
+                 K=ncol(dat_a[,c("x1","x2")]),
+                 Q=dat_a[,c("x1","x2")],
+                 alpha=1/2)
+
+mod_data_b2 <- list(N=nrow(dat_a),
+                 ncat=length(unique(dat_a$y)),
+                 Ylev=as.numeric(dat_a$y),
+                 link=1,
+                 K=ncol(dat_a[,c("x1","x2")]),
+                 Q=dat_a[,c("x1","x2")],
+                 alpha=1/100)
+
+mod_data_c <- list(N=nrow(dat_a),
+                 ncat=length(unique(dat_a$y)),
+                 Ylev=as.numeric(dat_a$y),
+                 link=1,
+                 K=ncol(dat_a[,c("x1","x2")]),
+                 Q=dat_a[,c("x1","x2")],
+                 alpha=2)
+
+fit_ord1_b <- sampling(ord_mod1, data=mod_data_b, seed=3145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.9))
+
+fit_ord1_b2 <- sampling(ord_mod1, data=mod_data_b2, seed=3145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.9))
+
+fit_ord1_c <- sampling(ord_mod1, data=mod_data_c, seed=1745, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.9))
+
+summary(fit_polr_b, pars=c("x1","x2"), digits=4)
+summary(fit_ord1_b,pars=c("b[1]","b[2]"))$summary
+
+plot(fit_polr_b, pars=c("x1","x2"), prob=0.8, prob_outer=0.95)
+plot(fit_ord1_b,pars=c("b[1]","b[2]"), ci_level = 0.8, outer_level=0.95)
+
+
+summary(fit_polr_c, pars=c("x1","x2"), digits=4)
+summary(fit_ord1_c,pars=c("b[1]","b[2]"))$summary
+
+plot(fit_polr_c, pars=c("x1","x2"), prob=0.8, prob_outer=0.95)
+plot(fit_ord1_c,pars=c("b[1]","b[2]"), ci_level = 0.8, outer_level=0.95)
+
+```
+
+```{r}
+# compare
+#!! need to figure out why stan_polr with dirichlet(alpha=1/2) doesn't match ord_mod1 with alpha=1/2
+fit_orm_a
+summary(fit_polr_a, pars=c("x1","x2"), digits=4) # dirichlet(1)
+summary(fit_polr_b, pars=c("x1","x2"), digits=4) # dirichlet(1/2)
+summary(fit_polr_c, pars=c("x1","x2"), digits=4) # dirichlet(2)
+
+summary(fit_ord1_a, pars=c("b[1]","b[2]"))$summary # alpha=1 <-- close to orm
+summary(fit_ord1_b, pars=c("b[1]","b[2]"))$summary # alpha=1/2 <-- close to orm
+summary(fit_ord1_b2, pars=c("b[1]","b[2]"))$summary # alpha=1/ncat <-- close to orm  
+summary(fit_ord1_c, pars=c("b[1]","b[2]"))$summary # alpha=2
+
+summary(fit_ord2_a, pars=c("b[1]","b[2]","alpha"))$summary # est alpha
+```
+
+```{r, eval=FALSE}
+# check Dirichlet density?
+library(plotly)
+library(MCMCpack)
+
+rdirichlet(10,c(1,1,1,1,1))
+rdirichlet(10,c(10,10,10,10,10))
+rdirichlet(10,c(0.1,0.1,0.1,0.1,0.1))
+
+mat<-rdirichlet(10,c(1,1,1))
+
+s<-seq(0,1,by=0.05)
+sg<-expand.grid(s,s)
+sgm<-sg[rowSums(sg)<=1,]
+
+sdiff <- 1-rowSums(sgm)
+
+mat<-cbind(sgm,sdiff)
+
+z<-ddirichlet(mat,c(2,2,2))
+
+dat<-cbind(x=mat[,1],y=mat[,3],z) %>% as_tibble()
+
+plot_ly(dat, x=~x, y=~y, z= ~z, type="scatter3d", mode="markers", color=~z, size=1)
+
+```
+
+##  example 2a
+
+```{r ex2a.1}
+set.seed(762)
+n <- 200
+x1 <- c(rep(0,n/2), rep(1,n/2))
+y <- rnorm(n) + 3*x1
+y_tr <- log(y+5)
+dat_d<-data.frame(y=ordered(y),x1, y_tr=ordered(y_tr))
+
+fit_orm_d <- orm(y ~ x1, data=dat_d)
+```
+
+
+--> !! Need to get betas from Bayesian CPMs to match beta from orm !! <--
+
+want small value of alpha, try exp(n) where n is sample size? how to justify? what sort of prior puts most weight around 0?
+
+http://mc-stan.org/rstanarm/reference/priors.html
+
+- try hs() prior
+- try dirchlet(1/n)
+
+```{r ex2a.2, cache=TRUE}
+# try stan_polr with different dirichlet specs and look at posterior checks 
+fit_polr1_d <- stan_polr(y ~ x1, data = dat_d, iter=3500, 
+                       warmup=1500, chains=2,
+               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+               adapt_delta = 0.99)
+
+summary(fit_polr1_d, pars=c("x1"), digits=4)
+
+# NOTE: pp_check doesn't look right because y data are factor levels (1:200) while y_rep are actual data points (-2.2: 5.64)
+pp_check(fit_polr1_d)  
+pp_check(fit_polr1_d, plotfun = "bars", nreps = 50, prob = 0.5)
+pp_check(fit_polr1_d, plotfun = "bars_grouped", group = dat2$x1, nreps = 50, prob = 0.5)
+
+fit_polr2_d <- stan_polr(y ~ x1, data = dat_d, iter=3500, 
+                       warmup=1500, chains=2,
+               prior=NULL, prior_counts = dirichlet(1/200), method="logistic",
+               adapt_delta = 0.99)
+
+summary(fit_polr2_d, pars=c("x1"), digits=4)
+
+pp_check(fit_polr2_d)
+```
+
+
+```{r}
+# try hardcoded models
+mod_data_d <- list(N=nrow(dat_d),
+                 ncat=length(unique(dat_d$y)),
+                 Ylev=as.numeric(dat_d$y),
+                 link=1,
+                 K=ncol(dat_d[,c("x1"),drop=FALSE]),
+                 Q=dat_d[,c("x1"),drop=FALSE],
+                 alpha=1/200)
+
+fit_ord1_d <- sampling(ord_mod1, data=mod_data_d, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+fit_ord2_d <- sampling(ord_mod2, data=mod_data_d, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+```
+
+```{r}
+# compare
+fit_orm_d
+summary(fit_polr1_d, pars=c("x1"), digits=4) # dirichlet(1),  way off
+summary(fit_polr2_d, pars=c("x1"), digits=4) # dirichlet(1/ncat), ok
+summary(fit_ord1_d, pars=c("b[1]"))$summary # alpha=1/ncat <-- this one looks best
+summary(fit_ord2_d, pars=c("b[1]","alpha"))$summary # est alpha, way off
+```
+
+
+```{r}
+fit_orm_e <- orm(y_tr ~ x1, data=dat_d)
+
+mod_data_e <- list(N=nrow(dat_d),
+                 ncat=length(unique(dat_d$y_tr)),
+                 Ylev=as.numeric(dat_d$y_tr),
+                 link=1,
+                 K=ncol(dat_d[,c("x1"),drop=FALSE]),
+                 Q=dat_d[,c("x1"),drop=FALSE],
+                 alpha=1/200)
+
+fit_ord1_e <- sampling(ord_mod1, data=mod_data_d, seed=12345, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+fit_orm_e
+summary(fit_ord1_e, pars=c("b[1]"))$summary
+
+
+
+ord1_e_mn_ints <- summary(fit_ord1_e, pars=paste0("cutpoints[",1:199,"]"))$summary[,"mean"]
+
+ord1_e_md_ints <-summary(fit_ord1_e, pars=paste0("cutpoints[",1:199,"]"))$summary[,"50%"]
+
+ord1_e_ci_ints <-summary(fit_ord1_e, pars=paste0("cutpoints[",1:199,"]"))$summary[,c("2.5%", "97.5%")]
+
+# compare intercepts from orm and stan model
+ints<-cbind(orm=coef(fit_orm_e)[1:199],
+            bayes_mn=-ord1_e_mn_ints,
+            bayes_md=-ord1_e_md_ints,
+            ci=-ord1_e_ci_ints)
+
+# coefs for rstanarm are negative of coefs from lrm, orm 
+qplot(ints[,"orm"], ints[,"bayes_mn"],
+      xlim=c(-15,10), ylim=c(-15,10)) + 
+  xlab("orm intercept coefs") + ylab("-1 * bayes CPM mean intercept coefs") +
+  geom_abline(slope=1,intercept=0)
+
+qplot(ints[,"orm"], ints[,"bayes_md"],
+      xlim=c(-15,10), ylim=c(-15,10)) + 
+  xlab("orm intercept coefs") + ylab("-1 * bayes CPM median intercept coefs") +
+  geom_abline(slope=1,intercept=0)
+
+ints %>% as_tibble() %>% 
+  mutate(row=1:nrow(ints)) %>%
+  ggplot(aes(x=row,y=orm))+
+  geom_point(aes(x=row,y=bayes_md),col=2, pch=1, size=2)+
+  geom_point(size=0.5)+
+  geom_ribbon(aes(ymin=`97.5%`,ymax=`2.5%`), fill=2, alpha=0.3)
+
+# compare intercepts for both mods
+ints_plt <- ints %>% as_tibble() %>% 
+  mutate(row=1:nrow(ints)) %>% 
+  gather(colnames(ints),key="mod",value="value") 
+
+# all are nearly identical except in tails
+ints_plt %>% filter(!mod%in%c("2.5%","97.5%")) %>% ggplot(aes(x=row,y=value, color=mod)) + geom_point()
+
+ints_plt %>% filter(!mod%in%c("bayes_mn")) %>% ggplot(aes(x=row,y=value, color=mod)) + geom_point()
+
+```
+
+
+```{r}
+fit_ord1_e
+
+mod_data_e
+
+#! need to save true y data in mod_data_e 
+truey0 <- as.numeric( levels(dat_d$y_tr) ) %>% sort()
+  
+# prepend value less than min(y) for alpha_0=-Inf intercept
+truey<-c(-Inf,truey0) 
+
+# format newdata, betas, and intercepts
+newdata=data.frame(`b[1]`=c(0,1))
+#! need function to extract beta coef names
+cv_nms<-"b[1]" 
+ndr <- newdata %>% mutate(ndrow=1:n())
+nd <- ndr %>% dplyr::select(-ndrow) %>% as.matrix()
+
+ctpt<-paste0("cutpoints[",1:199,"]")
+
+beta <- as.data.frame(fit_ord1_e) %>% dplyr::select(cv_nms) %>% as.matrix()
+int <- as.data.frame(fit_ord1_e) %>% dplyr::select(ctpt) %>% as.matrix()
+
+# get matrix of linear predictions Xb
+# (rxp)x (pxs) = rxs
+# r is rows in newdata, p is parameters (cols) in newdata, 
+# s is number of MCMC samples
+Xb <- nd %*% t(beta) 
+
+#use inverse function based on family
+inv_func <- plogis
+
+#will have 1 for each row of nd
+# check model/doc to make sure values are being calculated correctly
+# are cutpoints y<= or y< ??
+for (i in 1:nrow(nd)){
+      tmpcdf0 <- int - t(Xb[rep(i,ncol(int)),, drop=FALSE]) 
+      tmpcdf1 <- cbind(`-Inf`=-Inf, tmpcdf0, `Inf`=Inf) # add alpha_0=-Inf and alpha_n = Inf
+      tmpcdf <- tmpcdf1 %>% as.data.frame.table() %>% 
+        mutate(cdf=inv_func(Freq), ndrow=i) %>%
+        cbind(nd[i,,drop=FALSE])
+      assign(paste0("cc",i), tmpcdf)
+  }
+   
+#  F(y_1|X)=G^-1(alpha_i-betaX)
+
+# combine conditional cdfs
+nd_ds<-ls()[grep("cc",ls(),fixed=TRUE)] # list of all conditional cdf datasets
+cdf_vals<-do.call(rbind, lapply(nd_ds, function(x) get(as.character(x))))
+
+summ<-TRUE
+if (summ){
+    cdf_summ<-cdf_vals %>%
+      ungroup() %>%
+      group_by(ndrow, Var2) %>%
+      dplyr::summarize(mn_cdf=mean(cdf),
+                       med_cdf=median(cdf),
+                       cdf_q2.5=quantile(cdf,probs=0.025),
+                       cdf_q97.5=quantile(cdf,probs=0.975)) %>%
+      ungroup() %>% mutate(yval=rep(truey,nrow(nd))) %>%  
+      full_join(., ndr, by="ndrow")
+  #  return(cdf_summ)
+  } else {
+   cdf_out <- cdf_vals %>%
+      ungroup() %>%
+      dplyr::arrange(ndrow, Var1) %>%
+      mutate(yval=rep(truey,nrow(nd)*nsamps  ))
+  # return(cdf_out)
+  }
+
+cdf_summ
+
+```
+
+```{r}
+# getCDF function from rstanarm_ord_functions.R
+
+getCDF <- function(fit, newdata, summ=TRUE,...){
+  require(dplyr)
+  require(stringr)
+  
+  #check that cumulative model used
+  #check newdata is a data.frame
+  # check that names in newdata match coefs from model
+  
+  if( !identical(sort(names(coef(fit))), 
+                sort(names(newdata))) ) stop("newdata vars must match model")
+  
+  # other checks?
+  
+  nsamps<-attr(summary(spolrfit),"posterior_sample_size")
+  
+  # get values of outcome from ordered factor to numeric
+  
+  #!old don't need real name of outcome, fit object always calls it y
+  #fmla<-attr(summary(spolrfit),"formula")
+  #outcome<-str_remove(as.character(fmla[2]),"ordered") %>% str_sub(2,-2)
+  #truey0 <- as.numeric( levels( unlist(spolrfit[outcome]) ) ) %>% sort()
+  
+  truey0 <- as.numeric( levels(spolrfit$y) ) %>% sort()
+  
+  # prepend value less than min(y) for alpha_0=-Inf intercept
+  truey<-c(-Inf,truey0) 
+  
+  # format newdata, betas, and intercepts
+  cv_nms<-names(coef(spolrfit)) 
+  ndr <- newdata %>% mutate(ndrow=1:n())
+  nd <- ndr %>% select(-ndrow) %>% as.matrix()
+ 
+  beta <- as.data.frame(spolrfit) %>% select(cv_nms) %>% as.matrix()
+  int <- as.data.frame(spolrfit) %>% select(-cv_nms) %>% as.matrix()
+  
+  # get matrix of linear predictions Xb
+  # (rxp)x (pxs) = rxs
+  # r is rows in newdata, p is parameters (cols) in newdata, 
+  # s is number of MCMC samples
+  Xb <- nd %*% t(beta) 
+  
+  # add Xb to each intercept (4000xints) 
+  #dim(int) => s x (ints-1)
+  #dim(Xb) => r x s
+  
+  #use inverse function based on family
+  #! add cauchit
+  fam <- spolrfit$family
+  if (fam=="probit") {
+    inv_func <- pnorm
+  } else if (fam == "logistic") {
+    inv_func <- plogis
+  } else if (fam == "loglog") {
+    inv_func <- function(y) exp(-exp(-y))
+  } else if (fam == "cloglog") {
+    inv_func <- function(y) 1-exp(-exp(y))
+  } else if (fam == "cauchit") {
+    inv_func <- pcauchy #! not sure if this is right
+  }
+  
+  #will have 1 for each row of nd
+  # check model/doc to make sure values are being calculated correctly
+  # are cutpoints y<= or y< ??
+  for (i in 1:nrow(nd)){
+      tmpcdf0 <- int - t(Xb[rep(i,ncol(int)),, drop=FALSE]) 
+      tmpcdf1 <- cbind(`-Inf`=-Inf, tmpcdf0, `Inf`=Inf) # add alpha_0=-Inf and alpha_n = Inf
+      tmpcdf <- tmpcdf1 %>% as.data.frame.table() %>% 
+        mutate(cdf=inv_func(Freq), ndrow=i) %>%
+        cbind(nd[i,,drop=FALSE])
+      assign(paste0("cc",i), tmpcdf)
+  }
+   
+#  F(y_1|X)=G^-1(alpha_i-betaX)
+  
+# combine conditional cdfs
+nd_ds<-ls()[grep("cc",ls(),fixed=TRUE)] # list of all conditional cdf datasets
+cdf_vals<-do.call(rbind, lapply(nd_ds, function(x) get(as.character(x))))
+
+  if (summ){
+    cdf_summ<-cdf_vals %>%
+      ungroup() %>%
+      group_by(ndrow, Var2) %>%
+      dplyr::summarize(mn_cdf=mean(cdf),
+                       med_cdf=median(cdf),
+                       cdf_q2.5=quantile(cdf,probs=0.025),
+                       cdf_q97.5=quantile(cdf,probs=0.975)) %>%
+      ungroup() %>% mutate(yval=rep(truey,nrow(nd))) %>%  
+      full_join(., ndr, by="ndrow")
+    return(cdf_summ)
+  } else {
+   cdf_out <- cdf_vals %>%
+      ungroup() %>%
+      dplyr::arrange(ndrow, Var1) %>%
+      mutate(yval=rep(truey,nrow(nd)*nsamps  ))
+   return(cdf_out)
+  }
+
+}
+```
+
+```{r}
+cdf_summ %>% ggplot(aes(group=`b.1.`)) +
+  geom_ribbon(aes(x=yval, ymin=cdf_q2.5,ymax=cdf_q97.5),fill="grey30", alpha=0.4)+
+  geom_step(aes(x=yval,y=mn_cdf))
+```
