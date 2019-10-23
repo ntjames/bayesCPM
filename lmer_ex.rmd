@@ -26,7 +26,7 @@ invisible(lapply(libs, library, character.only = TRUE))
 #dir<-getwd()
 #source(file.path(dir,"rstanarm_ord_functions.r"))
 
-set.seed(24834)
+set.seed(55741)
 
 # call this once to distribute MCMC chains across cpu cores:
 options(mc.cores=parallel::detectCores())
@@ -38,7 +38,7 @@ options(mc.cores=parallel::detectCores())
 # compile ordinal models
 
 
-# concentration (alpha) is estimated with gamma(2,2) prior
+# concentration (alpha) is given as scalar
 # random intercepts
 if (0){
 ord_mod_file4<-read_file(file.path(getwd(),"ordinal_model_4.stan"))
@@ -80,7 +80,6 @@ summary(stan_gm1)
 ```
 
 
-
 fit model with brms
 
 ```{r}
@@ -96,6 +95,7 @@ make_stancode(Reaction ~ Days + (1| Subject), data=sleepstudy, family=gaussian)
 fit model with CPM
 
 ```{r}
+orm(Reaction ~ Days, data=sleepstudy, family="probit")
 
 # format data
 
@@ -110,6 +110,7 @@ if(0){
 # int L; //num group predictors
 # int<lower=1, upper=J> ll[N]; //group for individual
 # row_vector[L] u[J]; // group predictors
+# real<lower=0> alpha; // concentration parameter
 }
 
 
@@ -120,20 +121,18 @@ ndays<-length(unique(sleepstudy[,c("Days")]))
 
 grp_eff<-data.frame(grp=1:ngrps)
 
-
+ylevs<-length(unique(as.numeric(ordered(sleepstudy$Reaction))))
 stan_dat <- list(N=nrow(sleepstudy),
                  ncat=length(unique(sleepstudy$Reaction)),
                  Ylev=as.numeric(ordered(sleepstudy$Reaction)),
-                 link=1,
+                 link=2,
                  K=ncol( sleepstudy[,c("Days"),drop=FALSE] ),
                  Q=sleepstudy[,c("Days"),drop=FALSE],
                  J=ngrps,
                  L=ncol(grp_eff),
                  jj=as.numeric(sleepstudy[,c("Subject")]),
-                 u=grp_eff)
-
-
-#not quite right, want random intercepts AND random slopes
+                 u=grp_eff,
+                 alpha=1/ylevs)
 
 stan_cpm1 <- sampling(ord_mod4, data=stan_dat, seed=12345, 
                  iter=3000, warmup=1500, chains=2,
@@ -144,4 +143,78 @@ summary(stan_cpm1, pars=c("bet","b","u_b"))$summary
 ## need to use functions to get Mean, Quantile etc
 # see brms_ord_functions.r in /home/nathan/Dropbox/njames/school/PhD/orise_ra/brms 
 # and rstanarm_ord_functions.r (more updated) in /home/nathan/Dropbox/njames/school/PhD/orise_ra/rstanarm
+```
+
+
+```{r}
+# need to generate fake hierarchical data under similar scenario as other CPM sims
+# to evaluate
+generate.data.ri <- function(seed=1, n=200, p=0.5, alpha=0, beta=c(1.2, -0.4), grps=10,
+                             sigma=1){
+  set.seed(seed)
+  z1 <- sample(c(0,1), size=n, replace=TRUE, prob=c(1-p, p))
+  z2 <- rnorm(n, 0, 1)
+  grp<- sort(rep(1:grps,n/grps)) # 'n' must be divisible by 'grps'
+  ri <- sort(rep(rnorm(1:grps),n/grps))
+  y <- rnorm(n, alpha+beta[1]*z1 + beta[2]*z2+ri, sigma) 
+  data <- data.frame(y_ord=ordered(y), y, z1=z1, z2=z2, grp)
+  return(data)
+}
+
+dat1 <- generate.data.ri()
+
+lmer_fit<- lmer(y ~ z1 + z2 + (1|grp), data=dat1)
+
+stan_lmer_fit <- stan_lmer(y ~ z1 + z2 + (1|grp), data=dat1)
+summary(stan_lmer_fit)
+
+if(0){
+# int N; // num individuals
+# int ncat; // num categories
+# int Ylev[N]; // ordered individual outcome
+# int link; // link function
+# int K; // num ind predictors
+# matrix[N, K] Q; // individual predictors
+# int J; // num groups
+# int L; //num group predictors
+# int<lower=1, upper=J> ll[N]; //group for individual
+# row_vector[L] u[J]; // group predictors
+# real<lower=0> alpha; // concentration parameter
+}
+
+ngrps<-length(unique(dat1[,c("grp")]))
+#ndays<-length(unique(sleepstudy[,c("Days")]))
+#grp_eff<-data.frame(grp=sort(rep(1:ngrps,ndays)),day=rep(0:9,ngrps))
+
+grp_eff<-data.frame(grp=1:ngrps)
+
+ylevs<-length(unique(as.numeric(dat1$y_ord)))
+stan_dat1 <- list(N=nrow(dat1),
+                 ncat=length(unique(dat1$y_ord)),
+                 Ylev=as.numeric(ordered(dat1$y_ord)),
+                 link=2,
+                 K=ncol( dat1[,c("z1","z2")] ),
+                 Q=dat1[,c("z1","z2"),drop=FALSE],
+                 J=ngrps,
+                 L=ncol(grp_eff),
+                 jj=as.numeric(dat1[,c("grp")]),
+                 u=grp_eff,
+                 alpha=1/ylevs)
+
+#!! do model checks, ests somewhat close to stan_lmer, but model didn't converge
+stan_cpm2 <- sampling(ord_mod4, data=stan_dat1, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+#names(stan_cpm2)
+
+#!! why is b[1] same as u_b[1]?? random intercept estimates aren't right compared to stan_lmer
+summary(stan_cpm2, pars=c("b","bet","u_b"))$summary
+
+```
+
+
+```{r}
+# extend to random intercepts AND random slopes
+
 ```
