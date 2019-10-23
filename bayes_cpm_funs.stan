@@ -10,6 +10,13 @@ real CDF_polr(real x, int link) {
   else reject("Invalid link");
   return x;
 }
+
+//mixture link
+//real CDF_mix(real x, ...)
+//pis<-c(0.1,0.2,0.13,0.4,0.02,0.12,0.03)
+//qlogis(cumsum(pis))
+//qgumbel(cumsum(pis))
+
 // make cutpoints 
 vector make_cutpoints(vector probabilities, int ncat, int link) {
   vector[ncat - 1] cutpoints;
@@ -50,6 +57,22 @@ vector loglik(int[] Ylev, int N, vector cutpoints, int ncat, vector eta, int lin
     else
     // change to use log_diff_exp(log(CDF_polr(.)), log(CDF_polr(.))) ??
       ll[n] = log(CDF_polr(cutpoints[Ylev[n]] - eta[n], link) - CDF_polr(cutpoints[Ylev[n] - 1] - eta[n], link));
+  }
+  return ll;
+}
+
+// log-likelihood for hierarchical model
+vector loglik_hier(int[] Ylev, int N, vector cutpoints, int ncat, vector eta, vector zeta, int[] jj, int link) {
+  vector[N] ll;
+  for (n in 1:N) {
+    if (Ylev[n] == 1)
+      ll[n] = log(CDF_polr(cutpoints[1] - eta[n] - zeta[jj[n]], link));
+    else if (Ylev[n] == ncat)
+    // change to use log1m()??
+      ll[n] = log(1 - CDF_polr(cutpoints[ncat - 1] - eta[n] - zeta[jj[n]], link));
+    else
+    // change to use log_diff_exp(log(CDF_polr(.)), log(CDF_polr(.))) ??
+      ll[n] = log(CDF_polr(cutpoints[Ylev[n]] - eta[n] - zeta[jj[n]], link) - CDF_polr(cutpoints[Ylev[n] - 1] - eta[n] - zeta[jj[n]], link));
   }
   return ll;
 }
