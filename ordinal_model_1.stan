@@ -6,13 +6,13 @@ functions {
 #include /bayes_cpm_funs.stan
 }
 data {
-  int N;
-  int ncat;
-  int Ylev[N];
-  int link;
-  int K;
-  matrix[N, K] Q;
-  real<lower=0> alpha;
+  int N; // number of observations
+  int ncat; // number of unique outcome values
+  int Ylev[N]; // ranks of unique outcome values
+  int link; // link function (1=logistic, 2=probit, ...)
+  int K; // number of predictors
+  matrix[N, K] Q; // N x K design matrix
+  real<lower=0> alpha; // concentration parameter
 }
 
 parameters {
