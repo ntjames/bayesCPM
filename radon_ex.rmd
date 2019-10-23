@@ -1,0 +1,399 @@
+---
+title: "Bayesian CPM for radon example"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+<!-- 
+Radon regression example 
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+libs <- c("rstan", "dplyr", "stringr", "readr", "tidyr")
+invisible(lapply(libs, library, character.only = TRUE))
+
+# repro & update these functions for general Stan output
+#dir<-getwd()
+#source(file.path(dir,"rstanarm_ord_functions.r"))
+
+set.seed(24334)
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+## compile ordinal models
+
+```{r}
+# concentration (alpha) is given as a scalar parameter along with in data
+if (0){
+ord_mod_file1<-read_file(file.path(getwd(),"ordinal_model_1.stan"))
+ord_mod1 <- stan_model(model_code = ord_mod_file1)
+saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
+}
+
+ord_mod1 <- readRDS(file.path(getwd(),"ordinal_model_1.rds"))
+```
+
+## radon example using Stan and linear regression
+
+```{r}
+library(HLMdiag)
+data(radon,package="HLMdiag") 
+  
+dat <- radon %>% select(-uranium, -county) %>% filter(county.name %in% c("BLUE EARTH","CLAY","GOODHUE")) %>% mutate(base=1-basement)
+# from Table 7.3 in Bayesian Methods notes all recorded in basement EXCEPT those with asterisk. This is opposite of how the data is coded here 
+
+# dat %>% group_by(base) %>% summarise(mean(log.radon))
+```
+
+### with brms
+
+```{r}
+library(brms)
+brm_fit <- brm(log.radon~0+base+county.name,data=dat,family=gaussian)
+
+brm_fit
+
+plot(brm_fit)
+
+# posterior samples
+brm_post<-as.data.frame(brm_fit)
+
+# function to get output 
+get_output<-function(mod){
+  b1<-mod %>% select(contains("base")) %>% pull()
+  b2<-mod %>% select(contains("BLUE")) %>% pull()
+  b3<-mod %>% select(contains("CLAY")) %>% pull()
+  b4<-mod %>% select(contains("GOODHUE")) %>% pull()
+    
+  GM_BE_nobase = exp(b2)
+  GM_BE_base = exp(b1+b2)
+  GM_CL_nobase = exp(b3)
+  GM_CL_base = exp(b1+b3)
+  GM_GO_nobase = exp(b4)
+  GM_GO_base = exp(b1+b4)
+  base = exp(b1)
+  sig = mod[,"sigma"]
+  
+  values<-data.frame(
+    GM_BE_nobase,GM_BE_base,
+    GM_CL_nobase,GM_CL_base,
+    GM_GO_nobase,GM_GO_base,
+    base,sig)
+  
+apply(values,2,quantile,probs=c(0.25,0.5,0.75)) %>% round(2) %>% t()
+}
+
+get_output(brm_post)
+
+```
+
+### with rstanarm
+
+```{r}
+library(rstanarm)
+
+rstanarm_fit<-stan_glm(log.radon~0+base+county.name,data=dat,family=gaussian)
+
+rstanarm_fit
+
+plot(rstanarm_fit)
+
+pp_check(rstanarm_fit)
+
+rstanarm_post<-as.data.frame(rstanarm_fit)
+
+get_output(rstanarm_post)
+```
+
+```{r, eval=FALSE}
+stan_demo()
+
+9-15 (ARM chp 12)
+22-25 (ARM chp 13)
+31-37 (ARM chp 16)
+43-51 (ARM chp 17)
+53-56 (ARM chp 18)
+64-67 (ARM chp 19)
+75-82 (ARM cHP 21)
+```
+
+## radon example using Bayesian CPM model
+
+```{r}
+dat_wide <- dat %>% select(-basement) %>% 
+  mutate(BE = if_else(county.name=="BLUE EARTH",1,0),
+         CL = if_else(county.name=="CLAY",1,0),
+         GO = if_else(county.name=="GOODHUE",1,0),
+         radon = ordered(exp(log.radon)),
+         log.radon = ordered(log.radon))
+
+mod_data1 <- mkStanDat(dat_wide, outcome="log.radon", 
+                       preds = c("base", "BE", "CL", "GO"),
+                       link=2)
+
+cpm_fit1 <- sampling(ord_mod1, data=mod_data1, seed=23145, 
+                 iter=5000, warmup=2000, chains=4,
+                 control = list(adapt_delta = 0.9))
+
+summary(cpm_fit1, pars=c("b[1]","b[2]","b[3]","b[4]"))$summary %>% round(3)
+
+```
+
+```{r}
+newdat1 <- data.frame(base=c(0,1,0,1,0,1,1,0),
+                     BE=c(1,1,0,0,0,0,0,0),
+                     CL=c(0,0,1,1,0,0,0,0),
+                     GO=c(0,0,0,0,1,1,0,0))
+
+cdf_summ1 <- getCDF(cpm_fit1, mod_data1, newdat1)
+cdf_out1 <- getCDF(cpm_fit1, mod_data1, newdat1, summ=FALSE)
+
+## conditional cdf for no basement vs basement in Blue Earth county
+cdf_summ1 %>% filter(ndrow %in% c(1,2)) %>% ggplot(aes(group=ndrow)) +
+  geom_ribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, fill=factor(ndrow)) , alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("") + ylab("Conditional CDF") 
+
+## conditional cdf for no basement vs basement in Clay county
+cdf_summ1 %>% filter(ndrow %in% c(3,4)) %>% ggplot(aes(group=ndrow)) +
+  geom_ribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, fill=factor(ndrow)) , alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("") + ylab("Conditional CDF")
+
+## ??
+cdf_out1 %>% filter(ndrow==1) %>% 
+  ggplot(aes(x=yval,y=Freq, group=Var1)) + geom_line(alpha=0.01) +
+  geom_abline(slope=1,intercept = 0)
+
+```
+
+```{r}
+mn_summ1 <- getMean(cpm_fit1, mod_data1, newdat1)
+mn_vals1 <- getMean(cpm_fit1, mod_data1, newdat1, summ=FALSE)
+
+# geometric means
+geo_means <- mn_summ1 %>% filter(ndrow<=6) %>% select(mean_mn, sd_mn, mn_q25, med_mn, mn_q75) %>% exp()
+
+# exp(b[1]) is NOT change comparing basement to first floor, but val for basement measurements. 
+# need to take diff when (base=1) - when (base=0) to get 'basement effect'
+base_eff<-mn_vals1 %>% filter(ndrow %in% c(7,8)) %>% select(-c(base,BE,CL,GO)) %>% spread(ndrow,mn) %>% mutate(base_eff=`7`-`8`) %>%
+      dplyr::summarize(mean_mn=mean(base_eff),
+                       med_mn=median(base_eff),
+                       sd_mn=sd(base_eff),
+                       mn_q25=quantile(base_eff,probs=0.25),
+                       mn_q75=quantile(base_eff,probs=0.75))
+
+round( rbind(geo_means, exp(base_eff)), 2)
+```
+
+
+### redo model above with only basement
+
+```{r}
+rstanarm_fit_bo <- stan_glm(log.radon~base,data=dat,family=gaussian)
+
+plot(rstanarm_fit_bo)
+
+pp_check(rstanarm_fit_bo)
+
+rstanarm_post_bo<-as.data.frame(rstanarm_fit_bo)
+
+rstanarm_fit_bo
+```
+
+
+```{r}
+mod_data1_bo <- mkStanDat(dat_wide, outcome="log.radon", 
+                       preds = c("base"), link=2)
+
+cpm_fit1_bo<- sampling(ord_mod1, data=mod_data1_bo, seed=23145, 
+                 iter=3500, warmup=1500, chains=3,
+                 control = list(adapt_delta = 0.9))
+
+# summary(cpm_fit1_bo, pars=c("b[1]"))$summary
+
+newdat1_bo <- data.frame(base=c(0,1))
+#cdf_summ1_bo <- getCDF(cpm_fit1_bo, mod_data1_bo, newdat1_bo)
+#cdf_out1_bo <- getCDF(cpm_fit1_bo, mod_data1_bo, newdat1_bo, summ=FALSE)
+
+mn_summ1_bo <- getMean(cpm_fit1_bo, mod_data1_bo, newdat1_bo)
+mn_vals1_bo <- getMean(cpm_fit1_bo, mod_data1_bo, newdat1_bo, summ=FALSE)
+
+mn_summ1_bo %>% round(3)
+```
+
+### repeat model using radon on natural scale
+
+```{r}
+mod_data2 <- mkStanDat(dat_wide, outcome="radon", 
+                       preds = c("base", "BE", "CL", "GO"),
+                       link=2)
+
+cpm_fit2 <- sampling(ord_mod1, data=mod_data2, seed=23145, 
+                 iter=5000, warmup=2000, chains=4,
+                 control = list(adapt_delta = 0.85))
+
+summary(cpm_fit2,pars=c("b[1]","b[2]","b[3]","b[4]"))$summary %>% round(3)
+```
+
+
+```{r}
+cdf_summ2 <- getCDF(cpm_fit2, mod_data2, newdat1)
+#cdf_out2 <- getCDF(cpm_fit2, mod_data2, newdat1, summ=FALSE)
+
+## conditional cdf for no basement vs basement in Blue Earth county
+cdf_summ2 %>% filter(ndrow %in% c(1,2)) %>% ggplot(aes(group=ndrow)) +
+  geom_ribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, fill=factor(ndrow)) , alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("") + ylab("Conditional CDF") 
+```
+
+```{r}
+mn_summ2 <- getMean(cpm_fit2, mod_data2, newdat1)
+mn_vals2 <- getMean(cpm_fit2, mod_data2, newdat1, summ=FALSE)
+```
+
+
+
+```{r}
+## scratch
+if (0){
+# use mkStanDat instead
+ylevs <- length(unique(as.numeric(dat_wide$log.radon)))
+mod_data1 <- list(N=nrow(dat_wide),
+                 ncat=length(unique(dat_wide$log.radon)),
+                 Ylev=as.numeric(dat_wide$log.radon),
+                 link=2,
+                 K=ncol(dat_wide[,c("base","BE","CL","GO")]),
+                 Q=dat_wide[,c("base","BE","CL","GO")],
+                 alpha=1/ylevs)
+}
+
+if(0){
+# hardcode getCDF function
+  posts <- as.data.frame(cpm_fit1)  
+
+  nsamps<-nrow(posts)
+  
+  # get values of outcome from ordered factor to numeric
+  #!! need to save this with fit somehow
+  truey0 <- as.numeric( levels(dat_wide$log.radon) ) %>% sort()
+  
+  truey0levs<-length(unique(truey0))
+  
+  # prepend value less than min(y) for alpha_0=-Inf intercept
+  truey<-c(-Inf,truey0) 
+  
+  # format newdata, betas, and intercepts
+  newdata=data.frame(base=c(0,1,0,1,0,1,1,0),
+                     BE=c(1,1,0,0,0,0,0,0),
+                     CL=c(0,0,1,1,0,0,0,0),
+                     GO=c(0,0,0,0,1,1,0,0))
+  cv_nms<-names(posts)[names(posts) %in% c("b[1]","b[2]","b[3]","b[4]")]
+  cut_nms <- paste0("cutpoints[",1:(truey0levs-1),"]")
+  #cv_nms<-names(coef(spolrfit)) 
+  ndr <- newdata %>% mutate(ndrow=1:n())
+  nd <- ndr %>% select(-ndrow) %>% as.matrix()
+  
+  beta <- posts %>% select(cv_nms) %>% as.matrix()
+  int <- posts %>% select(cut_nms) %>% as.matrix()
+  
+  # get matrix of linear predictions Xb
+  # (rxp)x (pxs) = rxs
+  # r is rows in newdata, p is parameters (cols) in newdata, 
+  # s is number of MCMC samples
+  Xb <- nd %*% t(beta) 
+  
+  # add Xb to each intercept (4000xints) 
+  #dim(int) => s x (ints-1)
+  #dim(Xb) => r x s
+  
+  #use inverse function based on family
+  #! add cauchit
+  #fam <- spolrfit$family
+  fam<-"probit"
+  if (fam=="probit") {
+    inv_func <- pnorm
+  } else if (fam == "logistic") {
+    inv_func <- plogis
+  } else if (fam == "loglog") {
+    inv_func <- function(y) exp(-exp(-y))
+  } else if (fam == "cloglog") {
+    inv_func <- function(y) 1-exp(-exp(y))
+  } else if (fam == "cauchit") {
+    inv_func <- pcauchy #! not sure if this is right
+  }
+  
+  #will have 1 for each row of nd
+  # check model/doc to make sure values are being calculated correctly
+  # are cutpoints y<= or y< ??
+  for (i in 1:nrow(nd)){
+    tmpcdf0 <- int - t(Xb[rep(i,ncol(int)),, drop=FALSE]) 
+    tmpcdf1 <- cbind(`-Inf`=-Inf, tmpcdf0, `Inf`=Inf) # add alpha_0=-Inf and alpha_n = Inf
+    tmpcdf <- tmpcdf1 %>% as.data.frame.table() %>% 
+      mutate(cdf=inv_func(Freq), ndrow=i) %>%
+      cbind(nd[i,,drop=FALSE])
+    assign(paste0("cc",i), tmpcdf)
+  }
+  
+  #  F(y_1|X)=G^-1(alpha_i-betaX)
+  
+  # combine conditional cdfs
+  nd_ds<-ls()[grep("cc",ls(),fixed=TRUE)] # list of all conditional cdf datasets
+  cdf_vals<-do.call(rbind, lapply(nd_ds, function(x) get(as.character(x))))
+  
+
+cdf_summ<-cdf_vals %>%
+  ungroup() %>%
+  group_by(ndrow, Var2) %>%
+  dplyr::summarize(mn_cdf=mean(cdf),
+                   med_cdf=median(cdf),
+                   cdf_q25=quantile(cdf,probs=0.25),
+                   cdf_q75=quantile(cdf,probs=0.75)) %>%
+  ungroup() %>% mutate(yval=rep(truey,nrow(nd))) %>%  
+  full_join(., ndr, by="ndrow")
+
+cdf_out <- cdf_vals %>%
+  ungroup() %>%
+  dplyr::arrange(ndrow, Var1) %>%
+  mutate(yval=rep(truey,nrow(nd)*nsamps  ))
+
+cdf_summ1_tr<-cdf_summ1 %>% select(-c(cdf_q2.5,cdf_q5,cdf_q90,cdf_q97.5))
+identical(cdf_summ1_tr,cdf_summ)
+identical(cdf_out1,cdf_out)
+}
+
+if(0){
+# hardcode getMean function
+mn_vals<- cdf_out1 %>% filter(cdf!=0) %>% group_by(ndrow, Var1) %>%
+    mutate(pdf0=lag(cdf), pdf=ifelse(is.na(pdf0),cdf,cdf-pdf0), fy_Py=pdf*yval) %>% 
+    dplyr::summarize(n=n(),mn=sum(fy_Py)) %>% ungroup()
+  
+mn_summ<-mn_vals %>%
+  ungroup() %>%
+  group_by(ndrow) %>%
+  dplyr::summarize(mean_mn=mean(mn),
+                   med_mn=median(mn),
+                   sd_mn=sd(mn),
+                   mn_q25=quantile(mn,probs=0.25),
+                   mn_q75=quantile(mn,probs=0.75)) %>%
+  full_join(., ndr, by="ndrow")
+
+
+mn_summ1_tr <- mn_summ1 %>% select(-c(mn_q2.5,mn_q5,mn_q90,mn_q97.5))
+identical(mn_summ1_tr,mn_summ)
+
+mn_vals1_tr <- mn_vals1 %>% select(-c(base,BE,CL,GO))
+identical(mn_vals1_tr,mn_vals)
+}
+```
