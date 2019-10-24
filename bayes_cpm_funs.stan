@@ -46,6 +46,7 @@ vector make_cutpoints(vector probabilities, int ncat, int link) {
 }
 // log-likelihood 
 // same as eq (4) from Liu et al
+// possible to vectorize ??
 vector loglik(int[] Ylev, int N, vector cutpoints, int ncat, vector eta, int link) {
   vector[N] ll;
   for (n in 1:N) {

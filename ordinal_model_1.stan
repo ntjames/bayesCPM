@@ -1,6 +1,8 @@
-//modified from code sent by Philip G Jones <pgjones@saint-lukes.org>
-// itself based on stan_polr code
+// Bayesian CPM model with dirichlet prior
 // concentration (alpha) is given as a scalar parameter along with data
+// modified in part from code by Philip G Jones <pgjones@saint-lukes.org>
+// itself based on stan_polr() code
+
 
 functions {
 #include /bayes_cpm_funs.stan
