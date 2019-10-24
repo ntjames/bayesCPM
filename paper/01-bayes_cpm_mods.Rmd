@@ -4,11 +4,17 @@
 
 (I think the main modification needed for this extension will be a hierarchical structure (hyperparameter) on the Dirichlet prior concentration parameters. NO, scratch this for now)
 
--> Use model with dirichlet and concentration alpha=1/n
-also try alpha=0, alpha=1/2 (is this multinomial Jeffrey's prior or could it be that 1/n is multinomial Jeffreys prior?), alpha=1
-describe how to do informative prior based on conditional mean arg?
+-> Use model with dirichlet and concentration alpha=1/n  (should n be # obs or # unique obs)
+also try:
+alpha=0 (NO! stan_polr and ord_mod1 don't work w/ improper alpha=0 conc. param)
+alpha=1/2 (I think this is multinomial Jeffrey's prior)
+alpha=1
 
-1b) make sure hardcoded stan model matches stan_polr when alpha=1, 0.5, 0.2, 2, 5, 1/ncat (other vals?)
+lower priority -> parameterization on differences in intercepts or log difference in intercepts
+
+lower priority -> 1b) figure out why hardcoded stan model doesn't match stan_polr when alpha=1, 0.5, 0.2, 2, 5, 1/ncat (other vals?), 
+-> maybe change hardcoded stan model to est. cutpoints when all x are at their means (rather than all x=0 which I think is in implementation as of 10/10/19)
+-> could also be related to parameterization of betas in stan_polr
 
 1c) simulations comparing Bayes CPM to NPMLE (maybe not in paper, but need to verify models are similar)
 
@@ -16,8 +22,12 @@ describe how to do informative prior based on conditional mean arg?
 
 2a) mixture link model (maybe, depends on whether it's truly needed or improves model)
 --finite mixture and BNP mixture over, e.g. normals
+-- see brms mixture() and BDA3
 
-2b) Extend to nonlinear model
+2b) Extend to nonlinear model - try something simple like Emax
+-- see https://cran.r-project.org/web/packages/brms/vignettes/brms_nonlinear.html
+-- see http://mc-stan.org/rstanarm/articles/glmer.html
+-- see https://mc-stan.org/rstanarm/reference/stan_nlmer.html
 
 2c) Extend to mixed effects CPMs - nonlinear mixed effects model for Bayesian PK/PD
 
@@ -27,8 +37,6 @@ TO DO
 - Write section on extension to continuous, nail down 'proof' related to priors for intercepts/heuristic argument
 -- verify that NPMLE likelihood and my likelihood are the same
 
-- consider alternate parameterization delta_1=log(gamma_1); delta_j=log(gamma_j-gamma_{j-1}) from Albert & Chib 1997
-
 - clean up functions to get CDF, Mean, Quantile and Exceedance from Stan output
 --use roxygen function notation similar to 'Copula modeling with R'
 
@@ -37,7 +45,7 @@ TO DO
 -- make sure model is working well in basic scenario; compare to NPMLE
 using Bias, coverage, other statistics?
 
-- implement BNP model for comparison (JAGS?? dirichletprocess package?, other?)
+- implement BNP model for comparison (JAGS? OpenBUGS? dirichletprocess package?, other?)
 -- see https://cran.r-project.org/web/packages/dirichletprocess/index.html
 https://cran.r-project.org/web/packages/BNSP/index.html
 https://www.stats.ox.ac.uk/~teh/research/npbayes/Teh2010a.pdf
@@ -59,6 +67,9 @@ https://www.stats.ox.ac.uk/~teh/research/npbayes/Teh2010a.pdf
 --see links in above todo item
 
 lower priority issues:
+
+- consider alternate parameterization delta_1=log(gamma_1); delta_j=log(gamma_j-gamma_{j-1}) from Albert & Chib 1997 or just gamma_j-gamma_{j-1}
+
 
 * extend to weighted PPO vs. NPO type model (McKinley), except using continuous data and mixture links. [from Frank] consider adding a summarization of evidence for the candidate link functions, e.g., posterior probability that the model has a logit link.  And develop ways to summarize exposure/treatment effects in these mixtures of models, e.g. covariate-specific estimates of both odds ratios and risk differences, plus perhaps hazard ratio.
 

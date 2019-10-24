@@ -1,6 +1,6 @@
 ---
-title: "Bayesian Cumulative Probability Models for Continuous Outcomes"
-author: "Nathan T. James, ..., ..."
+title: "Bayesian Cumulative Probability Models for Continuous and Mixed Outcomes"
+author: "Nathan T. James, ..."
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 output: 
@@ -11,7 +11,7 @@ output:
       in_header: header.html
     config:
       toc:
-        before: <li> &nbsp; Bayesian Cumulative Probability Models for Continuous Outcomes </li>
+        before: <li> &nbsp; Bayesian Cumulative Probability Models for Continuous and Mixed Outcomes </li>
         collapse: section
       download: null
       sharing: no    
@@ -113,5 +113,12 @@ document.write(\'<div class="btn-group pull-right" style="position: absolute; to
 
 readr::write_lines(htmlhead, path = "header.html")
 ```
+
+## Abstract
+
+
+Ordinal cumulative probability models (CPMs) such as the proportional odds regression model are typically used for discrete ordered outcomes, but can readily accommodate a wide range of continuous and mixed discrete/continuous outcomes.  Recent papers by Liu et al. [@liu_modeling_2017] and Tian et al. (2019) describe the advantages of ordinal CPMs in this setting using non-parametric maximum likelihood estimation (NPMLE), however the extension to Bayesian inference has not been thoroughly explored. In this paper, we formulate a Bayesian CPM for continuous or mixed outcome data. Bayesian CPMs have advantages over frequentist CPMs with regard to interpretation, flexibility/extendability, and exact inference (within simulation error) when the log-likelihood is not well-approximated by a quadratic function. We detail progress on several extensions including model averaging across various link function specifications and use for non-linear mixed effects modeling. We evaluate our model against a Bayesian nonparametric regression approach using simulations and a case study.  Our results show [___]. 
+
+[Software to implement Bayesian CPM ...]
 
 # Introduction
