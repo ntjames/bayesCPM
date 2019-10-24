@@ -1,6 +1,20 @@
+# project-specific files
+/Tian_code/
+/biostat_sem/
+/refs/
+/paper/fig/
+/paper/js/
+/paper/output/
+/paper/zotero_library.bib
+/paper/_main.aux
+_bookdown_files/
+archive/
+*.rds
+
 # History files
 .Rhistory
 .Rapp.history
+*.Rproj
 
 # Session Data files
 .RData
