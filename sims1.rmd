@@ -1,0 +1,249 @@
+---
+title: "Bayesian CPM sims"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+<!-- 
+Reproduce Simulations from Liu et al
+!! modify to use sourced cpm_functions
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+libs <- c("rstan", "dplyr", "stringr", "readr", "tidyr")
+invisible(lapply(libs, library, character.only = TRUE))
+
+# repro & update these functions for general Stan output
+dir<-getwd()
+source(file.path(dir,"cpm_functions.r"))
+
+set.seed(24334)
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+## compile ordinal models
+
+```{r}
+# concentration (alpha) is unspecified, default is ???
+if (0){
+ord_mod_file0<-read_file(file.path(getwd(),"ordinal_model_0.stan"))
+ord_mod0 <- stan_model(model_code = ord_mod_file0)
+saveRDS(ord_mod0, file = file.path(getwd(),"ordinal_model_0.rds"))
+}
+
+# concentration (alpha) is given as a scalar parameter along with in data
+if (0){
+ord_mod_file1<-read_file(file.path(getwd(),"ordinal_model_1.stan"))
+ord_mod1 <- stan_model(model_code = ord_mod_file1)
+saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
+}
+
+ord_mod1 <-readRDS(file.path(getwd(),"ordinal_model_1.rds"))
+
+# concentration (alpha) is estimated with gamma(2,2) prior or exp(1) prior
+if (0){
+ord_mod_file2<-read_file(file.path(getwd(),"ordinal_model_2.stan"))
+ord_mod2 <- stan_model(model_code = ord_mod_file2)
+saveRDS(ord_mod2, file = file.path(getwd(),"ordinal_model_2.rds"))
+
+ord_mod_file2b<-read_file(file.path(getwd(),"ordinal_model_2b.stan"))
+ord_mod2b <- stan_model(model_code = ord_mod_file2b)
+saveRDS(ord_mod2b, file = file.path(getwd(),"ordinal_model_2b.rds"))
+
+ord_mod_file2c<-read_file(file.path(getwd(),"ordinal_model_2c.stan"))
+ord_mod2c <- stan_model(model_code = ord_mod_file2c)
+saveRDS(ord_mod2c, file = file.path(getwd(),"ordinal_model_2c.rds"))
+}
+
+```
+
+```{r}
+# from Liu et al. sim code
+generate.data.1 <- function(seed=1, n=200, p=0.5, alpha=0, beta=c(1.1, -0.6), sigma=1){
+  set.seed(seed)
+  z1 <- sample(c(0,1), size=n, replace=TRUE, prob=c(1-p, p))
+  z2 <- rnorm(n, 0, 1)
+  log.y <- rnorm(n, alpha+beta[1]*z1 + beta[2]*z2, sigma) 
+  data <- data.frame(y=ordered(log.y), z1=z1, z2=z2)
+  return(data)
+}
+
+if(0){
+dat<-generate.data.1()
+
+library(rms)
+orm(y~z1+z2,data=dat, family="probit")
+}
+
+```
+
+## sim 1
+
+```{r ex1, cache=TRUE}
+
+dat1 <- generate.data.1()
+ylevs <- length(unique(dat1$y))
+mod_data1 <- list(N=nrow(dat1),
+                 ncat=length(unique(dat1$y)),
+                 Ylev=as.numeric(dat1$y),
+                 link=2,
+                 K=ncol(dat1[,c("z1","z2")]),
+                 Q=dat1[,c("z1","z2")],
+                 alpha=1/ylevs)
+
+fit_ord1 <- sampling(ord_mod1, data=mod_data1, seed=21345, 
+                 iter=2000, warmup=1000, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord1, pars=c("b[1]","b[2]"))$summary
+
+
+x2<-1:(ylevs - 1)
+
+#rownames(summary(fit_ord1,pars=paste0("cutpoints[",x2,"]"))$summary)
+
+get_cutpoints<-function(fit,summ_stat='mean',pr=c(0.5)){
+  summary(fit, pars=paste0("cutpoints[",x2,"]"), probs=pr)$summary[,summ_stat]
+}
+
+cp1_mn <- get_cutpoints(fit_ord1)
+cp1_5 <- get_cutpoints(fit_ord1, summ_stat='5%',pr=c(0.05))
+cp1_95 <- get_cutpoints(fit_ord1, summ_stat='95%',pr=c(0.95))
+
+#plot log(y) vs intercepts
+
+plt_dat1<-data.frame(log.y=-as.numeric(levels(dat1$y))[1:199],
+           alp.mn=-cp1_mn,
+           alp.5pct=cp1_5,
+           alp.95pct=cp1_95)
+
+plt_dat1 %>% ggplot(aes(x=log.y, y=alp.mn))+geom_step()+
+  geom_abline(slope=1,intercept=0)
+
+```
+
+
+## sim 2
+
+```{r}
+# from Tian et al.
+
+generate.data.2 <- function(seed=1, n=200, p=0.5, alpha=0, beta=0.5){
+  set.seed(seed)
+  #generate data
+  x <- rbinom(n,1,p=0.5)
+  e <- rnorm(n,0,1)
+  y <- qchisq(pnorm(beta*x+e),df=5)
+  data <- data.frame(y=ordered(y), x=x)
+  return(data)
+}
+
+dat2<-generate.data.2(3534)
+  
+###orm
+#orm(y~x, data=dat2, family=probit) 
+
+ylevs2 <- length(unique(dat2$y))
+mod_data2 <- list(N=nrow(dat2),
+                 ncat=length(unique(dat2$y)),
+                 Ylev=as.numeric(dat2$y),
+                 link=2,
+                 K=ncol(dat2[,c("x"),drop=FALSE]),
+                 Q=dat2[,c("x"),drop=FALSE],
+                 alpha=1/ylevs2)
+
+#start_time <- Sys.time()
+fit_ord2 <- sampling(ord_mod1, data=mod_data2, seed=21345, 
+                 iter=2000, warmup=1000, chains=2,
+                 control = list(adapt_delta = 0.8))
+#end_time <- Sys.time()
+#end_time - start_time
+
+# time for n=200 is around 15 seconds
+# time for n=500 is around 45 seconds
+# time for n=1000 is around 80 seconds
+
+summary(fit_ord2, pars=c("b[1]"))$summary
+
+```
+
+
+# sim 3
+
+```{r}
+# make data
+n<-200
+x<-rbinom(n,1,0.4)
+beta1 <- 2.3
+#beta2 <- -1.5
+grp<-sort(rep(c(0,1),n/2))
+#y<-rnorm(n,85)+beta1*x+beta2*grp
+y<-rnorm(n, 85+beta1*x)
+
+dat00<-cbind(y,x,grp)
+
+# scenario 1 - single detection limit
+ll1 <- 87.5
+ll2 <- 84.5
+
+dat0<-dat00 %>% as_tibble() %>% 
+  mutate(lim=ifelse(grp==0,ll2,ll2),left=pmax(lim,y),right=left) %>% 
+  mutate(left=ifelse(lim==left,NA,left)) %>% as.data.frame()
+
+dat3<-dat0 %>% dplyr::select(right,x,y) %>% rename(y_cens=right) %>% mutate(y_cens=ordered(y_cens))
+
+orm(y_cens~x, dat3, family="probit")
+orm(y~x, dat3, family="probit")
+
+ylevs3 <- length(unique(dat3$y_cens))
+mod_data3 <- list(N=nrow(dat3),
+                 ncat=length(unique(dat3$y_cens)),
+                 Ylev=as.numeric(dat3$y_cens),
+                 link=2,
+                 K=ncol(dat3[,c("x"),drop=FALSE]),
+                 Q=dat3[,c("x"),drop=FALSE],
+                 alpha=1/ylevs3)
+
+fit_ord3 <- sampling(ord_mod1, data=mod_data3, seed=21345, 
+                 iter=2000, warmup=1000, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord3, pars=c("b[1]"))$summary
+
+# scenario 2 - two detection limits
+dat01<-dat00 %>% as_tibble() %>% 
+  mutate(lim=ifelse(grp==0,ll1,ll2),left=pmax(lim,y),right=left) %>% 
+  mutate(left=ifelse(lim==left,NA,left)) %>% as.data.frame()
+
+dat3b <- dat01 %>% dplyr::select(right,x,y) %>% rename(y_cens=right) %>% mutate(y_cens=ordered(y_cens))
+
+orm(y_cens~x, dat3b, family="probit")
+orm(y~x, dat3b, family="probit")
+
+
+ylevs3b <- length(unique(dat3b$y_cens))
+mod_data3b <- list(N=nrow(dat3b),
+                 ncat=length(unique(dat3b$y_cens)),
+                 Ylev=as.numeric(dat3b$y_cens),
+                 link=2,
+                 K=ncol(dat3b[,c("x"),drop=FALSE]),
+                 Q=dat3b[,c("x"),drop=FALSE],
+                 alpha=1/ylevs3b)
+
+fit_ord3b <- sampling(ord_mod1, data=mod_data3b, seed=21345, 
+                 iter=2000, warmup=1000, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+summary(fit_ord3b, pars=c("b[1]"))$summary
+
+```
