@@ -9,12 +9,16 @@ output:
     theme: paper
 ---
 
+<!--
+Comparisons between different versions of Bayes CPM code and 
+between rstanarm and hardcoded CPM
+-->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 rm(list=ls())
-libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "ordinal","MASS")
+libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "bayesplot","ordinal","MASS")
 invisible(lapply(libs, library, character.only = TRUE))
 
 # repro & update these functions for general Stan output
@@ -71,10 +75,168 @@ ord_mod2 <-readRDS(file.path(getwd(),"ordinal_model_2.rds"))
 
 ```
 
+## example with no covariates
+
+```{r ex0, cache=TRUE}
+set.seed(473)
+n <- 100
+y <- round(runif(n), 4)
+x <- rep(1,n)
+
+# number unique values; no ties
+n_uniq<-length(unique(y))
+cuts <- n_uniq - 1
+
+
+dat0<-data.frame(y,x)
+
+# using lrm
+# NOTE: f_lrm_alt <- lrm(y ~ x, eps=1e-5) doesn't work with x as constant
+f_lrm <- lrm(y ~ 1, eps=1e-5)
+
+y2 <- y-100
+f_lrm2 <- lrm(y2 ~ 1, eps=1e-5)
+
+y3 <- log(y)
+f_lrm3 <- lrm(y3 ~ 1, eps=1e-5)
+
+# intercepts are the same regardless of shift and transformation
+
+
+
+# using cumulative link model (clm) from ordinal package
+f_clm <- clm(factor(y) ~ 1, data=dat0) 
+#!! f_clm_alt <- clm(factor(y) ~ x, data=dat0)
+
+#!! all.equal(summary(f_clm)$alpha, summary(f_clm_alt)$alpha)
+
+cbind(-coef(f_lrm),-coef(f_lrm2), -coef(f_lrm3), summary(f_clm)$alpha)
+
+# using orm doesn't work w/ no covars
+# f_orm <- orm(y ~ 1, eps=1e-5) # doesn't work with only 'intercept'
+
+#f_orm_alt <- orm(y ~ x, eps=1e-5)
+
+#cbind(-coef(f_orm_alt)[1:cuts], -coef(f_lrm),
+#      summary(f_clm)$alpha, summary(f_clm_alt)$alpha)
+
+# doesn't work with no covariates
+# b <- stan_polr(ordered(y) ~ 1, data = dat0,
+#               prior=NULL, prior_counts = dirichlet(1), method="logistic",
+#               adapt_delta = 0.99)
+
+# only expect Bayes model MAP to match MLE for intercepts if use noninformative prior 
+# for intercepts and betas AND number of observations in each cell is moderate 
+# see Johnson & Albert, Chp 4, pg 132
+mod_data0 <- list(N=nrow(dat0),
+                 ncat=length(unique(dat0$y)),
+                 Ylev=as.numeric(ordered(dat0$y)),
+                 link=1,
+                 K=ncol(dat0[,c("x"),drop=FALSE]),
+                 Q=dat0[,c("x"),drop=FALSE],
+                 alpha=1)
+
+f_stan0 <- optimizing(ord_mod0, data=mod_data0, seed=12345)
+
+f_stan0$par[paste0("cutpoints[",1:cuts,"]")]
+
+f_stan1 <- sampling(ord_mod1, data=mod_data0, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan1_mn <- summary(f_stan1, pars=paste0("cutpoints[",1:cuts,"]"), probs=c(0.5))$summary[,'mean']
+
+f_stan1_md <-summary(f_stan1, pars=paste0("cutpoints[",1:cuts,"]"), probs=c(0.5))$summary[,'50%']
+```
+
+```{r, eval=FALSE, echo=FALSE}
+#print(f_stan1, pars=paste0("cutpoints[",1:cuts,"]"), probs=c(0.5))
+
+plot(f_stan1, pars=paste0("cutpoints[",1:25,"]"))
+
+# mean
+#plot(-coef(f_lrm),1:99)
+#points(f_stan1_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan1_mn)
+
+# median
+#plot(-coef(f_lrm),1:99)
+#points(f_stan1_md,1:99, col="green")
+
+# ecdf?
+plot(-coef(f_lrm),sort(y)[1:99])
+
+# difference alpha MLEs vs. alpha post. median
+plot(1:99, -coef(f_lrm)-f_stan1_md)
+
+# specify larger concentration (alpha)
+mod_data1 <- list(N=nrow(dat0),
+                 ncat=length(unique(dat0$y)),
+                 Ylev=as.numeric(ordered(dat0$y)),
+                 link=1,
+                 K=ncol(dat0[,c("x"),drop=FALSE]),
+                 Q=dat0[,c("x"),drop=FALSE],
+                 alpha=5)
+
+f_stan_alp5 <- sampling(ord_mod1, data=mod_data1, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan_alp5_mn <- summary(f_stan_alp5, pars=paste0("cutpoints[",1:cuts,"]"))$summary[,'mean']
+
+plot(-coef(f_lrm),1:99)
+points(f_stan_alp5_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan_alp5_mn)
+
+# specify smaller concentration (alpha) 
+
+#!! alpha = 0 is like uninformative (flat) prior, right?
+#!! make model with unassigned prior for alpha  --> might not have proper posterior
+mod_data2 <- list(N=nrow(dat0),
+                 ncat=length(unique(dat0$y)),
+                 Ylev=as.numeric(ordered(dat0$y)),
+                 link=1,
+                 K=ncol(dat0[,c("x"),drop=FALSE]),
+                 Q=dat0[,c("x"),drop=FALSE],
+                 alpha=0.1)
+
+f_stan_alp01 <- sampling(ord_mod1, data=mod_data2, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan_alp01_mn <- summary(f_stan_alp01, pars=paste0("cutpoints[",1:cuts,"]"))$summary[,'mean']
+
+plot(-coef(f_lrm),1:99)
+points(f_stan_alp01_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan_alp01_mn)
+
+
+# estimate alpha
+f_stan2 <- sampling(ord_mod2, data=mod_data0, seed=12345, 
+                 iter=3000, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+f_stan2_mn <- summary(f_stan2, pars=paste0("cutpoints[",1:cuts,"]"))$summary[,'mean']
+
+plot(-coef(f_lrm),1:99)
+points(f_stan2_mn,1:99, col="red")
+
+# difference intercept MLEs vs. intercept post. mean
+plot(1:99, -coef(f_lrm)-f_stan2_mn)
+
+```
+
+
 
 ## orm() example 1
 
-```{r ex1, cache=TRUE}
+```{r ex1a, cache=TRUE}
 set.seed(3758)
 n <- 100
 y <- round(runif(n), 2)
@@ -95,7 +257,7 @@ fit_polr_a <- stan_polr(y ~ x1 + x2, data = dat_a, seed=23145,
                        prior=NULL, prior_counts = dirichlet(1), method="logistic",
                        adapt_delta = 0.8)
 
-# hardcoded stan model 1
+# hardcoded stan model data
 mod_data_a <- list(N=nrow(dat_a),
                  ncat=length(unique(dat_a$y)),
                  Ylev=as.numeric(dat_a$y),
@@ -103,6 +265,10 @@ mod_data_a <- list(N=nrow(dat_a),
                  K=ncol(dat_a[,c("x1","x2")]),
                  Q=dat_a[,c("x1","x2")],
                  alpha=1)
+
+fit_ord0_a <- sampling(ord_mod0, data=mod_data_a, seed=23145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
 
 fit_ord1_a <- sampling(ord_mod1, data=mod_data_a, seed=23145, 
                  iter=3500, warmup=1500, chains=2,
@@ -112,22 +278,63 @@ fit_ord2_a <- sampling(ord_mod2, data=mod_data_a, seed=23145,
                  iter=3500, warmup=1500, chains=2,
                  control = list(adapt_delta = 0.8))
 
+# check trace plots
 mcmc_trace(fit_polr_a, pars=c("x1","x2"))
+traceplot(fit_ord0_a, pars=c("b[1]","b[2]","alpha"))
 traceplot(fit_ord1_a, pars=c("b[1]","b[2]"))
 traceplot(fit_ord2_a, pars=c("b[1]","b[2]","alpha"))
 
-#! stan_polr, ord_mod1 similar (and also match orm) w/ dirchlet(1) and alpha=1, respectively
+# check summaries
+fit_orm_a 
+summary(fit_polr_a, pars=c("x1","x2"), digits=4)
+summary(fit_ord0_a,pars=c("b[1]","b[2]","alpha"))$summary
+summary(fit_ord1_a,pars=c("b[1]","b[2]"))$summary
+summary(fit_ord2_a,pars=c("b[1]","b[2]","alpha"))$summary
+
+#! stan_polr, ord_mod1 and ord_mod2 are somewhat similar (and also match orm) w/ dirchlet(1) and alpha=1 and estmating alpha, respectively
 #! ord_mod2 is a bit off and alpha est is higher than 1 (approx 4)
 #! is gamma prior too strong??
 # hist(extract(fit_ord2_a,pars="alpha")$alpha)
+```
+
+Add table comparing 5 models (orm, stan_polr w/ dirichlet(1), ord_mod0 w noninformative (unspecified) alpha, ord_mod1 with alpha=1, ord_mod2 with gamma(2,2) prior on alpha
 
 
-# check other values e.g dirchlet(1/2) and alpha=1/2, dirchlet(2) and alpha=2
+```{r ex1b}
+# compare alpha=1/2, alpha=1/ylevs, alpha=2
+
+if(0){
+#Note: stan_polr and ord_mod1 don't work w/ improper alpha=0 concentration param
+fit_polr_b0 <- stan_polr(y ~ x1 + x2, data = dat_a, seed=3145, iter=3500,
+                       warmup=1500, chains=2,
+               prior=NULL, prior_counts = dirichlet(0), method="logistic",
+               adapt_delta = 0.9)
+
+mod_data_b0 <- list(N=nrow(dat_a),
+                 ncat=length(unique(dat_a$y)),
+                 Ylev=as.numeric(dat_a$y),
+                 link=1,
+                 K=ncol(dat_a[,c("x1","x2")]),
+                 Q=dat_a[,c("x1","x2")],
+                 alpha=0)
+
+fit_ord1_b0 <- sampling(ord_mod1, data=mod_data_b0, seed=3145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.9))
+}
+
 
 fit_polr_b <- stan_polr(y ~ x1 + x2, data = dat_a, seed=3145, iter=3500, 
                        warmup=1500, chains=2,
                prior=NULL, prior_counts = dirichlet(1/2), method="logistic",
                adapt_delta = 0.9)
+
+ylevs<-length(unique(dat_a$y)) 
+fit_polr_b2 <- stan_polr(y ~ x1 + x2, data = dat_a, seed=3145, iter=3500, 
+                       warmup=1500, chains=2,
+               prior=NULL, prior_counts = dirichlet(1/ylevs), method="logistic",
+               adapt_delta = 0.9)
+
 
 fit_polr_c <- stan_polr(y ~ x1 + x2, data = dat_a, seed=1745, iter=3500, 
                        warmup=1500, chains=2,
@@ -148,7 +355,7 @@ mod_data_b2 <- list(N=nrow(dat_a),
                  link=1,
                  K=ncol(dat_a[,c("x1","x2")]),
                  Q=dat_a[,c("x1","x2")],
-                 alpha=1/100)
+                 alpha=1/ylevs)
 
 mod_data_c <- list(N=nrow(dat_a),
                  ncat=length(unique(dat_a$y)),
@@ -170,35 +377,108 @@ fit_ord1_c <- sampling(ord_mod1, data=mod_data_c, seed=1745,
                  iter=3500, warmup=1500, chains=2,
                  control = list(adapt_delta = 0.9))
 
+# using dirichlet(1/2) or alpha=1/2
 summary(fit_polr_b, pars=c("x1","x2"), digits=4)
 summary(fit_ord1_b,pars=c("b[1]","b[2]"))$summary
 
 plot(fit_polr_b, pars=c("x1","x2"), prob=0.8, prob_outer=0.95)
 plot(fit_ord1_b,pars=c("b[1]","b[2]"), ci_level = 0.8, outer_level=0.95)
 
+# using dirichlet(1/ylevs) or alpha=1/ylevs
+summary(fit_polr_b2, pars=c("x1","x2"), digits=4)
+summary(fit_ord1_b2,pars=c("b[1]","b[2]"))$summary
 
+plot(fit_polr_b2, pars=c("x1","x2"), prob=0.8, prob_outer=0.95)
+plot(fit_ord1_b2,pars=c("b[1]","b[2]"), ci_level = 0.8, outer_level=0.95)
+
+# using dirichlet(2) or alpha=2
 summary(fit_polr_c, pars=c("x1","x2"), digits=4)
 summary(fit_ord1_c,pars=c("b[1]","b[2]"))$summary
 
 plot(fit_polr_c, pars=c("x1","x2"), prob=0.8, prob_outer=0.95)
 plot(fit_ord1_c,pars=c("b[1]","b[2]"), ci_level = 0.8, outer_level=0.95)
-
 ```
 
 ```{r}
-# compare
+# check match between stan_polr and hardcoded stan model
 #!! need to figure out why stan_polr with dirichlet(alpha=1/2) doesn't match ord_mod1 with alpha=1/2
 fit_orm_a
 summary(fit_polr_a, pars=c("x1","x2"), digits=4) # dirichlet(1)
 summary(fit_polr_b, pars=c("x1","x2"), digits=4) # dirichlet(1/2)
+summary(fit_polr_b2, pars=c("x1","x2"), digits=4) # dirichlet(1/ylevs)
 summary(fit_polr_c, pars=c("x1","x2"), digits=4) # dirichlet(2)
 
-summary(fit_ord1_a, pars=c("b[1]","b[2]"))$summary # alpha=1 <-- close to orm
-summary(fit_ord1_b, pars=c("b[1]","b[2]"))$summary # alpha=1/2 <-- close to orm
-summary(fit_ord1_b2, pars=c("b[1]","b[2]"))$summary # alpha=1/ncat <-- close to orm  
-summary(fit_ord1_c, pars=c("b[1]","b[2]"))$summary # alpha=2
+fit_orm_a
+summary(fit_ord1_a, pars=c("b[1]","b[2]"))$summary # alpha=1 <-- somewhat close to orm
+summary(fit_ord1_b, pars=c("b[1]","b[2]"))$summary # alpha=1/2 <-- somewhat close to orm
+summary(fit_ord1_b2, pars=c("b[1]","b[2]"))$summary # alpha=1/ylevs <-- very close to orm!!
+summary(fit_ord1_c, pars=c("b[1]","b[2]"))$summary # alpha=2 <-- somewhat close to orm
 
 summary(fit_ord2_a, pars=c("b[1]","b[2]","alpha"))$summary # est alpha
+```
+
+```{r}
+## compare models using outcome with only 4 categories
+set.seed(1342)
+n <- 50
+y <- round(runif(n), 1)
+x1 <- sample(c(-1,0,1), n, TRUE)
+x2 <- sample(c(-1,0,1), n, TRUE)
+
+dat_b <- data.frame(y=ordered(y),x1,x2)
+
+
+# orm
+fit_orm_bb <- orm(y ~ x1 + x2, eps=1e-5)
+
+
+## Compare stan_polr to hardcoded stan model 1 (fixed alpha) and 2 (estimate alpha)
+
+# stan_polr
+fit_polr_bb <- stan_polr(y ~ x1 + x2, data = dat_b, seed=23145, 
+                       iter=3500, warmup=1500, chains=2,
+                       prior=NULL, prior_counts = dirichlet(1), method="logistic",
+                       adapt_delta = 0.8)
+
+
+ylevs<-length(unique(dat_b$y)) 
+fit_polr_bb2 <- stan_polr(y ~ x1 + x2, data = dat_b, seed=3145, iter=3500, 
+                       warmup=1500, chains=2,
+               prior=NULL, prior_counts = dirichlet(1/ylevs), method="logistic",
+               adapt_delta = 0.9)
+
+# hardcoded stan model data
+mod_data_bb <- list(N=nrow(dat_b),
+                 ncat=length(unique(dat_b$y)),
+                 Ylev=as.numeric(dat_b$y),
+                 link=1,
+                 K=ncol(dat_b[,c("x1","x2")]),
+                 Q=dat_b[,c("x1","x2")],
+                 alpha=1)
+
+
+mod_data_bb2 <- list(N=nrow(dat_b),
+                 ncat=length(unique(dat_b$y)),
+                 Ylev=as.numeric(dat_b$y),
+                 link=1,
+                 K=ncol(dat_b[,c("x1","x2")]),
+                 Q=dat_b[,c("x1","x2")],
+                 alpha=1/ylevs)
+
+fit_ord1_bb <- sampling(ord_mod1, data=mod_data_bb, seed=23145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+fit_ord1_bb2 <- sampling(ord_mod1, data=mod_data_bb2, seed=23145, 
+                 iter=3500, warmup=1500, chains=2,
+                 control = list(adapt_delta = 0.8))
+
+fit_orm_bb
+summary(fit_polr_bb, pars=c("x1","x2"), digits=4) # dirichlet(1)
+summary(fit_polr_bb2, pars=c("x1","x2"), digits=4) # dirichlet(1/ylevs)
+summary(fit_ord1_bb, pars=c("b[1]","b[2]"))$summary # alpha=1
+summary(fit_ord1_bb2, pars=c("b[1]","b[2]"))$summary # alpha=1/ylevs
+
 ```
 
 ```{r, eval=FALSE}
@@ -244,7 +524,8 @@ fit_orm_d <- orm(y ~ x1, data=dat_d)
 
 --> !! Need to get betas from Bayesian CPMs to match beta from orm !! <--
 
-want small value of alpha, try exp(n) where n is sample size? how to justify? what sort of prior puts most weight around 0?
+want small value of alpha, try 1/nlevs where nlevs is number of unique levels
+how to justify? what sort of prior puts most weight around 0?
 
 http://mc-stan.org/rstanarm/reference/priors.html
 
@@ -356,6 +637,7 @@ ints %>% as_tibble() %>%
   geom_ribbon(aes(ymin=`97.5%`,ymax=`2.5%`), fill=2, alpha=0.3)
 
 # compare intercepts for both mods
+library(tidyr)
 ints_plt <- ints %>% as_tibble() %>% 
   mutate(row=1:nrow(ints)) %>% 
   gather(colnames(ints),key="mod",value="value") 
@@ -372,6 +654,8 @@ ints_plt %>% filter(!mod%in%c("bayes_mn")) %>% ggplot(aes(x=row,y=value, color=m
 fit_ord1_e
 
 mod_data_e
+
+# Code to get CDF, see function below
 
 #! need to save true y data in mod_data_e 
 truey0 <- as.numeric( levels(dat_d$y_tr) ) %>% sort()
