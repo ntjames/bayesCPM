@@ -53,8 +53,8 @@ vector loglik(int[] Ylev, int N, vector cutpoints, int ncat, vector eta, int lin
     if (Ylev[n] == 1)
       ll[n] = log(CDF_polr(cutpoints[1] - eta[n], link));
     else if (Ylev[n] == ncat)
-    // change to use log1m() ??
-      ll[n] = log(1 - CDF_polr(cutpoints[ncat - 1] - eta[n], link));
+    // changed to use log1m()
+      ll[n] = log1m(CDF_polr(cutpoints[ncat - 1] - eta[n], link));
     else
     // change to use log_diff_exp(log(CDF_polr(.)), log(CDF_polr(.))) ??
       ll[n] = log(CDF_polr(cutpoints[Ylev[n]] - eta[n], link) - CDF_polr(cutpoints[Ylev[n] - 1] - eta[n], link));
