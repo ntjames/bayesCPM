@@ -23,8 +23,6 @@ libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "ordinal", "M
 invisible(lapply(libs, library, character.only = TRUE))
 
 # CPM functions
-
-
 dir<-getwd()
 source(file.path(dir,"cpm_functions.r"))
 
@@ -45,7 +43,7 @@ options(mc.cores=parallel::detectCores())
 
 # concentration (alpha) is given as a scalar parameter along with in data
 if (0){
-ord_mod_file1<-read_file(file.path(getwd(),"ordinal_model_1.stan"))
+ord_mod_file1 <- read_file(file.path(getwd(),"ordinal_model_1.stan"))
 ord_mod1 <- stan_model(model_code = ord_mod_file1)
 saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
 }
@@ -91,8 +89,45 @@ summary(fit_ord1,pars=c("b[1]","b[2]"))$summary %>% round(3)
 
 b_summ<-summary(fit_ord1)$summary
 
+plot(fit_ord1,pars="pi")
+plot(fit_ord1,pars=c(paste0("pi[",1:30,"]"))) # approx 1/67+1/67 ??
+summary(fit_ord1,pars=c(paste0("pi[",1:30,"]")))$summary # approx 1/67+1/67 or 2/67+1/67??
+
+(1+(1/67))/(67)
+
+(2+(1/67))/(67)
+
+#means
+#0.009593060
+#0.019069737
+#0.029651789
+mns<-summary(fit_ord1,pars=c(paste0("pi")))$summary[,'mean']
+sum(mns)
+
+cbind(mns*n,table(y))
+cbind(table(y)/n,mns)
+
+#use table(y)/n as inits for pi?
+
+#medians
+meds<-summary(fit_ord1,pars=c(paste0("pi")))$summary[,'50%']
+#c(0.006747834, 0.016088113, 0.026757347)
+
 # b_summ[(num_y+1):(num_y+num_par),1] # coefficients
 # b_summ[(num_y+num_par+1):(2*num_y+num_par-1),1] # cutpoints
+
+mod_data1_pis <- table(mod_data1$y)/mod_data1$N
+mod_data1_cp_init <- qlogis(cumsum(mod_data1_pis))[1:66]
+
+ini <- list(cutpoints=mod_data1_cp_init )
+ini_list <- lapply(1:4, function(x) lapply(ini,jitter))
+
+fit_ord1b <- sampling(ord_mod1, data=mod_data1, seed=12345, 
+                 iter=8000, warmup=2000, chains=4, 
+                 init = ini_list,
+                 control = list(adapt_delta = 0.8))
+
+fit_ord1b
 ```
 
 
@@ -115,7 +150,7 @@ colnames(ints)<-c("lrm","orm","clm","polr","bayes_cpm")
 
 ints_plt <- ints %>% as_tibble() %>% 
   mutate(row=1:nrow(ints),lrm=-lrm,orm=-orm) %>% 
-  gather(colnames(ints),key="mod",value="value") 
+  tidyr::gather(colnames(ints),key="mod",value="value") 
 
 # all are identical except bayes_cpm in tails
 ints_plt %>% ggplot(aes(x=row,y=value, color=mod)) + geom_point()
@@ -129,6 +164,7 @@ coef(f2)[67:68] # ordinal
 coef(p) # polr
 b_summ[(num_y+1):(num_y+num_par),6] # bayes cpm
 
+# difference between NPMLE and Bayes CPM
 sum(abs(coef(p)-b_summ[(num_y+1):(num_y+num_par),6]))
 
 rm(f,g,f2,p,p_summ,b_summ, fit_ord1, mod_data1, ints, ints_plt, dat1, num_par, num_y)
@@ -169,24 +205,36 @@ mod_data3cau$link <- 5
 ```
 
 ```{r ex2a.3, cache=TRUE}
+#probit
 bg <- sampling(ord_mod1, data=mod_data3, seed=6472, 
-                 iter=4000, warmup=2000, chains=4,
+                 iter=3000, warmup=2000, chains=4,
                  control = list(adapt_delta = 0.8))
+#plot(bg,pars="pi")
+#plot(bh,pars=c(paste0("pi[",1:20,"]"))) approx 1/300 + 1/300
+#summary(bg,pars=c(paste0("pi[",1:20,"]")))$summary
+
+mns_bg<-summary(bg,pars=c(paste0("pi")))$summary[,'mean']
+sum(mns_bg)
+
+cbind(mns_bg*n,table(y))
 ```
 
 ```{r ex2a.4, cache=TRUE}
+# logistic
 bh <- sampling(ord_mod1, data=mod_data3h, seed=6472, 
                  iter=4000, warmup=2000, chains=4,
-                 control = list(adapt_delta = 0.8))
+                 control = list(adapt_delta = 0.9))
 ```
 
 ```{r ex2a.5, cache=TRUE}
+# log-log
 bll <- sampling(ord_mod1, data=mod_data3ll, seed=6472, 
-                 iter=4000, warmup=2000, chains=3,
+                 iter=3000, warmup=2000, chains=3,
                  control = list(adapt_delta = 0.9))
 ```
 
 ```{r ex2a.6.0, cache=TRUE, eval=FALSE}
+# complementary log-log
 #!! takes a really long time
 #!! didn't converge w/  seed=12345 and:
 # iter=3500, warmup=1500, chains=2, control = list(adapt_delta = 0.9)
@@ -195,14 +243,44 @@ bll <- sampling(ord_mod1, data=mod_data3ll, seed=6472,
 # iter=4000, warmup=3000, chains=3, control = list(adapt_delta = 0.99)
 # iter=7000, warmup=6000, chains=2, control = list(adapt_delta = 0.99)
 bcll <- sampling(ord_mod1, data=mod_data3cll, seed=6472, 
-                 iter=8000, warmup=4000, chains=2,
-                 control = list(adapt_delta = 0.95))
+                 iter=8000, warmup=7000, chains=2,
+                 control = list(adapt_delta = 0.95, max_treedepth=15))
+```
+
+```{r,eval=FALSE}
+traceplot(bcll,pars=c("cutpoints[1]"))
 ```
 
 ```{r ex2a.6.1, eval=FALSE}
 # try optimizing?
 bcll_opt <- optimizing(ord_mod1, data=mod_data3cll, seed=6472)
 # get non-zero return code
+```
+
+```{r ex2a.6.2, eval=FALSE}
+# try initializing at MLEs or 
+#ll
+#summary(bcll,pars=c(paste0("cutpoints[",1:299,"]")))$summary[,'mean']
+
+# somehow even slower!!
+#init_list0 <- list(cutpoints=-coef(ll)[1:299])
+#init_list <- lapply(1:2, function(x) lapply(init_list0 ,jitter))
+#bcll_i <- sampling(ord_mod1, data=mod_data3cll, seed=6472, 
+#                 iter=4000, warmup=2000, chains=2, init=init_list,
+#                 control = list(adapt_delta = 0.95, max_treedepth=15))
+
+# try initialize based on pis
+mod_data3cll_pis <- table(mod_data3cll$y)/mod_data3cll$N
+mod_data3cll_cp_init <- log(-log1p(-cumsum(mod_data3cll_pis)))[1:299]
+
+ini <- list(cutpoints=mod_data3cll_cp_init)
+ini_list <- lapply(1:2, function(x) lapply(ini,jitter))
+
+# still slow and doesn't converge
+bcll_i2 <- sampling(ord_mod1, data=mod_data3cll, seed=6472, 
+                 iter=4000, warmup=2000, chains=2, init=ini_list,
+                 control = list(adapt_delta = 0.9, max_treedepth=10))
+
 ```
 
 ```{r ex2a.7, cache=TRUE}
@@ -228,8 +306,8 @@ cph<-get_cutpoints(bh)
 cpll<-get_cutpoints(bll)
 cpcll<-get_cutpoints(bcll)
 
-#! check that cloglog and loglog links aren't mixed up
-#! seem backward from specified links but matches orm output
+# cloglog and loglog seem backward from specified links but matches orm output
+# this is because orm estimates P(Y>y) rather than P(Y<y) so 'opposite' link function needs to be used for non-symmetric links
 z2 <- list(logistic=list(x=levseq, y=-1*cpg),
            probit=list(x=levseq, y=-1*cph),
            loglog=list(x=levseq, y=-1*cpcll),
