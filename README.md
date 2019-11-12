@@ -1,2 +1,2 @@
 # bayes_cpm
-Model continuous outcomes using Bayesian Cumulative Probability Models
+Model continuous and mixed outcomes using Bayesian Cumulative Probability Models
