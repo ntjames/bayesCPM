@@ -11,17 +11,16 @@ output:
 
 <!-- 
 Reproduce Simulations from Liu et al
-!! modify to use sourced cpm_functions
 -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 rm(list=ls())
-libs <- c("rstan", "dplyr", "stringr", "readr", "tidyr")
+libs <- c("rstan", "dplyr", "stringr", "readr", "tidyr","pammtools","evd")
 invisible(lapply(libs, library, character.only = TRUE))
 
-# repro & update these functions for general Stan output
+# functions for bayes_cpm
 dir<-getwd()
 source(file.path(dir,"cpm_functions.r"))
 
@@ -38,212 +37,421 @@ options(mc.cores=parallel::detectCores())
 if (0){
 ord_mod_file0<-read_file(file.path(getwd(),"ordinal_model_0.stan"))
 ord_mod0 <- stan_model(model_code = ord_mod_file0)
-saveRDS(ord_mod0, file = file.path(getwd(),"ordinal_model_0.rds"))
+#saveRDS(ord_mod0, file = file.path(getwd(),"ordinal_model_0.rds"))
 }
 
 # concentration (alpha) is given as a scalar parameter along with in data
 if (0){
 ord_mod_file1<-read_file(file.path(getwd(),"ordinal_model_1.stan"))
 ord_mod1 <- stan_model(model_code = ord_mod_file1)
-saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
+#saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
 }
 
-ord_mod1 <-readRDS(file.path(getwd(),"ordinal_model_1.rds"))
+ord_mod1 <- readRDS(file.path(getwd(),"ordinal_model_1.rds"))
 
 # concentration (alpha) is estimated with gamma(2,2) prior or exp(1) prior
 if (0){
 ord_mod_file2<-read_file(file.path(getwd(),"ordinal_model_2.stan"))
 ord_mod2 <- stan_model(model_code = ord_mod_file2)
-saveRDS(ord_mod2, file = file.path(getwd(),"ordinal_model_2.rds"))
+#saveRDS(ord_mod2, file = file.path(getwd(),"ordinal_model_2.rds"))
 
 ord_mod_file2b<-read_file(file.path(getwd(),"ordinal_model_2b.stan"))
 ord_mod2b <- stan_model(model_code = ord_mod_file2b)
-saveRDS(ord_mod2b, file = file.path(getwd(),"ordinal_model_2b.rds"))
+#saveRDS(ord_mod2b, file = file.path(getwd(),"ordinal_model_2b.rds"))
 
 ord_mod_file2c<-read_file(file.path(getwd(),"ordinal_model_2c.stan"))
 ord_mod2c <- stan_model(model_code = ord_mod_file2c)
-saveRDS(ord_mod2c, file = file.path(getwd(),"ordinal_model_2c.rds"))
+#saveRDS(ord_mod2c, file = file.path(getwd(),"ordinal_model_2c.rds"))
 }
 
 ```
 
 ```{r}
 # from Liu et al. sim code
-generate.data.1 <- function(seed=1, n=200, p=0.5, alpha=0, beta=c(1.1, -0.6), sigma=1){
+generate.data.1 <- function(seed=1, n=50, p=0.5, alpha=0, beta=c(1.0, -0.5), sigma=1){
   set.seed(seed)
   z1 <- sample(c(0,1), size=n, replace=TRUE, prob=c(1-p, p))
   z2 <- rnorm(n, 0, 1)
+ # y0 <- rnorm(n, alpha+beta[1]*z1 + beta[2]*z2, sigma) 
+ # y <- exp(y0) #log normal
   log.y <- rnorm(n, alpha+beta[1]*z1 + beta[2]*z2, sigma) 
-  data <- data.frame(y=ordered(log.y), z1=z1, z2=z2)
+  data <- data.frame(log.y=ordered(log.y), z1=z1, z2=z2)
   return(data)
 }
 
 if(0){
-dat<-generate.data.1()
-
 library(rms)
-orm(y~z1+z2,data=dat, family="probit")
+dat<-generate.data.1()
+orm(log.y~z1+z2,data=dat, family="probit")
 }
-
 ```
-
-## sim 1
-
-```{r ex1, cache=TRUE}
-
-dat1 <- generate.data.1()
-ylevs <- length(unique(dat1$y))
-mod_data1 <- list(N=nrow(dat1),
-                 ncat=length(unique(dat1$y)),
-                 Ylev=as.numeric(dat1$y),
-                 link=2,
-                 K=ncol(dat1[,c("z1","z2")]),
-                 Q=dat1[,c("z1","z2")],
-                 alpha=1/ylevs)
-
-fit_ord1 <- sampling(ord_mod1, data=mod_data1, seed=21345, 
-                 iter=2000, warmup=1000, chains=2,
-                 control = list(adapt_delta = 0.8))
-
-summary(fit_ord1, pars=c("b[1]","b[2]"))$summary
-
-
-x2<-1:(ylevs - 1)
-
-#rownames(summary(fit_ord1,pars=paste0("cutpoints[",x2,"]"))$summary)
-
-get_cutpoints<-function(fit,summ_stat='mean',pr=c(0.5)){
-  summary(fit, pars=paste0("cutpoints[",x2,"]"), probs=pr)$summary[,summ_stat]
-}
-
-cp1_mn <- get_cutpoints(fit_ord1)
-cp1_5 <- get_cutpoints(fit_ord1, summ_stat='5%',pr=c(0.05))
-cp1_95 <- get_cutpoints(fit_ord1, summ_stat='95%',pr=c(0.95))
-
-#plot log(y) vs intercepts
-
-plt_dat1<-data.frame(log.y=-as.numeric(levels(dat1$y))[1:199],
-           alp.mn=-cp1_mn,
-           alp.5pct=cp1_5,
-           alp.95pct=cp1_95)
-
-plt_dat1 %>% ggplot(aes(x=log.y, y=alp.mn))+geom_step()+
-  geom_abline(slope=1,intercept=0)
-
-```
-
-
-## sim 2
 
 ```{r}
-# from Tian et al.
 
-generate.data.2 <- function(seed=1, n=200, p=0.5, alpha=0, beta=0.5){
-  set.seed(seed)
-  #generate data
-  x <- rbinom(n,1,p=0.5)
-  e <- rnorm(n,0,1)
-  y <- qchisq(pnorm(beta*x+e),df=5)
-  data <- data.frame(y=ordered(y), x=x)
-  return(data)
+#hist(rgumbel(50))
+
+#!!! change to use gumbel max instead of min
+if (0){
+rGumbelMin<- function(n, mu=0, sigma=1){
+  u <- runif(n, min=0, max=1)
+  x <- mu + sigma*log(-log(1-u))
+  return(x)
 }
-
-dat2<-generate.data.2(3534)
+dGumbelMin <- function(x, mu=0, sigma=1){
+  df <- 1/sigma *exp((x-mu)/sigma)*exp(-exp((x-mu)/sigma))
+  return(df)
+}
+pGumbelMin <- function(x, mu=0, sigma=1){
+  pf <- 1-exp(-exp((x-mu)/sigma))
+  return(pf)
+}
+qGumbelMin <- function(p, mu=0, sigma=1){
+  x <- mu + sigma*(-log(-log(1-p)))
   
-###orm
-#orm(y~x, data=dat2, family=probit) 
+}
+}
 
-ylevs2 <- length(unique(dat2$y))
-mod_data2 <- list(N=nrow(dat2),
-                 ncat=length(unique(dat2$y)),
-                 Ylev=as.numeric(dat2$y),
-                 link=2,
-                 K=ncol(dat2[,c("x"),drop=FALSE]),
-                 Q=dat2[,c("x"),drop=FALSE],
-                 alpha=1/ylevs2)
+generate.data.2 <- function(seed, n, p=0.5,alpha=0, beta=c(1, -0.5), sigma=1){
+  require(evd)
+  set.seed(seed)
+  z1 <- sample(c(0,1), size=n, replace=TRUE, prob=c(1-p, p))
+  z2 <- rnorm(n, 0, 1)
+  
+  y <- evd::rgumbel(n, loc=alpha+beta[1]*z1+beta[2]*z2, scale=sigma)
+  
+  data <- data.frame(y=ordered(y), z1=z1, z2=z2)
+  return(data) 
+}
 
-#start_time <- Sys.time()
-fit_ord2 <- sampling(ord_mod1, data=mod_data2, seed=21345, 
-                 iter=2000, warmup=1000, chains=2,
+```
+
+## sim 1.1
+
+```{r ex1.1, eval=FALSE, cache=TRUE}
+# generate data
+dat1 <- generate.data.1(seed=2,n=50)
+
+hist(as.numeric(levels(dat1$log.y)))
+  
+
+ycens <- as.numeric(levels(dat1$log.y)[as.numeric(dat1$log.y)])
+ycens[ycens < 0]<- 0
+dat1$log.y.cens<-ordered(ycens)
+
+mod_data1 <- mkStanDat(dat1, outcome="log.y", 
+                       preds = c("z1", "z2"),
+                       link=2)
+
+cpm_fit1 <- sampling(ord_mod1, data=mod_data1, seed=6145, 
+                 iter=4000, warmup=2000, chains=3,
                  control = list(adapt_delta = 0.8))
-#end_time <- Sys.time()
-#end_time - start_time
 
-# time for n=200 is around 15 seconds
-# time for n=500 is around 45 seconds
-# time for n=1000 is around 80 seconds
+summary(cpm_fit1, pars=c("b[1]","b[2]"))$summary
+# summary(cpm_fit1)$summary
 
-summary(fit_ord2, pars=c("b[1]"))$summary
+# sequence for cutpoints
+cp_seq <- 1:(mod_data1$ncat - 1)
+
+get_cutpoints <- function(fit,cps=cp_seq,summ_stat='50%',pr=c(0.5)){
+  summary(fit, pars=paste0("cutpoints[",cps,"]"), probs=pr)$summary[,summ_stat]
+}
+
+get_cutpoints(cpm_fit1,summ_stat='sd')
+
+cp1_md <- get_cutpoints(cpm_fit1) # median of posterior cutpoints
+cp1_5 <- get_cutpoints(cpm_fit1, summ_stat='5%',pr=c(0.05)) # 5th ptile of posterior cutpoints
+cp1_95 <- get_cutpoints(cpm_fit1, summ_stat='95%',pr=c(0.95)) # 95th ptile of posterior cutpoints
+
+# find estimate of cutpoint posterior for given y value
+cutpoint_est <- function(post,fitdata,y){
+  #old 
+  #truey<-c(-Inf,fitdata$truey0)
+  #post[sum(truey < y)]
+  
+  truey<-c(-Inf,fitdata$truey0,Inf)
+  
+  if (y<=min(fitdata$truey0)){
+    return(-Inf)
+  } 
+  else if (y > max(fitdata$truey0)) {
+    return(Inf)
+  } 
+  else {
+    post[which(fitdata$truey0>=y)[1]-1]
+  }
+}
+
+
+# cutpoint estimates at given log(y) values
+sapply(c(-1,-0.33,0.5,1.33,2), function(x) cutpoint_est(cp1_md,mod_data1,x))
+
+
+## plot log(y) vs cutpoints
+plt_dat1 <- data.frame(log.y= -mod_data1$truey0[cp_seq],
+           alp.mn= -cp1_md,
+           alp.5pct= -cp1_5,
+           alp.95pct= -cp1_95)
+
+plt_dat1 %>% ggplot(aes(x=log.y, y=alp.mn))+
+  geom_step()+
+  geom_abline(slope=1,intercept=0)+
+  geom_stepribbon(aes(ymin=alp.5pct, ymax=alp.95pct),alpha=0.3)
+```
+
+```{r}
+
+sim1_coeff.fun <- function(sim=5, seed=1, n=50,
+                       p=0.5, alpha=0, beta=c(1,-0.5), sigma=1,
+                       log.y=c(-1, -0.33, 0.5, 1.33, 2), se=TRUE){
+  set.seed(seed)
+  seeds <- unique(round(runif(sim*10,0,10)*sim,0))[seq(sim)]
+  
+  # cutpoints
+  alpha.y <- matrix(NA, ncol=length(log.y), nrow=sim)
+  alpha.y.se <- matrix(NA, ncol=length(log.y), nrow=sim)
+  
+  # betas
+  md.beta.est <- matrix(NA, ncol=length(beta), nrow=sim)
+  mn.beta.est <- matrix(NA, ncol=length(beta), nrow=sim)
+  beta.se <- matrix(NA, ncol=length(beta), nrow=sim)
+  
+  for(i in 1:sim){
+    try({
+      data <- generate.data.1(seed=seeds[i], n=n, p=p, 
+                              alpha=alpha, beta=beta, sigma=sigma)
+      
+      mod_data <- mkStanDat(data, outcome="log.y", 
+                            preds = c("z1", "z2"),
+                            link=2) #probit link
+
+      
+      cpm_fit <- sampling(ord_mod1, data=mod_data, seed=seeds[i], 
+                 iter=4000, warmup=2000, chains=2, refresh=2000,
+                 control = list(adapt_delta = 0.85))
+      
+      fit_summ_beta<-summary(cpm_fit, pars=c("b[1]","b[2]"),
+                             use_cache=FALSE)$summary
+      
+      md.beta.est[i,] <- fit_summ_beta[,'50%']  
+      mn.beta.est[i,] <- fit_summ_beta[,'mean'] 
+      beta.se[i, ] <- fit_summ_beta[,'sd']
+
+      # median and sd of posterior cutpoints 
+      cp_seq <- 1:(mod_data$ncat - 1)
+      cp_md <- get_cutpoints(cpm_fit, cps=cp_seq) 
+      cp_sd <- get_cutpoints(cpm_fit, cps=cp_seq, summ_stat='sd')
+      
+      # cutpoint estimates at given log(y) values
+      alpha.y[i,] <- sapply(log.y, function(x) cutpoint_est(cp_md,mod_data,x))
+      alpha.y.se[i,] <- sapply(log.y, function(x) cutpoint_est(cp_sd,mod_data,x))
+      
+    })
+  }
+  
+  return(list(md.beta.est=md.beta.est,
+              mn.beta.est=mn.beta.est,
+              beta.se=beta.se,
+              alpha.y=alpha.y,
+              alpha.y.se=alpha.y.se))
+}
+
+seed=1
+p <- 0.5
+alpha <- 0
+beta <- c(1, -0.5)
+sigma <- 1
+log.y <- c(-1, -0.33, 0.5, 1.33, 2)
+#sim=100
+sim=100
+
+system.time( sim1_coeff.n25 <- sim1_coeff.fun(n=25, sim=sim) )
+
+# 13 min for 100 sims with n=50
+system.time( sim1_coeff.n50 <- sim1_coeff.fun(n=50, sim=sim) )
+
+```
+
+```{r}
+nsamps <- c(25,50,100,200,400)
+
+simarray0<-expand.grid(nsamps,1:5)
+simarray<-cbind(simarray0,round(runif(25,0,1e5)))
+names(simarray)<-c("nsamps","rep","seed")
+simarray<-simarray[order(simarray$seed),]
+
+nm <- paste0("sim.n",simarray[1,"nsamps"],".",simarray[1,"rep"])
+assign(nm, 55)
 
 ```
 
 
-# sim 3
+```{r}
+sim1_coeff.summary <- function(result, md=FALSE, beta=c(1, -0.5), alpha.y=c(-1, -0.33, 0.5, 1.33, 2)){
+  
+  # mn.beta.est or md.beta.est
+  bt <- result$mn.beta.est
+  if(md) bt <- result$md.beta.est
+  
+  bt.se <- result$beta.se
+  alph.cln <- ifelse(is.infinite(result$alpha.y), NA, result$alpha.y)
+  alph.se.cln <- ifelse(is.infinite(result$alpha.y.se), NA, result$alpha.y.se)
+  
+  mean.est <- c(colMeans(bt, na.rm=TRUE),
+                colMeans(alph.cln, na.rm=TRUE))
+  
+  mean.se <- c(colMeans(bt.se, na.rm=TRUE),
+               colMeans(alph.se.cln, na.rm=TRUE))
+    
+  emp.se <- c(apply(bt, 2, function(x) sd(x, na.rm=TRUE)),
+              apply(alph.cln, 2, function(x) sd(x, na.rm=TRUE)))
+  
+  mse <- c(colMeans((bt-matrix(beta, nrow=dim(bt)[1],
+                               ncol=length(beta),byrow=TRUE))^2, na.rm=TRUE),
+           colMeans((alph.cln-matrix(alpha.y, nrow=dim(alph.cln)[1],
+                                     ncol=length(alpha.y), byrow=TRUE))^2,
+                    na.rm=TRUE))
+  
+# coverage - need to get 95% cred interval for Bayes version of this
+if(0){ 
+  beta.lb <-result$beta.est+qnorm(0.025, 0, 1)*result$beta.se 
+  beta.ub <- result$beta.est-qnorm(0.025, 0, 1)*result$beta.se
+  
+  alpha.lb <- cbind(result$alpha.y+qnorm(0.025, 0, 1)*result$alpha.y.se)
+  alpha.ub <- cbind(result$alpha.y-qnorm(0.025, 0, 1)*result$alpha.y.se)
+  alpha.lb <- ifelse(is.infinite(alpha.lb), NA, alpha.lb)
+  alpha.ub <- ifelse(is.infinite(alpha.ub), NA, alpha.ub)
+  
+  alpha.coverage <- rep(NA, length(alpha.y))
+  for(i in 1:length(alpha.y)){
+    alpha.coverage[i] <-mean(apply(cbind(alpha.lb[,i], alpha.ub[,i]), 1, FUN=function(x) alpha.y[i]>=x[1] & alpha.y[i]<=x[2]), na.rm=TRUE)
+  
+  }
+  
+  beta.coverage <- rep(NA, length(beta))
+  for(i in 1:length(beta)){
+    beta.coverage[i] <-mean(apply(cbind(beta.lb[,i], beta.ub[,i]), 1, FUN=function(x) beta[i]>=x[1] & beta[i]<=x[2]), na.rm=TRUE)
+  }
+  
+  coverage <- c(beta.coverage, alpha.coverage)
+}
+  
+  result <- cbind(format(c(beta, alpha.y), nsmall=1),
+                  format(round(mean.est, 2), nsmall=2),
+                  format(round(mean.se, 3) , nsmall=3),
+                  format(round(emp.se, 3) , nsmall=3),
+                  format(round(mse, 4) , nsmall=3))
+  return(result)
+  
+}
+```
 
 ```{r}
-# make data
-n<-200
-x<-rbinom(n,1,0.4)
-beta1 <- 2.3
-#beta2 <- -1.5
-grp<-sort(rep(c(0,1),n/2))
-#y<-rnorm(n,85)+beta1*x+beta2*grp
-y<-rnorm(n, 85+beta1*x)
+sim1_coeff.probit.n25 <- sim1_coeff.summary(sim1_coeff.n25)
+sim1_coeff.probit.n50 <- sim1_coeff.summary(sim1_coeff.n50)
 
-dat00<-cbind(y,x,grp)
+colnames(sim1_coeff.probit.n50)<-colnames(sim1_coeff.probit.n25)<-c("true","mean.est","mean.se","emp.se","mse")
 
-# scenario 1 - single detection limit
-ll1 <- 87.5
-ll2 <- 84.5
-
-dat0<-dat00 %>% as_tibble() %>% 
-  mutate(lim=ifelse(grp==0,ll2,ll2),left=pmax(lim,y),right=left) %>% 
-  mutate(left=ifelse(lim==left,NA,left)) %>% as.data.frame()
-
-dat3<-dat0 %>% dplyr::select(right,x,y) %>% rename(y_cens=right) %>% mutate(y_cens=ordered(y_cens))
-
-orm(y_cens~x, dat3, family="probit")
-orm(y~x, dat3, family="probit")
-
-ylevs3 <- length(unique(dat3$y_cens))
-mod_data3 <- list(N=nrow(dat3),
-                 ncat=length(unique(dat3$y_cens)),
-                 Ylev=as.numeric(dat3$y_cens),
-                 link=2,
-                 K=ncol(dat3[,c("x"),drop=FALSE]),
-                 Q=dat3[,c("x"),drop=FALSE],
-                 alpha=1/ylevs3)
-
-fit_ord3 <- sampling(ord_mod1, data=mod_data3, seed=21345, 
-                 iter=2000, warmup=1000, chains=2,
-                 control = list(adapt_delta = 0.8))
-
-summary(fit_ord3, pars=c("b[1]"))$summary
-
-# scenario 2 - two detection limits
-dat01<-dat00 %>% as_tibble() %>% 
-  mutate(lim=ifelse(grp==0,ll1,ll2),left=pmax(lim,y),right=left) %>% 
-  mutate(left=ifelse(lim==left,NA,left)) %>% as.data.frame()
-
-dat3b <- dat01 %>% dplyr::select(right,x,y) %>% rename(y_cens=right) %>% mutate(y_cens=ordered(y_cens))
-
-orm(y_cens~x, dat3b, family="probit")
-orm(y~x, dat3b, family="probit")
+sim1_coeff.probit.n25
+sim1_coeff.probit.n50
+```
 
 
-ylevs3b <- length(unique(dat3b$y_cens))
-mod_data3b <- list(N=nrow(dat3b),
-                 ncat=length(unique(dat3b$y_cens)),
-                 Ylev=as.numeric(dat3b$y_cens),
-                 link=2,
-                 K=ncol(dat3b[,c("x"),drop=FALSE]),
-                 Q=dat3b[,c("x"),drop=FALSE],
-                 alpha=1/ylevs3b)
+```{r}
+## plot CDF when z1=0, z2=0
+cpm_fit1_cdf <- getCDF(cpm_fit1,mod_data1,newdata=data.frame(z1=0, z2=0))
 
-fit_ord3b <- sampling(ord_mod1, data=mod_data3b, seed=21345, 
-                 iter=2000, warmup=1000, chains=2,
-                 control = list(adapt_delta = 0.8))
+yv<-0.25
+cdfv<-cpm_fit1_cdf[sum(cpm_fit1_cdf$yval < yv),"med_cdf"] %>% pull()
 
-summary(fit_ord3b, pars=c("b[1]"))$summary
+x_cdf<-seq(-2.5,2.5,length=50)
+y_cdf<-pnorm(x_cdf)
+dat_cdf=data.frame(x_cdf,y_cdf)
+
+cpm_fit1_cdf %>% ggplot(aes(group=ndrow)) +
+  geom_stepribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, fill=factor(ndrow)), alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("") + ylab("Conditional CDF") +
+  geom_vline(aes(xintercept = yv),alpha=0.3)+
+  geom_hline(aes(yintercept = cdfv),alpha=0.3)+
+  geom_line(data=dat_cdf,aes(x=x_cdf,y=y_cdf),inherit.aes = FALSE)
+
+
+cdf_est<-function(y,cdf_fit){
+  cdf_fit[sum(cdf_fit$yval < y),'med_cdf'] %>% pull()
+}
+
+# marginal cdf at given log(y) vals
+sapply(c(-1,-0.33,0.5,1.33,2), function(x) cdf_est(x, cpm_fit1_cdf))
+
+```
+
+## sim 1.2
+
+```{r ex1.1, cache=TRUE}
+# generate data
+#!!! change to use gumbel max instead of min
+dat2 <- generate.data.2(seed=1462, n=500)
+# orm(y~z1+z2, data=dat2, family=cloglog)
+# z1=1, z2=-0.5
+
+#hist(as.numeric(levels(dat2$y)))
+
+mod_data2 <- mkStanDat(dat2, outcome="y", 
+                       preds = c("z1", "z2"),
+                       link=3) #link=3 for gumbel max
+
+cpm_fit2 <- sampling(ord_mod1, data=mod_data2, seed=2145, 
+                 iter=4000, warmup=2000, chains=2,
+                 control = list(adapt_delta = 0.85, max_treedepth=15))
+
+summary(cpm_fit2,pars=c("b[1]","b[2]"))$summary
+
+```
+
+```{r, eval=FALSE}
+# try setting inits to MLEs from orm 
+orm_fit<-orm(y~z1+z2,data=dat2)
+
+coef(orm_fit)[c('z1','z2')]
+coef(orm_fit)[1:24]
+
+init_list0 <- list(b=coef(orm_fit)[c('z1','z2')],
+                   cutpoints=-coef(orm_fit)[1:24])
+
+init_list <- lapply(1:2, function(x) lapply(init_list0 ,jitter))
+
+cpm_fit2b <- sampling(ord_mod1, data=mod_data2, seed=2145, 
+                 iter=5000, warmup=4000, chains=2, init=init_list,
+                 control = list(adapt_delta = 0.9, max_treedepth=10))
+
+summary(cpm_fit2b,pars=c("b","cutpoints"))$summary %>% round(2)
+
+traceplot(cpm_fit2b,pars=c("cutpoints"))
+traceplot(cpm_fit2b,pars=c("cutpoints[24]"))
+```
+
+```{r}
+summary(cpm_fit2, pars=c("b[1]","b[2]"))$summary
+
+# sequence for cutpoints
+cp_seq2 <- 1:(mod_data2$ncat - 1)
+
+cp2_md <- get_cutpoints(cpm_fit2,cp_seq=cp_seq2) # median of posterior cutpoints
+cp2_5 <- get_cutpoints(cpm_fit2,cp_seq=cp_seq2, summ_stat='5%',pr=c(0.05)) # 5th ptile of posterior cutpoints
+cp2_95 <- get_cutpoints(cpm_fit2,cp_seq=cp_seq2, summ_stat='95%',pr=c(0.95)) # 95th ptile of posterior cutpoints
+
+# cutpoint estimates at given log(y) values
+sapply(c(-1,-0.33,0.5,1.33,2), function(x) cutpoint_est(cp2_md,mod_data2,x))
+
+## plot log(y) vs cutpoints
+plt_dat2<-data.frame(log.y= -mod_data2$truey0[cp_seq2],
+           alp.mn= -cp2_md,
+           alp.5pct= -cp2_5,
+           alp.95pct= -cp2_95)
+
+plt_dat2 %>% ggplot(aes(x=log.y, y=alp.mn))+
+  geom_step()+
+  geom_abline(slope=1,intercept=0)+
+  geom_stepribbon(aes(ymin=alp.5pct, ymax=alp.95pct),alpha=0.3)
 
 ```
