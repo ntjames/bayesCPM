@@ -50,9 +50,13 @@ using Bias, coverage, other statistics?
 https://cran.r-project.org/web/packages/BNSP/index.html
 https://www.stats.ox.ac.uk/~teh/research/npbayes/Teh2010a.pdf
 
--- switch CPM models to JAGS??
+- switch CPM models to OpenBUGs??
+-- see http://www.omori.e.u-tokyo.ac.jp/WinBUGS/index.htm ex 14, 15, maybe 16
+-- see https://gist.github.com/bartneck/038fae866e10641b8121679cd02db52e
+-- see http://www.openbugs.net/Examples/Inhalers.html
 
--- extend simulation code to compare Bayes CPM to BNP
+
+- extend simulation code to compare Bayes CPM to BNP
 
 - write code for mixed effects model
 -- see Sorensen et al 2016 paper and STAN for linear mixed models at https://people.bath.ac.uk/jjf23/stan/
