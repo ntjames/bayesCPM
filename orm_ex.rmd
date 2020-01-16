@@ -1,5 +1,5 @@
 ---
-title: "orm() examples using Stan"
+title: "orm() documentation examples using Bayesian CPM"
 output:
   html_document:
     toc: no
@@ -421,6 +421,9 @@ set.seed(3)
 n <- 200
 x1 <- rnorm(n)
 y <- x1 + rnorm(n)
+# n <- 100
+# x1 <- rnorm(n)
+# y <- 0.9*x1 + rnorm(n)
 dat3 <- data.frame(y=ordered(y),y_num=y,x1)
 
 
@@ -475,10 +478,72 @@ res <- microbenchmark(callCDF(), callCDF_dt(), times=25)
 print(res)
 ggplot2::autoplot(res)
 
+
 cdf_bg_dt %>% filter(ndrow %in% c(1,2,3)) %>% ggplot(aes(group=ndrow)) +
   geom_ribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, fill=factor(ndrow)) , alpha=0.4) +
   geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
   xlab("") + ylab("Conditional CDF") 
+
+```
+
+```{r, eval=FALSE}
+#plots, etc for 11/13/19 seminar
+bg_df<-as.data.frame(bg)
+
+head(bg_df[,c("cutpoints[98]")])
+#head(bg_df[,c("b[1]")])
+
+#head(bg_df[,c("cutpoints[1]","cutpoints[2]","cutpoints[3]","cutpoints[73]","cutpoints[74]","b[1]")])
+
+
+dir<-getwd()
+figdir<-file.path(dir,"biostat_sem","fig")
+
+library(pammtools)
+
+cdf_bg <- getCDF(bg, mod_data4g, newdata=data.frame(x1=c(-1,0,1))) 
+
+cdf_bg %>% filter(ndrow %in% c(1,2,3)) %>% ggplot(aes(group=ndrow)) +
+  geom_stepribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, 
+                      fill=factor(ndrow)) , alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("y") + ylab("Conditional CDF") + 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -1", "x = 0", "x = 1")) + 
+  scale_color_discrete(name = "covariate value", 
+                       labels=c("x = -1", "x = 0", "x = 1")) +
+  stat_function(fun=pnorm,color="darkgreen",
+                linetype=2, alpha=0.4) + 
+  stat_function(fun=function(x) pnorm(x,0.9), color="blue",
+                linetype=2, alpha=0.4) +
+  stat_function(fun=function(x) pnorm(x,-0.9),color="red",
+                linetype=2, alpha=0.4)
+
+ggsave(file.path(figdir,"cond_cdf.png"),width=6,height=3)
+
+
+mn_dat<-getMean(bg, mod_data4g, newdata=data.frame(x1=c(-1,0,1)),summ=FALSE)
+
+#ggplot(mn_dat,aes(x=mn,group=x1,fill=factor(ndrow)))+geom_density(alpha=0.4)
+
+ggplot(mn_dat,aes(x=mn,fill=factor(x1)))+geom_density(alpha=0.6,color=NA)+ 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -1", "x = 0", "x = 1")) + 
+  xlab("") + ylab("conditional mean density")
+ggsave(file.path(figdir,"cond_mn.png"),width=6,height=3)
+
+mn_dat %>% filter(x1==1) %>% pull(mn) %>% quantile(probs=c(0.025,0.975))
+
+
+q50_dat<-getQuantile(bg, mod_data4g, newdata=data.frame(x1=c(-1,0,1)),q=0.50,summ=FALSE)
+ggplot(q50_dat,aes(x=qtile,fill=factor(x1)))+geom_density(alpha=0.6,color=NA)+ scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -1", "x = 0", "x = 1")) + 
+  xlab("") + ylab("conditional median density")
+ggsave(file.path(figdir,"cond_md.png"),width=6,height=3)
+
+q50_x0_samps<-q50_dat %>% filter(x1==0) %>% pull(qtile)
+
+mean(q50_x0_samps > 0 | q50_x0_samps < -0.5)
 
 ```
 
