@@ -1,0 +1,83 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# bayesCPM
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+This package includes functions to fit a Bayesian Cumulative Probability Model (CPM) using the R interface to Stan.
+
+## Installation
+
+<!--
+You can install the released version of bayesCPM from [CRAN](https://CRAN.R-project.org) with:
+
+``` r
+install.packages("bayesCPM")
+```
+-->
+
+You can install the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("ntjames/bayes_cpm/pkg")
+```
+
+## Example
+
+This is a basic example:
+
+```{r example}
+library(bayesCPM)
+library(dplyr) # needed for bayesCPM::mkStanDat()
+
+## make example data
+set.seed(1567)
+n <- 100
+x1 <- rnorm(n)
+y <- 0.9*x1 + rnorm(n)
+dat <- data.frame(y=ordered(y),x1)
+
+## convert data to Stan format (link=2 is probit)
+dat_stan  <- mkStanDat(dat, outcome="y", preds = c("x1"), link=2)
+
+## sample from Bayes CPM model with probit link
+fit <- bayes_cpm(dat_stan)
+```
+
+Using the model fit we can get a summary of the posterior conditional mean
+
+```{r mean}
+## posterior conditional mean when x=1
+fit_mn <- getMean(fit, dat_stan, newdata=data.frame(x1=c(1)))
+fit_mn
+```
+
+or plot the median of the posterior conditional CDF
+
+```{r cdf}
+## get posterior conditional CDF when x=1
+fit_cdf <- getCDF(fit, dat_stan, newdata=data.frame(x1=c(1))) 
+
+plot(fit_cdf$yval, fit_cdf$med_cdf, type="s", xlab="y", ylab="Conditional CDF")
+```
+
+<!--
+You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date.
+
+You can also embed plots, In that case, don't forget to commit and push the resulting figure files, so they display on GitHub!
+-->

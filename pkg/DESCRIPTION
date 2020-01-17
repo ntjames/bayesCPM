@@ -1,0 +1,28 @@
+Package: bayesCPM
+Title: Bayesian Cumulative Probability Models For Continuous and Mixed Outcomes
+Version: 0.0.0.9000
+Authors@R: person("Nathan T.", "James", email = "nathan.t.james@vanderbilt.edu", role = c("aut", "cre"))
+Description: Bayesian cumulative probability models (CPMs) for continuous and
+    mixed outcomes. This package includes functions to fit a Bayesian CPM using
+    the R interface to Stan.
+License: What license it uses
+Encoding: UTF-8
+LazyData: true
+Biarch: true
+Depends:
+    R (>= 3.5.0)
+Imports:
+    dplyr,
+    Matrix,
+    methods,
+    Rcpp (>= 0.12.0),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.0.0)
+LinkingTo:
+    BH (>= 1.66.0),
+    Rcpp (>= 0.12.0),
+    RcppEigen (>= 0.3.3.3.0),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+SystemRequirements: GNU make
+RoxygenNote: 7.0.1
