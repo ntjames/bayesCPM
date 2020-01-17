@@ -2,6 +2,7 @@
 /Tian_code/
 /biostat_sem/
 /refs/
+/data/
 /paper/fig/
 /paper/js/
 /paper/output/
@@ -10,6 +11,8 @@
 _bookdown_files/
 archive/
 *.rds
+*.zip
+
 
 # History files
 .Rhistory
