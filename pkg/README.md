@@ -25,7 +25,7 @@ You can install the development version from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("ntjames/bayes_cpm/pkg")
+devtools::install_github("ntjames/bayesCPM/pkg")
 ```
 
 ## Example
