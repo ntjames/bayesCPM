@@ -1,0 +1,172 @@
+---
+title: "Bayesian CPM example to check influence of centering"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#rm(list=ls())
+libs <- c("rstan", "rms", "dplyr", "stringr", "readr", "pammtools")
+invisible(lapply(libs, library, character.only = TRUE))
+
+# CPM functions
+dir <- file.path("/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm")
+source(file.path(dir,"cpm_functions.r"))
+
+# dir for figures
+#figdir <- file.path(dir,"biostat_sem","fig")
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+```{r}
+# compile/read in CPM models
+# concentration (alpha) is given as a scalar parameter along with in data
+ord_mod1 <- readRDS(file.path(dir,"ordinal_model_1.rds"))
+```
+
+<!-- similar to orm() example 4a -->
+
+```{r ex4a.1, cache=TRUE}
+# Compare predicted mean with ols for a continuous x
+set.seed(1567)
+n <- 100
+x1 <- rnorm(n)
+y1 <- 0.75*x1 + rnorm(n) # w/ normal error
+dat1 <- data.frame(y=ordered(y1),y_num=y1,x=x1)
+
+orm(y1~x1, family=probit)
+
+
+
+#x2 <- rnorm(n, mean=1000)
+x2 <- x1+1000
+y2 <- 0.75*x2 + rnorm(n) # w/ normal error
+dat2 <- data.frame(y=ordered(y2),y_num=y2,x=x2)
+
+orm(y2~x2, family=probit)
+```
+
+```{r ex4a.2, cache=TRUE}
+# link=2 is probit link
+mod_data1  <- mkStanDat(dat1, outcome="y", preds = c("x"), link=2) 
+mod_data2  <- mkStanDat(dat2, outcome="y", preds = c("x"), link=2)
+
+bg1 <- sampling(ord_mod1, data=mod_data1, seed=6472, 
+                 iter=4250, warmup=3000, chains=4,
+                 control = list(adapt_delta = 0.8))
+
+plot(bg1, plotfun = "rhat")
+traceplot(bg1,"b[1]")
+
+# sampling with non-centered x takes longer to run, produces more divergent transitions, possible convergence issues
+bg2 <- sampling(ord_mod1, data=mod_data2, seed=6472, 
+                 iter=4250, warmup=3000, chains=4,
+                 control = list(adapt_delta = 0.9))
+
+plot(bg2, plotfun = "rhat")
+traceplot(bg2)
+traceplot(bg2,"b[1]")
+```
+
+
+```{r, eval=FALSE}
+#plots, etc for biostat seminar
+bg1_df <- as.data.frame(bg1)
+bg2_df <- as.data.frame(bg2)
+
+#head(bg_df[,c("cutpoints[98]")])
+#head(bg_df[,c("b[1]")])
+
+head(bg1_df[,c("cutpoints[1]","cutpoints[2]","cutpoints[3]","cutpoints[98]","cutpoints[99]","b[1]")])
+
+mean(bg1_df[,"b[1]"])
+
+
+head(bg2_df[,c("cutpoints[1]","cutpoints[2]","cutpoints[3]","cutpoints[98]","cutpoints[99]","b[1]")])
+
+mean(bg2_df[,"b[1]"])
+```
+
+```{r}
+cdf_bg1 <- getCDF(bg1, mod_data1, newdata=data.frame(x=c(-2,0,2))) 
+
+cdf_bg1 %>% filter(ndrow %in% c(1,2,3)) %>% ggplot(aes(group=ndrow)) +
+  geom_stepribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, 
+                      fill=factor(ndrow)) , alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("y") + ylab("Conditional CDF") + 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -2", "x = 0", "x = 2")) + 
+  scale_color_discrete(name = "covariate value", 
+                       labels=c("x = -2", "x = 0", "x = 2")) +
+  stat_function(fun=pnorm,color="darkgreen",
+                linetype=2, alpha=0.4) + 
+  stat_function(fun=function(x) pnorm(x,2*0.75), color="blue",
+                linetype=2, alpha=0.4) +
+  stat_function(fun=function(x) pnorm(x,-2*0.75),color="red",
+                linetype=2, alpha=0.4)
+
+
+mn_dat1<-getMean(bg1, mod_data1, newdata=data.frame(x=c(-2,0,2)),summ=FALSE)
+
+ggplot(mn_dat1,aes(x=mn,fill=factor(x)))+geom_density(alpha=0.6,color=NA)+ 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -2", "x = 0", "x = 2")) + 
+  xlab("") + ylab("conditional mean density")
+
+#ggsave(file.path(figdir,"cond_mn2.png"),width=6,height=3)
+
+#mn_dat %>% filter(x1==2) %>% pull(mn) %>% quantile(probs=c(0.025,0.975))
+
+#q50_dat <- getQuantile(bg, mod_data, newdata=data.frame(x1=c(-2,0,2)),q=0.50,summ=FALSE)
+
+#ggplot(q50_dat,aes(x=qtile,fill=factor(x1)))+
+#  geom_density(alpha=0.6, color=NA, adjust=3)+ 
+#  scale_fill_discrete(name = "covariate value", 
+#                      labels=c("x = -2", "x = 0", "x = 2")) + 
+#  xlab("") + ylab("conditional median density")
+
+#ggsave(file.path(figdir,"cond_md2.png"),width=6,height=3)
+
+#q50_x0_samps<-q50_dat %>% filter(x1==0) %>% pull(qtile)
+
+#mean(q50_x0_samps > 0.25 | q50_x0_samps < -0.25)
+
+```
+
+```{r}
+cdf_bg2 <- getCDF(bg2, mod_data2, newdata=data.frame(x=c(998,1000,1002))) 
+
+cdf_bg2 %>% filter(ndrow %in% c(1,2,3)) %>% ggplot(aes(group=ndrow)) +
+  geom_stepribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, 
+                      fill=factor(ndrow)) , alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("y") + ylab("Conditional CDF") + 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = 998", "x = 1000", "x = 1002")) + 
+  scale_color_discrete(name = "covariate value", 
+                       labels=c("x = 998", "x = 1000", "x = 1002")) +
+  stat_function(fun=function(x) pnorm(x, 0.75*1000),color="darkgreen",
+                linetype=2, alpha=0.4) + 
+  stat_function(fun=function(x) pnorm(x, 0.75*1002), color="blue",
+                linetype=2, alpha=0.4) +
+  stat_function(fun=function(x) pnorm(x, 0.75*998),color="red",
+                linetype=2, alpha=0.4)
+#ggsave(file.path(figdir,"cond_cdf2.png"),width=6,height=3)
+
+mn_dat2<-getMean(bg2, mod_data2, newdata=data.frame(x=c(998, 1000, 1002)),summ=FALSE)
+
+ggplot(mn_dat2,aes(x=mn,fill=factor(x)))+geom_density(alpha=0.6,color=NA)+ 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = 998", "x = 1000", "x = 1002")) + 
+  xlab("") + ylab("conditional mean density")
+```
