@@ -1,0 +1,52 @@
+---
+title: "Bayesian Nonparametric (BNP) Models"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+<!-- 
+Bayesian Nonparametric models
+see https://web.ma.utexas.edu/users/pmueller/bnp/ for book site with code
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+libs <- c("rstan", "dplyr", "stringr", "readr", "tidyr")
+invisible(lapply(libs, library, character.only = TRUE))
+
+# repro & update these functions for general Stan output
+#dir<-getwd()
+#source(file.path(dir,"rstanarm_ord_functions.r"))
+
+set.seed(24334)
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+
+## Using OpenBUGS
+
+see http://www.openbugs.net/Examples/Eye-tracking.html
+
+
+## Using 'bayesm'
+
+## Using 'DPpackage'
+
+## Using 'BNSP'
+
+## Using 'dirichletprocess'
+
+## Using Stan??
+
+## Using 'BART'??
+
+## using 'Bmix' ??
