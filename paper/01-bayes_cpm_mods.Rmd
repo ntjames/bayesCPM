@@ -4,39 +4,27 @@
 
 1a) start by writing up Bayes ordinal CPM for continuous outcome (i.e. extensions to prior spec to deal with large # of intercepts). 
 
--> Use model with dirichlet and concentration alpha=1/n  (should n be # obs or # unique obs?)
-also tried:
-alpha=0 (NO! stan_polr and ord_mod1 don't work w/ improper alpha=0 conc. param)
-alpha=1/2 (I think this is multinomial Jeffrey's prior)
-alpha=1
+-> Use model with dirichlet and several concentration params
+for n # unique obs/categories
+alpha=1/n
+alpha=0? (NO! stan_polr and ord_mod1 don't work w/ improper alpha=0 conc. param)
+alpha=1/2 (multinomial Jeffrey's prior)
+alpha=1 ('uniform' prior)
+alpha=1/(0.8 + 0.35 max(n, 3)) (conc param from Frank's sims)
 
-1c) simulations comparing Bayes CPM to NPMLE - need to verify models are similar, especially in case where likelihood not well approximated by quadratic function
+Appendix showing derivation of posterior, what prior will be equivalent to MLE
 
-1d) simulations comparing Bayes CPM to Bayesian nonparametric (BNP) model
-
-
+other possible priors
 -> truncated normal (McKinley 2015)
 -> parameterization on differences in intercepts or log difference in intercepts?
 e.g. alternate parameterization delta_1=log(gamma_1); delta_j=log(gamma_j-gamma_{j-1}) from Albert & Chib 1997, Fahrmeir & Tutz 1994, Ishwaran 2000 or just gamma_j-gamma_{j-1}
 -> Congdon 2005 describes truncated normal and reparameterized
 
-1e) Case study with HIV data
+1c) simulations comparing Bayes CPM to NPMLE? - need to verify models are similar, especially in case where likelihood not well approximated by quadratic function
 
+1d) simulations showing posterior predictive checks? Bayesian p-value or other Bayesian model checking
 
-For next paper - extensions
-
-2a) Non-proportional odds. extend to weighted PPO vs. NPO type model (McKinley), except using continuous data and mixture links. [from Frank] consider adding a summarization of evidence for the candidate link functions, e.g., posterior probability that the model has a logit link.  And develop ways to summarize exposure/treatment effects in these mixtures of models, e.g. covariate-specific estimates of both odds ratios and risk differences, plus perhaps hazard ratio.
-
-2b) mixture link model (maybe, depends on whether it's truly needed or improves model)
---finite mixture and BNP mixture over, e.g. normals
--- see brms mixture() and BDA3
-
-2c) Extend to nonlinear model - try something simple like Emax
--- see https://cran.r-project.org/web/packages/brms/vignettes/brms_nonlinear.html
--- see http://mc-stan.org/rstanarm/articles/glmer.html
--- see https://mc-stan.org/rstanarm/reference/stan_nlmer.html
-
-2d) Extend to mixed effects CPMs - nonlinear mixed effects model for Bayesian PK/PD
+1e) Case study with HIV data. Add model checking steps?
 
 TO DO
 - Clean up section describing basic Bayesian ordinal model
@@ -50,12 +38,12 @@ lower priority -> 1b) figure out why hardcoded stan model doesn't match stan_pol
 -> maybe change hardcoded stan model to est. cutpoints when all x are at their means (rather than all x=0 which I think is in implementation as of 10/10/19)
 -> could also be related to parameterization of betas in stan_polr
 
--->
+### R package ###
 
-<!--
-R package
+TO DO
+
 - add formula interface
-- automatic centering of predictors (see brms and rstanrm which both do this)
+- note about centering predictors OR automatic centering of predictors (see brms and rstanarm which both do this)
 - clean up & update CDF, Mean, Quantile to accept list like rms::contrast rather than newdata data.frame to facilitate comparisons
 - figure out Stan issue with non-symmetric link function 
 - add vignette using all examples from orm() documentation
@@ -67,18 +55,37 @@ R package
 -- make sure model is working well in basic scenario; compare to NPMLE
 using Bias, coverage, other statistics?
 
-- implement BNP model for comparison (JAGS? OpenBUGS? dirichletprocess package?, other?)
--- see https://cran.r-project.org/web/packages/dirichletprocess/index.html
-https://cran.r-project.org/web/packages/BNSP/index.html
-https://www.stats.ox.ac.uk/~teh/research/npbayes/Teh2010a.pdf
-
 lower priority -> implement CPM models in OpenBUGS??
 -- see http://www.omori.e.u-tokyo.ac.jp/WinBUGS/index.htm ex 14, 15, maybe 16
 -- see https://gist.github.com/bartneck/038fae866e10641b8121679cd02db52e
 -- see http://www.openbugs.net/Examples/Inhalers.html
 
-lower priority -> code for mixed effects model
--- see Sorensen et al 2016 paper and STAN for linear mixed models at https://people.bath.ac.uk/jjf23/stan/
+-->
+
+
+<!--
+### Extensions/Future papers ###
+
+2a) Use Dirichlet process prior and compare Bayes CPM to Bayesian nonparametric (BNP) model
+
+-> implement BNP model for comparison to basic BayesCPM (JAGS? OpenBUGS? dirichletprocess package?, other?)
+-- see https://cran.r-project.org/web/packages/dirichletprocess/index.html
+https://cran.r-project.org/web/packages/BNSP/index.html
+https://www.stats.ox.ac.uk/~teh/research/npbayes/Teh2010a.pdf
+
+
+2b) Non-proportional odds. extend to weighted PPO vs. NPO type model (McKinley), except using continuous data and mixture links. [from Frank] consider adding a summarization of evidence for the candidate link functions, e.g., posterior probability that the model has a logit link.  And develop ways to summarize exposure/treatment effects in these mixtures of models, e.g. covariate-specific estimates of both odds ratios and risk differences, plus perhaps hazard ratio.
+
+2c) mixture link model (maybe, depends on whether it's truly needed or improves model)
+--finite mixture and BNP mixture over, e.g. normals
+-- see brms mixture() and BDA3
+
+2d) compare to single-index models?
+
+2e) Extend to nonlinear model - try something simple like Emax
+-- see https://cran.r-project.org/web/packages/brms/vignettes/brms_nonlinear.html
+-- see http://mc-stan.org/rstanarm/articles/glmer.html
+-- see https://mc-stan.org/rstanarm/reference/stan_nlmer.html
 
 lower priority -> code for nonlinear model
 -- see stan_nlmer and vignette
@@ -86,8 +93,13 @@ lower priority -> code for nonlinear model
 -- https://discourse.mc-stan.org/t/hierarchical-nonlinear-regression/4382/12
 -- https://mattstats.wordpress.com/2017/06/12/fitting-nonlinear-functions-in-stan/
 
-lower priority -> code for nonlinear mixed effects model
---see links in above todo item
+
+2f) Extend to mixed effects CPMs
+
+-> code for mixed effects model
+-- see Sorensen et al 2016 paper and STAN for linear mixed models at https://people.bath.ac.uk/jjf23/stan/
+
+2g) nonlinear mixed effects model for Bayesian PK/PD?
 
 other lower priority issues/future extensions:
 
@@ -96,6 +108,7 @@ other lower priority issues/future extensions:
 * repeated ordinal w/ terminating event and censoring
 
 * multiple detection limits within or across sites (hierarch on groups defined by detection limit)
+
 -->
 
 
@@ -113,6 +126,7 @@ A Bayesian CPM for ordinal regression was described by Albert and Chib [@albert_
 
 Congdon [@congdon_bayesian_2005], Others??
 
+Mallick [???] - Similar model in context of survival data, also incorporates BNP prior, others??
 
 <!--freq continuous CPM -->
 Harrell [@harrell_regression_2015] and Liu [@liu_modeling_2017] describe how non-parametric maximum likelihood (NPMLE) estimation can be used for continuous outcomes under the CPM modeling framework. A key insight for these models is that continuous data can also be viewed as ordinal categorical data. CPMs for continuous outcomes have several advanatages including direct modeling of the full conditional cumulative distribution function, invariance of regression coefficient estimates to monotonic outcome transformations, and ability to handle mixed continuous/discrete outcomes such as those that arise with a lower or upper limits of detection.
@@ -189,61 +203,104 @@ Specifying priors for $\boldsymbol{\gamma}$ presents a challenge because of the 
  how sensitive are approaches above to sample size & cell counts?
 -->
 
-We instead adopt a third approach which specifies a prior on $\boldsymbol{\pi_i}$ (for a specified covariate vector) and to utilizes the transformation defined by $G(\cdot)$ to induce a prior on the $\boldsymbol{\gamma}$. Let $\pi_{.j} \equiv Pr(r(y)=j|x=0)$ be the probability of being in category $j$ when all the covariates are 0 and $\boldsymbol{\pi_{.}}=(\pi_{.1},\ldots,\pi_{.J})$. From equation \ref{eq:cellprobs} it follows that
+We instead adopt a third approach which specifies a prior on $\boldsymbol{\pi_i}$ (for a specified covariate vector) and to utilizes the transformation defined by $G(\cdot)$ to induce a prior on the $\boldsymbol{\gamma}$. [add Betancourt ref]
+Let $\pi_{.j} \equiv Pr(r(y)=j|x=0)$ be the probability of being in category $j$ when all the covariates are 0 and $\boldsymbol{\pi_{.}}=(\pi_{.1},\ldots,\pi_{.J})$. From equation \ref{eq:cellprobs} it follows that
 \begin{gather}
 \pi_{.j}=G^{-1}(\gamma_j-0)-G^{-1}(\gamma_{j-1}-0)=G^{-1}(\gamma_j)-G^{-1}(\gamma_{j-1})
 \end{gather}
 These equations define a transformation $h(\boldsymbol{\gamma})=\boldsymbol{\pi_{.}}$ between the cutpoints and probabilities of category membership when all the covariates are 0. Conversely,
 \begin{gather}
-\sum_{k=1}^{j}\pi_{.k}=\sum_{k=1}^{j}G^{-1}(\gamma_k)-G^{-1}(\gamma_{k-1})=G^{-1}(\gamma_j)
+\sum_{k=1}^{j}\pi_{.k}=\sum_{k=1}^{j}\left[G^{-1}(\gamma_k)-G^{-1}(\gamma_{k-1})\right]=G^{-1}(\gamma_j)
 \end{gather}
 so $G\left(\sum_{k=1}^{j}\pi_{.k}\right)=\gamma_j$ defines the inverse transformation. 
 
-Because $\boldsymbol{y}$ has a multinomial distribution a conjugate symmetric Dirichlet distribution is a natural choice of prior for $\pi_{.}$. We set $p(\pi_{.}) \propto \prod_{j=1}^{J}\pi_{.j}^{\alpha_j-1}$ where $\alpha_j =\frac{1}{J}$ for all $j$. Under conjugacy, the $\alpha_j$ can be interpreted as the number of pseudo-observations in each category contributed by the prior, so the choice of $\alpha_j =\frac{1}{J}$ implies a total prior contribution equivalent to 1 observation. 
+Because $\boldsymbol{y}$ has a multinomial distribution a conjugate Dirichlet distribution is a natural choice of prior for $\pi_{.}$. Setting $p(\pi_{.}) \propto \prod_{j=1}^{J}\pi_{.j}^{\alpha_j-1}$ the posterior distribution is
+\begin{align}
+p(\boldsymbol{\gamma},\boldsymbol{\beta}|\boldsymbol{x},\boldsymbol{y}) & \propto p(\boldsymbol{\gamma})p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})\\
+&\propto p(h(\boldsymbol{\gamma}))|\mathcal{J}|p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})\\
+&\propto p(\boldsymbol{\pi_{\cdot}})|\mathcal{J}|p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})
+\end{align}
+where $\mathcal{J}$ is the Jacobian of the transformation $h(\boldsymbol{\gamma})=\boldsymbol{\pi_{.}}$. Letting $\Omega=\sum_{j=1}^J\pi_{.j}=1$ be the constraint that the category probabilites must sum to 1, the entries in $\mathcal{J}$ where $\mathcal{J}_{r,c}$ is the term in row $r$ and column $c$ are
+\begin{align}
+\mathcal{J}_{j,1}&=\frac{\partial \pi_{.j}}{\partial \Omega}=1\\
+\mathcal{J}_{j+1,j+1}&=\frac{\partial \pi_{.j+1}}{\partial \gamma_j}=\frac{\partial}{\partial \gamma_j}\left[G^{-1}(\gamma_{j+1})-G^{-1}(\gamma_{j})\right]=-g(\gamma_j)\\
+\mathcal{J}_{j,j+1}&=\frac{\partial \pi_{.j}}{\partial \gamma_j}=\frac{\partial}{\partial \gamma_j}\left[G^{-1}(\gamma_{j})-G^{-1}(\gamma_{j-1})\right]=g(\gamma_j)
+\end{align}
+With $\mathcal{J}_{r,c}=0$ for all other entries.
+!!!! NB: $G^{-1}()$ is cdf so $g()$ is pdf, need to correct notation throughout so that $G^{-1}()$ is inverse cdf/quantile and $G()$ is cdf
 
-!! Describe extension using BNP prior so number of distinct values/categories does not need to be specified
+\begin{equation}
+ \begin{vmatrix} 
+ \mathcal{J}_{11} & \mathcal{J}_{12} & \mathcal{J}_{13} & \mathcal{J}_{14}\\
+ \mathcal{J}_{21} & \mathcal{J}_{22} & \mathcal{J}_{23} & \mathcal{J}_{24}\\
+ \mathcal{J}_{31} & \mathcal{J}_{32} & \mathcal{J}_{33} & \mathcal{J}_{34}\\
+ \mathcal{J}_{41} & \mathcal{J}_{42} & \mathcal{J}_{43} & \mathcal{J}_{44}\\
+ \end{vmatrix}\\
+ = \begin{vmatrix} 
+ 1 & g(\gamma_1)  & 0            & 0\\
+ 1 & -g(\gamma_1) & g(\gamma_2)  & 0\\
+ 1 & 0            & -g(\gamma_2) & g(\gamma_3)\\
+ 1 & 0            & 0            & -g(\gamma_3)\\
+ \end{vmatrix}
+\end{equation}
+
+Assuming a symmetric Dirichlet distribution $\alpha_1 = \alpha_2 = \cdots = \alpha_n$, we explore several possible choices for the $\alpha_j$ parameters
+
+[possible choices 1/J, 1/2 Jeffrey's, 1 uniform, Frank's prior, prior to match MLE? - where $\alpha_j =\frac{1}{J}$ for all $j$]. 
+
+show draws of $\boldsymbol{\gamma}$ induced priors for each of the possible prior choices for $\alpha_j$
+
+
+(prior predictive distribution - first draw params from Dirichlet, then draw cdf vals see BDA3 p 7, plot ranks on x-axis and cdf val on y-axis)
+
+Under conjugacy, the $\alpha_j$ can be interpreted as the number of pseudo-observations in each category contributed by the prior, so the choice of $\alpha_j =\frac{1}{J}$ implies a total prior contribution equivalent to 1 observation. <- what about Jacobian though
+
 
 <!--
 $\alpha=1$ equally favor all vectors $p_i$ such that $\sum p_i =1$
 $\alpha < 1$ favors sparsity in most cells with high prob for small number of cells
-$\alpha > 1$ favors equally distributed counts  (If all concentration parameters are equal but greater than 1 then the prior mode is that the categories are equiprobable, and the larger the value of the identical concentration parameters, the more sharply peaked the distribution is at the mode. )
+$\alpha > 1$ favors equally distributed counts (If all concentration parameters are equal but greater than 1 then the prior mode is that the categories are equiprobable, and the larger the value of the identical concentration parameters, the more sharply peaked the distribution is at the mode. )
 
 using a symmetric Dirichlet distribution so $\alpha_1=\alpha_2=\cdots=\alpha_n=1$ implies a posterior distribution of $p(\boldsymbol{p_i}|y) \propto Dirichlet(1+n_1,1+n_2,\ldots,1+n_J)$ where $n_j$ is the number of observations in each category.
 -->
 
-The posterior distribution is
-\begin{align}
-p(\boldsymbol{\gamma},\boldsymbol{\beta}|\boldsymbol{x},\boldsymbol{y}) & \propto p(\boldsymbol{\gamma})p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})\\
-&\propto p(h(\boldsymbol{\gamma}))|\mathcal{J}_h|p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})\\ 
-&\propto p(\boldsymbol{\pi_{\cdot}})|\mathcal{J}_h|p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})
-\end{align}
-
-where $\mathcal{J}_h$ is the Jacobian of the transformation $h(\boldsymbol{\gamma})=\boldsymbol{\pi_{.}}$.
-
-!! One potential limitation of the formulation above is that the number of distinct outcome values must be known *a priori*
-
-!! The Dirichlet process prior is an infinite dimensional analogue to the Dirichlet prior (number of categories is as large as needed, although calculations are still finite dimensional)
-
-[describe Dirichlet process prior and how it changes the model formulation]
-
-
-### Nonparametric Model
-
-[comparison to other Bayesian nonparametric approach, e.g. Dirichlet process mixture or Polya trees ]
-
-<!-- - what are advantages of CPM vs this model? - computation efficiency?? other? -->
-
-Note: want to use BNP model that allows flexibility in the residual distribution for comparison
-$y_i = f(x_i) + \epsilon_i$ with $\epsilon_i|G \stackrel{iid}\sim G$ with BNP for $G$ See Muller Chp 4, esp 4.2 and Chp 3. 
+### Conditional Functionals
 
 <!--
-Dirichlet process model for epsilon in Y=x'beta + epsilon
+[description of how to use Bayesian CPM to get parameter ests. for shifts in distribution and other quantities of interest, e.g. conditional CDF Mean, Quantiles, using a single model]
+-->
 
-describe model
+Using MCMC samples from the posterior distribution ($\tilde{\gamma}$, $\tilde{\beta}$) it is straightforward to calculate the posterior conditional CDF, mean, quantiles or other functionals as shown in the table.
 
-show connection to CPM (limiting case?)
+- Posterior conditional CDF:  $\tilde{F}(y_i|\boldsymbol{x}_i)=G^{-1}(\tilde{\gamma}_{r(y_i)}-\boldsymbol{x}_i^{T}\tilde{\boldsymbol{\beta}})$
+
+- Posterior conditional mean:
+$\tilde{E}[Y|\boldsymbol{x}_i]=\sum_{i=1}^{n}y_i\tilde{f}(y_i|\boldsymbol{x}_i)$ where $\tilde{f}(y_i|\boldsymbol{x}_i)=\tilde{F}(y_i|\boldsymbol{x}_i)-\tilde{F}(y_{i-1}|\boldsymbol{x}_i)$
+
+
+- Posterior conditional quantile:
+To estimate the $q^{th}$ quantile 
+  - Find $y_i=\inf\{y:\tilde{F}(y|x)\ge q\}$ and the next smallest value $y_{i-1}$ 
+  - Use linear interpolation to find quantile $y_q$ where $y_{i-1}<y_q<y_i$ 
+
+
+<!---
+### Nonparametric Model
 
 empirical Bayesian histogram (e.g., Dirichlet process)
+
+[comparison to other Bayesian nonparametric approach, e.g. Dirichlet process mixture or Polya trees]
+
+The Dirichlet process prior is an infinite dimensional analogue to the Dirichlet prior (number of categories is as large as needed, although calculations are still finite dimensional)
+
+[describe Dirichlet process prior, e.g. stick-breaking process and how it changes the model formulation]
+
+ - what are advantages of CPM vs this model? - computation efficiency?? other? show connection to CPM (limiting case?)
+
+
+Note: want to use BNP model that allows flexibility in the residual distribution for comparison
+$y_i = f(x_i) + \epsilon_i$ with $\epsilon_i|G \stackrel{iid}\sim G$ with BNP for $G$ See Muller Chp 4, esp 4.2 and Chp 3. Try
+$p(\boldsymbol{\pi_{\cdot}}) \sim DP(mG_0)$ with $G_0 \sim Unif(0,1)$ and $m$ specified to control concentration around $G_0$
 
 For later models might want flexibility in $f(x_i)$ or completely nonparametric (i.e. density regression)
 -->
@@ -256,8 +313,6 @@ In the usual ordinal CPM described above, many of the $j=1,\ldots,J$ categories 
 
 [Heuristic argument]
 For continuous outcome $y$ with no ties, the dimension of the $\gamma$ parameter grows at the same rate as the sample size $n$, so an uniformative prior for $p(\boldsymbol{\gamma})$ will be highly influential on posterior inference.
-
-assume symmetric Dirichlet distribution $\alpha_1 = \alpha_2 = \cdots = \alpha_n$
 
 - If use improper $\alpha=0$, revert to previous noninformative case and nonidentifiable unless additional constraint is added
 - Using $\alpha=1$ which equally favors all vectors $p_i$ such that $\sum p_i=1$ adds as many observations from the prior as are observed (each cell has count 2, one from prior & one from observed data)
@@ -272,7 +327,6 @@ Hyp. However, when the number of ordinal categories increases and the number of 
 
 Hyp. there is some sort of shrinkage or regularization going on that is too strong with fixed parameter.
 
-
 [Speculative statement: This implies that information supplied by the Dirichlet prior has higher weight since each cell is a combination of 'prior count' and a single observation - need to show this]. (Is Dir. with $\alpha=1$ the equivalent of noninformative prior for multinomial?? - see BDA3 chap on Bayesian histogram)
 
 [General question, model is motivated by positing latent variables, e.g. conditional on covars; why not actually incorporate these latent variables using some sort of data augmentation or EM algorithm approach?]
@@ -284,10 +338,6 @@ p(\boldsymbol{\gamma},\boldsymbol{\beta}|\boldsymbol{X},\boldsymbol{Y}) \propto 
 
 where $F(y -|x)=\lim_{t \uparrow y}F(t|x)$
 
-from Albert & Chib 1997; what is lumping property of Dirichlet??
-
-(what about different type of uninformative prior, e.g. Jeffrey's prior?? or Albert 1997 prior on unconstrained intercepts?? - Maybe just mention that other parameterizations for intercepts have been explored)
-
 By default, $\alpha_i=1\, \forall i$ (i.e., prior count of 1 in each bin)
 allow $\gamma \sim ??$ (ie hyperprior on concentration param)
 
@@ -295,85 +345,31 @@ add hyperprior so $\alpha \sim Gamma(a,b)$ (some sort of weakly informative, pos
 
 -->
 
-```{r, eval=FALSE, echo=FALSE}
-library(gtools)
-
-# from Wikipedia
-# Values of the concentration parameter above 1 prefer variates that are dense, evenly distributed distributions, i.e. all the values within a single sample are similar to each other. Values of the concentration parameter below 1 prefer sparse distributions, i.e. most of the values within a single sample will be close to 0, and the vast majority of the mass will be concentrated in a few of the values. 
-
-# alpha (conc) = 1, uniform over discrete dists with 4 categories
-d1<-rdirichlet(20, c(1,1,1,1))
-
-# alpha (conc) = 15, discrete dists with 4 balanced category probabilities more likely
-d2<-rdirichlet(20, c(15,15,15,15))
-
-# alpha (conc) = 0.5, discrete dists with 4 unbalanced category probabilities more likely
-d3<-rdirichlet(20, c(0.5,0.5,0.5,0.5))
-
-```
-
-### Posterior conditional distributions
-
-!!! START HERE - seminar slide 14 !!!
-
-[description of how to use Bayesian CPM to get parameter ests. for shifts in distribution and other quantities of interest, e.g. conditional CDF Mean, Quantiles, using a single model]
-
-<!--
-
-## Extending the CPM model
-
-* Mixture link
--Not sure if mixture link is needed to fit model well. Evidence from previous papers and CPM poster show ok robustness, except for extreme link misspecification
-
-One important component of the CPM is the specification of the link function $F(\cdot)$. Although the CPM model estimated using NPMLE is somewhat robust to link function misspecification it is of interest to determine the degree to which the data support one link function over another. In the Bayesian model, we can model a mixture of several link functions while incorporating the additional uncertainty inherent in allowing a combination of multiple links.
-
-Consider both finite mixture $F_{mix}=w_1F_1 + w_2F_2 + (1-w_1-w_2)F_3$ and BNP prior over normal distributions to get nonparametric estimate of link 
-
-[need to research more about mixture models]
-[add Stan model implementing mixture link]
-Let $F_1 \sim loglog$, $F_2 \sim logistic$, $F_3 \sim cloglog$ be three possible choices for link function. Then $F_{mix}=w_1F_1 + w_2F_2 + (1-w_1-w_2)F_3$ is a mixture. The priors for weights $w_1$, $w_2$, $w_3$ such that $\sum_i w_i = 1$
-
-Incorporating this extension the full model becomes
-
-$p(\boldsymbol{\gamma},\boldsymbol{\beta},\boldsymbol{w}|\boldsymbol{X},\boldsymbol{Y}) \propto p(\boldsymbol{\gamma},\boldsymbol{\beta}, \boldsymbol{w})\prod_{i=1}^{n}[F_{mix}(y_i|x_i)-F_{mix}(y_i - |x_i)]$
-
-(do we need to get inverse?, i.e. $F_{mix}^{-1}(\cdot)$)
-
-also consider using some sort of DP prior over normal distributions to get nonparametric estimate of link (lose interpretability and computational efficiency, but might have more robustness). One or the other might be better depending on the sample size, complexity of outcome, etc 
-
-* PO, NPO, PPO extension
-use selection for PO/NPO by variable -> see McKinley et al. [@mckinley_bayesian_2015]
-
-* Nonlinear model extension - 
-nonlinear in variables (splines etc) and nonlinear in parameters
-
-* Longitudinal model extension - 
-nonlinear mixed effects (will eventually be used for PK/PD modeling)
-
--->
 
 ## Simulation Set-up
 
-models for comparison:  
+To evaluate the long-run frequency properties of the Bayesian CPM we generate data from two simulation models.
 
-1) Bayes CPM
-2) NPMLE CPM
-3) BNP model
+The first model for a continuous outcome is:
+$$Y=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim N(0,1)$$
+where $\beta_1=1$, $\beta_2=-0.5$, $X_1 \sim Bernoulli(0.5)$ and $X_2 \sim N(0,1)$
 
-To evaluate the performance of our Bayesian CPM we use the following simulation set-up:
+The second simulation model uses identical datasts, but sets values of $Y<0$ to 0 to produce a mixed discrete/continuous outcome. $1000$ datasets were simulated for sample sizes $n=25,50,100,200$ and $400$
 
-\begin{itemize}
-\item Data for $n=50$ observations generated from $Y =\beta X+\varepsilon$ with $\beta=3$, $X \sim Bernoulli(0.5)$, and $\varepsilon \sim Logistic(0,1)$\\ 
-\item 10,000 posterior MCMC draws produced using CPM with logit link [$G(p)=\log(\frac{p}{1-p})$]
-\end{itemize}
+A Bayesian CPM (using which prior??) with the properly specified probit link was fit to each simulated dataset across the two outcome models. For comparison, the NPMLE CPM model <!--and the [BNP model for residuals]--> were also fit to each dataset. The average bias of the posterior medians and standard errors of $\beta_1$ and $\beta_2$ were compared for the three models. In addition, five posterior intercept parameter estimates were compared for the Bayesian and frequentist CPM models.
 
 <!--
-! need a case where likelihood not well approximated by quadratic function (ie NPMLE doesn't work well but Bayes CPM works)
+additional sims
 
-!weird shapes (i.e. mixture distributions); mixture continuous/discrete (lower limit of detection) - see Yuqi's paper for ideas
+need a case where likelihood not well approximated by quadratic function (ie NPMLE doesn't work well but Bayes CPM works)
+
+weird shapes (i.e. mixture distributions); mixture continuous/discrete (lower limit of detection) - see Yuqi's paper for ideas
 -->
 
-[section describing how models were actually fit, i.e. used HMC implemented in Stan, JAGS, dirichletprocess etc]
+Describe posterior predictive checks, Bayesian p-value or some additional Bayesian model checking
+
+
+[section describing how models were actually fit, i.e. used HMC implemented in Stan, JAGS, etc?]
 
 
 ## Case Study
@@ -381,7 +377,8 @@ To evaluate the performance of our Bayesian CPM we use the following simulation 
 <!--
 Use HIV data from Dr. Koethe. Describe background, data and modeling approach
 -->
-The data for the case study were collected from 216 HIV-postive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are proided in ???. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates (age, sex, race, smoking status, study location and CD4 cell count).
+
+The data for the case study were collected from 216 HIV-postive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in ???. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates (age, sex, race, smoking status, study location and CD4 cell count).
 
 The biomarkers of interest are (IL-6) and IL-1-$\beta$. Both biomarkers are skewed and have values censored below a lower limit of detection. To account for skewness and censoring in the outcomes we fit a Bayesian CPM model using a probit link function to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
 
@@ -390,6 +387,7 @@ The biomarkers of interest are (IL-6) and IL-1-$\beta$. Both biomarkers are skew
 
 ## Simulations
 
+!!! seminar slide 19 - 20 !!!
 
 Figure \@ref(fig:simplt1) presents the results of the Bayesian CPM model for the uncensored simulation data 
 
@@ -400,6 +398,9 @@ knitr::include_graphics(file.path(wd,"fig","sim_full.png"))
 ```{r simplt2, fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","sim_cens.png"))
 ```
+
+Describe results from graphs, compare and contrast the 3 models with focus on 
+
 
 ## Case Study 
 
@@ -428,12 +429,46 @@ Bayesian CPMs are a versatile modeling approach with many advantages
 
 Avoid specification of outcome transformation, handle continuous and discrete ordered outcomes, estimate full conditional CDF, conditional mean and quantiles using a single model, provide exact inference 
 
-Limitations
--speed?
--bias for small $n$
+## Limitations
 
-Extensions
--mixture link, Lang
--NPO
--nonlinear models in covariates (splines) and parameters (dose-finding, PK/PD)
--mixed effects
+- bias for small $n$
+- Another potential limitation of the formulation above is that the number of distinct outcome values must be known *a priori*, that is we condition on $J$ categories. Some discussion of extensions using  e.g. Dirichlet process mixture or Polya trees (ref semiparameteric surv. analysis papers?)
+- speed?
+
+## Extensions
+
+
+<!--
+
+## Extending the CPM model
+
+* Mixture link
+-Not sure if mixture link is needed to fit model well. Evidence from previous papers and CPM poster show ok robustness, except for extreme link misspecification
+
+One important component of the CPM is the specification of the link function $F(\cdot)$. Although the CPM model estimated using NPMLE is somewhat robust to link function misspecification it is of interest to determine the degree to which the data support one link function over another. In the Bayesian model, we can model a mixture of several link functions while incorporating the additional uncertainty inherent in allowing a combination of multiple links.
+
+Consider both finite mixture $F_{mix}=w_1F_1 + w_2F_2 + (1-w_1-w_2)F_3$ and BNP prior over normal distributions to get nonparametric estimate of link 
+
+[need to research more about mixture models]
+[add Stan model implementing mixture link]
+Let $F_1 \sim loglog$, $F_2 \sim logistic$, $F_3 \sim cloglog$ be three possible choices for link function. Then $F_{mix}=w_1F_1 + w_2F_2 + (1-w_1-w_2)F_3$ is a mixture. The priors for weights $w_1$, $w_2$, $w_3$ such that $\sum_i w_i = 1$
+
+Incorporating this extension the full model becomes
+
+$p(\boldsymbol{\gamma},\boldsymbol{\beta},\boldsymbol{w}|\boldsymbol{X},\boldsymbol{Y}) \propto p(\boldsymbol{\gamma},\boldsymbol{\beta}, \boldsymbol{w})\prod_{i=1}^{n}[F_{mix}(y_i|x_i)-F_{mix}(y_i - |x_i)]$
+
+(do we need to get inverse?, i.e. $F_{mix}^{-1}(\cdot)$)
+
+also consider using some sort of DP prior over normal distributions to get nonparametric estimate of link (lose interpretability and computational efficiency, but might have more robustness). One or the other might be better depending on the sample size, complexity of outcome, etc 
+
+* PO, NPO, PPO extension
+use selection for PO/NPO by variable -> see McKinley et al. [@mckinley_bayesian_2015]
+or location-shift models -> see Tutz and Berger
+
+* Nonlinear model extension - 
+nonlinear in variables (splines etc) and nonlinear in parameters
+
+* Longitudinal model extension - 
+nonlinear mixed effects (will eventually be used for PK/PD modeling)
+
+-->
