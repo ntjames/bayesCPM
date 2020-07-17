@@ -35,7 +35,7 @@ for (j in 1:25){
   try(assign(nam_a2, readRDS(fp_a2)))
 }
 
-
+# for reference
 if (0){
 # from Liu et al. sim code
 generate.data.1 <- function(seed=1, n=50, p=0.5, alpha=0, beta=c(1.0, -0.5), sigma=1){
@@ -166,9 +166,10 @@ sim1_coeff.fun <- function(sim=5, seed=1, n=50, p=0.5, alpha=0, beta=c(1,-0.5),
 # sim_a1_n - probit link, conc=1/(0.8 + 0.35*max(ncats, 3))
 # sim_a2_n - probit link, conc=1/(2+(ncats/3))
 
-for (i in c(25,50,100,200,400)){
+# combine 5 reps of 200 sims for each setting
+for (n in c(25,50,100,200,400)){
   for (pre in c("sim_n","sim_a1_n","sim_a2_n")){
-  nm0 <- paste0(pre, i)
+  nm0 <- paste0(pre, n)
   nm <- paste0(nm0, "_", 1:5)
   nmlist <- map(nm,get)
   
@@ -185,6 +186,7 @@ for (i in c(25,50,100,200,400)){
 
 rm(cn,cn0,fl,fl0,nmlist,nm,nm0)
 
+#!old
 if(0){
 # seminar sims, probit link, conc=1/ncats
 for (i in c(25,50,100,200,400)){
@@ -321,8 +323,37 @@ conv <- function(summ){
 return(out)
 }
 
+#for (n in c(25,50,100,200,400)){
+#  for (pre in c("sim_n","sim_a1_n","sim_a2_n")){
+    
+nsamps <- c(25,50,100,200,400)
+concs <- c('1/J','1/(0.8 + 0.35*J)','1/(2+(J/3))')
+pres <- c('sim_n','sim_a1_n','sim_a2_n')
+outcome <- c('full.','cens.')
 
-## full dataset
+for (k in seq_along(outcome)){
+  for (j in seq_along(pres)){
+    for (i in nsamps){
+     nm0 <- paste0(pres[j], i)
+     dd <- conv(get(nm0)[[k]]) %>% mutate(n=i, conc=concs[j])
+     nm <- paste0(outcome[k],nm0)
+     #print(nm)
+     assign(nm,dd)
+    }
+  }
+}
+
+## full outcome dataset
+full_dat <- bind_rows( lapply(ls()[grep('full.sim',ls())],get) ) %>%
+  mutate(n=factor(n,levels=c(400,200,100,50,25)))
+
+## censored outcome dataset
+cens_dat <- bind_rows( lapply(ls()[grep('cens.sim',ls())],get) ) %>%
+  mutate(n=factor(n,levels=c(400,200,100,50,25))) %>% filter(!true %in% c(-1.00,-0.33))
+
+
+#! old
+if (0){ # old
 sim_coeff.a0.n25.full <- conv(sim_n25[[1]]) %>% mutate(n=25,conc='1/J')
 sim_coeff.a0.n50.full <- conv(sim_n50[[1]]) %>% mutate(n=50,conc='1/J')
 sim_coeff.a0.n100.full <- conv(sim_n100[[1]]) %>% mutate(n=100,conc='1/J')
@@ -333,7 +364,7 @@ sim_coeff.a1.n25.full <- conv(sim_a1_n25[[1]]) %>% mutate(n=25,conc='1/(0.8 + 0.
 sim_coeff.a1.n50.full <- conv(sim_a1_n50[[1]]) %>% mutate(n=50,conc='1/(0.8 + 0.35*J)')
 sim_coeff.a1.n100.full <- conv(sim_a1_n100[[1]]) %>% mutate(n=100,conc='1/(0.8 + 0.35*J)')
 sim_coeff.a1.n200.full <- conv(sim_a1_n200[[1]]) %>% mutate(n=200,conc='1/(0.8 + 0.35*J)')
-#sim_coeff.a1.n400.full <- conv(sim_a1_n400[[1]]) %>% mutate(n=400,conc='1/(0.8 + 0.35*J)')
+sim_coeff.a1.n400.full <- conv(sim_a1_n400[[1]]) %>% mutate(n=400,conc='1/(0.8 + 0.35*J)')
 
 sim_coeff.a2.n25.full <- conv(sim_a2_n25[[1]]) %>% mutate(n=25,conc='1/(2+(J/3))')
 sim_coeff.a2.n50.full <- conv(sim_a2_n50[[1]]) %>% mutate(n=50,conc='1/(2+(J/3))')
@@ -341,25 +372,26 @@ sim_coeff.a2.n100.full <- conv(sim_a2_n100[[1]]) %>% mutate(n=100,conc='1/(2+(J/
 sim_coeff.a2.n200.full <- conv(sim_a2_n200[[1]]) %>% mutate(n=200,conc='1/(2+(J/3))')
 sim_coeff.a2.n400.full <- conv(sim_a2_n400[[1]]) %>% mutate(n=400,conc='1/(2+(J/3))')
 
-
-
-full_dat <- bind_rows(sim_coeff.a0.n25.full,
-                      sim_coeff.a0.n50.full,
-                      sim_coeff.a0.n100.full,
-                      sim_coeff.a0.n200.full,
-                      sim_coeff.a0.n400.full,
-                      sim_coeff.a1.n25.full,
-                      sim_coeff.a1.n50.full,
-                      sim_coeff.a1.n100.full,
+full_dat_old <- bind_rows(sim_coeff.a1.n100.full,
                       sim_coeff.a1.n200.full,
-                      #sim_coeff.a1.n400.full,
-                      sim_coeff.a2.n25.full,
-                      sim_coeff.a2.n50.full,
+                      sim_coeff.a1.n25.full,
+                      sim_coeff.a1.n400.full,
+                      sim_coeff.a1.n50.full,
                       sim_coeff.a2.n100.full,
                       sim_coeff.a2.n200.full,
-                      sim_coeff.a2.n400.full
-                      ) %>%
+                      sim_coeff.a2.n25.full,
+                      sim_coeff.a2.n400.full,
+                      sim_coeff.a2.n50.full,
+                      sim_coeff.a0.n100.full,
+                      sim_coeff.a0.n200.full,
+                      sim_coeff.a0.n25.full,
+                      sim_coeff.a0.n400.full,
+                      sim_coeff.a0.n50.full) %>%
                       mutate(n=factor(n,levels=c(400,200,100,50,25)))
+
+all.equal(full_dat_old,full_dat)
+
+}
 
 full_plt_dat <- full_dat %>% select(bias.est,bias.se,param,n,conc) %>%
   pivot_longer(cols=c(bias.est,bias.se))
@@ -398,6 +430,8 @@ full_plt_dat %>%
 # sim_coeff.summary(sim_n200[[2]])
 # sim_coeff.summary(sim_n400[[2]])
 
+#! old
+if(1){
 sim_coeff.a0.n25.cens <- conv(sim_n25[[2]]) %>% mutate(n=25,conc='1/J')
 sim_coeff.a0.n50.cens <- conv(sim_n50[[2]]) %>% mutate(n=50,conc='1/J')
 sim_coeff.a0.n100.cens <- conv(sim_n100[[2]]) %>% mutate(n=100,conc='1/J')
@@ -408,7 +442,7 @@ sim_coeff.a1.n25.cens <- conv(sim_a1_n25[[2]]) %>% mutate(n=25,conc='1/(0.8 + 0.
 sim_coeff.a1.n50.cens <- conv(sim_a1_n50[[2]]) %>% mutate(n=50,conc='1/(0.8 + 0.35*J)')
 sim_coeff.a1.n100.cens <- conv(sim_a1_n100[[2]]) %>% mutate(n=100,conc='1/(0.8 + 0.35*J)')
 sim_coeff.a1.n200.cens <- conv(sim_a1_n200[[2]]) %>% mutate(n=200,conc='1/(0.8 + 0.35*J)')
-#sim_coeff.a1.n400.cens <- conv(sim_a1_n400[[2]]) %>% mutate(n=400,conc='1/(0.8 + 0.35*J)')
+sim_coeff.a1.n400.cens <- conv(sim_a1_n400[[2]]) %>% mutate(n=400,conc='1/(0.8 + 0.35*J)')
 
 sim_coeff.a2.n25.cens <- conv(sim_a2_n25[[2]]) %>% mutate(n=25,conc='1/(2+(J/3))')
 sim_coeff.a2.n50.cens <- conv(sim_a2_n50[[2]]) %>% mutate(n=50,conc='1/(2+(J/3))')
@@ -416,25 +450,26 @@ sim_coeff.a2.n100.cens <- conv(sim_a2_n100[[2]]) %>% mutate(n=100,conc='1/(2+(J/
 sim_coeff.a2.n200.cens <- conv(sim_a2_n200[[2]]) %>% mutate(n=200,conc='1/(2+(J/3))')
 sim_coeff.a2.n400.cens <- conv(sim_a2_n400[[2]]) %>% mutate(n=400,conc='1/(2+(J/3))')
 
-
-
-cens_dat <- bind_rows(sim_coeff.a0.n25.cens,
-                      sim_coeff.a0.n50.cens,
-                      sim_coeff.a0.n100.cens,
-                      sim_coeff.a0.n200.cens,
-                      sim_coeff.a0.n400.cens,
-                      sim_coeff.a1.n25.cens,
-                      sim_coeff.a1.n50.cens,
-                      sim_coeff.a1.n100.cens,
+cens_dat_old <- bind_rows(sim_coeff.a1.n100.cens,
                       sim_coeff.a1.n200.cens,
-                      #sim_coeff.a1.n400.cens,
-                      sim_coeff.a2.n25.cens,
-                      sim_coeff.a2.n50.cens,
+                      sim_coeff.a1.n25.cens,
+                      sim_coeff.a1.n400.cens,
+                      sim_coeff.a1.n50.cens,
                       sim_coeff.a2.n100.cens,
                       sim_coeff.a2.n200.cens,
-                      sim_coeff.a2.n400.cens
-                      ) %>%
+                      sim_coeff.a2.n25.cens,
+                      sim_coeff.a2.n400.cens,
+                      sim_coeff.a2.n50.cens,
+                      sim_coeff.a0.n100.cens,
+                      sim_coeff.a0.n200.cens,
+                      sim_coeff.a0.n25.cens,
+                      sim_coeff.a0.n400.cens,
+                      sim_coeff.a0.n50.cens) %>%
   mutate(n=factor(n,levels=c(400,200,100,50,25))) %>% filter(!true %in% c(-1.00,-0.33))
+
+all.equal(cens_dat_old,cens_dat)
+}
+
 
 
 cens_plt_dat <- cens_dat %>% select(bias.est,bias.se,param,n,conc) %>%
