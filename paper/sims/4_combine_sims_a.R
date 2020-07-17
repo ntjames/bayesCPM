@@ -1,8 +1,6 @@
 rm(list=ls())
-libs <- c("rstan", "dplyr", "stringr", "readr", "tidyr","purrr", "ggplot2")
+libs <- c("rstan", "dplyr", "stringr", "readr", "tidyr", "purrr", "ggplot2")
 invisible(lapply(libs, library, character.only = TRUE))
-
-# set directories
 
 #seminar directory (sims for 1/J)
 sdir <- file.path("/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm/biostat_sem")
@@ -19,7 +17,7 @@ figdir <- file.path(pdir,"fig")
 # load sim array
 simarray <- readRDS(file.path(sdir,"sims","bayes_cpm_simarray.rds"))
 
-
+# load sim data
 for (j in 1:25){
   # load sims from seminar 
   nam <- paste0("sim_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
@@ -34,6 +32,8 @@ for (j in 1:25){
   try(assign(nam_a1, readRDS(fp_a1)))
   try(assign(nam_a2, readRDS(fp_a2)))
 }
+
+rm(nam,nam_a1,nam_a2,fp,fp_a1,fp_a2,j)
 
 # for reference
 if (0){
@@ -184,66 +184,11 @@ for (n in c(25,50,100,200,400)){
   }
 }
 
-rm(cn,cn0,fl,fl0,nmlist,nm,nm0)
+rm(cn,cn0,fl,fl0,nmlist,nm,nm0,n,pre)
 
-#!old
 if(0){
-# seminar sims, probit link, conc=1/ncats
-for (i in c(25,50,100,200,400)){
-nm0 <- paste0("sim_n", i)
-nm <- paste0(nm0, "_", 1:5)
-nmlist <- map(nm,get)
-
-fl0 <- map(nmlist, function(x) x[[1]])
-cn0 <- map(nmlist, function(x) x[[2]])
-
-fl <- pmap(fl0,rbind)
-cn <- pmap(cn0,rbind)
-
-assign(nm0,list(full=fl,cens=cn))
-rm(list=nm)
-
-}
-
-rm(cn,cn0,fl,fl0,nmlist,nm,nm0)
-
-# sim a1, probit link, conc=1/(0.8 + 0.35*max(ncats, 3))
-for (i in c(25,50,100,200,400)){
-  nm0 <- paste0("sim_a1_n", i)
-  nm <- paste0(nm0, "_", 1:5)
-  nmlist <- map(nm,get)
-  
-  fl0 <- map(nmlist, function(x) x[[1]])
-  cn0 <- map(nmlist, function(x) x[[2]])
-  
-  fl <- pmap(fl0,rbind)
-  cn <- pmap(cn0,rbind)
-  
-  assign(nm0,list(full=fl,cens=cn))
-  rm(list=nm)
-}
-
-rm(cn,cn0,fl,fl0,nmlist,nm,nm0)
-
-# sim a2, probit link, conc=1/(2+(ncats/3))
-for (i in c(25,50,100,200,400)){
-  nm0 <- paste0("sim_a2_n", i)
-  nm <- paste0(nm0, "_", 1:5)
-  nmlist <- map(nm,get)
-  
-  fl0 <- map(nmlist, function(x) x[[1]])
-  cn0 <- map(nmlist, function(x) x[[2]])
-  
-  fl <- pmap(fl0,rbind)
-  cn <- pmap(cn0,rbind)
-  
-  assign(nm0,list(full=fl,cens=cn))
-  rm(list=nm)
-}
-
-rm(cn,cn0,fl,fl0,nmlist,nm,nm0)
-}
-
+# function to summarize sims
+# first 2 rows are betas, next 5 rows are log.y values
 sim_coeff.summary <- function(result, md=FALSE, beta=c(1, -0.5),
                               alpha.y=c(-1, -0.33, 0.5, 1.33, 2)){
 
@@ -305,187 +250,206 @@ sim_coeff.summary <- function(result, md=FALSE, beta=c(1, -0.5),
 
 }
 
-# first 2 rows are betas, next 5 rows are log.y values
 
+# function to convert summary to data.frame, get bias, and rename rows & cols
 conv <- function(summ){
   out0<-sim_coeff.summary(summ) %>%
     as.data.frame(stringsAsFactors=FALSE) %>%
     mutate_all(as.numeric)
-
+  
   names(out0)<-c("true","mean.est","mean.se","emp.se","mse")
-
+  
   out<-out0 %>% mutate(bias.est=100*(mean.est-true)/true,
                        bias.se=100*(mean.se-emp.se)/emp.se,
                        param=c("beta[1]","beta[2]",
-                             "gamma[y[1]]","gamma[y[2]]",
-                             "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
-
-return(out)
+                               "gamma[y[1]]","gamma[y[2]]",
+                               "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
+  return(out)
+}
 }
 
-#for (n in c(25,50,100,200,400)){
-#  for (pre in c("sim_n","sim_a1_n","sim_a2_n")){
-    
+if(0){ # scratch
+head(sim_n50[[1]][[1]])
+head(sim_n50[[1]][[1]]- matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2) )
+head((sim_n50[[1]][[1]]- matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2))/
+       abs(matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2)))
+
+
+matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2)
+
+bt - matrix(beta,byrow=TRUE,nrow=nrow(bt),ncol=length(beta))
+  
+apply(sim_n50[[1]][[1]],)
+head(sim_n50[[1]][[3]])
+head(apply(sim_n50[[1]][[1]], 2, function(x) sd(x, na.rm=TRUE)))
+
+
+alph.cln <- ifelse(is.infinite(sim_n50[[1]][[4]]), NA, sim_n50[[1]][[4]])
+
+head(alph.cln)
+
+head(alph.cln - matrix(c(-1, -0.33, 0.5, 1.33, 2),byrow=TRUE,nrow=1000,ncol=5))
+
+}
+
+sim_summary <- function(result, md=TRUE, beta=c(1, -0.5),
+                              alpha.y=c(-1, -0.33, 0.5, 1.33, 2)){
+  
+  # mn.beta.est or md.beta.est
+  bt <- result[[2]] # result$mn.beta.est
+  if(md) bt <- result[[1]] #result$md.beta.est
+  
+  #alph.cln <- ifelse(is.infinite(result$alpha.y), NA, result$alpha.y)
+  alph.cln <- ifelse(is.infinite(result[[4]]), NA, result[[4]])
+  
+  truebt <- matrix(beta,byrow=TRUE,nrow=nrow(bt),ncol=length(beta))
+  truealph <- matrix(alpha.y,byrow=TRUE,nrow=nrow(alph.cln),ncol=length(alpha.y))
+  
+  # bias in mean or median
+  bias.bt <- bt - truebt
+  pct.bias.bt <- 100*(bias.bt/abs(truebt))
+  
+  # bias in cutpoints
+  bias.alpha <- alph.cln - truealph
+  pct.bias.alpha <- 100*(bias.alpha/abs(truealph))
+  
+  # average percent bias
+  result <- colMeans(cbind(pct.bias.bt,pct.bias.alpha), na.rm=TRUE) %>% 
+    t() %>% data.frame()
+  
+  names(result)<-c("beta[1]","beta[2]",
+                   "gamma[y[1]]","gamma[y[2]]",
+                   "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]")
+  return(result)
+}
+
+sim_summary(sim_a2_n25[[1]]) 
+
+
+
+# get summaries and convert data for all simulations
 nsamps <- c(25,50,100,200,400)
 concs <- c('1/J','1/(0.8 + 0.35*J)','1/(2+(J/3))')
 pres <- c('sim_n','sim_a1_n','sim_a2_n')
 outcome <- c('full.','cens.')
 
+# old
+if(0){ 
 for (k in seq_along(outcome)){
   for (j in seq_along(pres)){
     for (i in nsamps){
      nm0 <- paste0(pres[j], i)
      dd <- conv(get(nm0)[[k]]) %>% mutate(n=i, conc=concs[j])
      nm <- paste0(outcome[k],nm0)
-     #print(nm)
      assign(nm,dd)
     }
   }
 }
 
+}
+
+for (k in seq_along(outcome)){
+  for (j in seq_along(pres)){
+    for (i in nsamps){
+      nm0 <- paste0(pres[j], i)
+      dd <- sim_summary(get(nm0)[[k]]) %>% mutate(n=i, conc=concs[j])
+      nm <- paste0(outcome[k],nm0)
+      assign(nm,dd)
+    }
+  }
+}
+
+#full.sim_a1_n100
+
 ## full outcome dataset
 full_dat <- bind_rows( lapply(ls()[grep('full.sim',ls())],get) ) %>%
   mutate(n=factor(n,levels=c(400,200,100,50,25)))
 
+# for plotting
+full_plt_dat <- full_dat %>% 
+  pivot_longer(cols=c("beta[1]","beta[2]",
+               "gamma[y[1]]","gamma[y[2]]",
+               "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
+
+# old
+# full_plt_dat <- full_dat %>% select(bias.est,bias.se,param,n,conc) %>%
+#   pivot_longer(cols=c(bias.est,bias.se))
+
 ## censored outcome dataset
 cens_dat <- bind_rows( lapply(ls()[grep('cens.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25))) %>% filter(!true %in% c(-1.00,-0.33))
+  mutate(n=factor(n,levels=c(400,200,100,50,25))) %>%
+  select(-c("gamma[y[1]]","gamma[y[2]]"))
 
+#old
+# cens_dat <- bind_rows( lapply(ls()[grep('cens.sim',ls())],get) ) %>%
+#   mutate(n=factor(n,levels=c(400,200,100,50,25))) %>% 
+#   filter(!true %in% c(-1.00,-0.33))
 
-#! old
-if (0){ # old
-sim_coeff.a0.n25.full <- conv(sim_n25[[1]]) %>% mutate(n=25,conc='1/J')
-sim_coeff.a0.n50.full <- conv(sim_n50[[1]]) %>% mutate(n=50,conc='1/J')
-sim_coeff.a0.n100.full <- conv(sim_n100[[1]]) %>% mutate(n=100,conc='1/J')
-sim_coeff.a0.n200.full <- conv(sim_n200[[1]]) %>% mutate(n=200,conc='1/J')
-sim_coeff.a0.n400.full <- conv(sim_n400[[1]]) %>% mutate(n=400,conc='1/J')
+# for plotting
+cens_plt_dat <- cens_dat %>%  
+  pivot_longer(cols=c("beta[1]","beta[2]",
+                      "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
 
-sim_coeff.a1.n25.full <- conv(sim_a1_n25[[1]]) %>% mutate(n=25,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n50.full <- conv(sim_a1_n50[[1]]) %>% mutate(n=50,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n100.full <- conv(sim_a1_n100[[1]]) %>% mutate(n=100,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n200.full <- conv(sim_a1_n200[[1]]) %>% mutate(n=200,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n400.full <- conv(sim_a1_n400[[1]]) %>% mutate(n=400,conc='1/(0.8 + 0.35*J)')
+# cens_plt_dat <- cens_dat %>% select(bias.est,bias.se,param,n,conc) %>%
+#   pivot_longer(cols=c(bias.est,bias.se))
 
-sim_coeff.a2.n25.full <- conv(sim_a2_n25[[1]]) %>% mutate(n=25,conc='1/(2+(J/3))')
-sim_coeff.a2.n50.full <- conv(sim_a2_n50[[1]]) %>% mutate(n=50,conc='1/(2+(J/3))')
-sim_coeff.a2.n100.full <- conv(sim_a2_n100[[1]]) %>% mutate(n=100,conc='1/(2+(J/3))')
-sim_coeff.a2.n200.full <- conv(sim_a2_n200[[1]]) %>% mutate(n=200,conc='1/(2+(J/3))')
-sim_coeff.a2.n400.full <- conv(sim_a2_n400[[1]]) %>% mutate(n=400,conc='1/(2+(J/3))')
+# labels and plot params
+#! nlabs <- c("average bias of \nposterior median (%)","average bias of \nposterior se (%)")
+#! names(nlabs)<-c("bias.est","bias.se")
 
-full_dat_old <- bind_rows(sim_coeff.a1.n100.full,
-                      sim_coeff.a1.n200.full,
-                      sim_coeff.a1.n25.full,
-                      sim_coeff.a1.n400.full,
-                      sim_coeff.a1.n50.full,
-                      sim_coeff.a2.n100.full,
-                      sim_coeff.a2.n200.full,
-                      sim_coeff.a2.n25.full,
-                      sim_coeff.a2.n400.full,
-                      sim_coeff.a2.n50.full,
-                      sim_coeff.a0.n100.full,
-                      sim_coeff.a0.n200.full,
-                      sim_coeff.a0.n25.full,
-                      sim_coeff.a0.n400.full,
-                      sim_coeff.a0.n50.full) %>%
-                      mutate(n=factor(n,levels=c(400,200,100,50,25)))
+pltw<-10; plth<-5; atxtsz<-9; fctsiz<-13
 
-all.equal(full_dat_old,full_dat)
-
-}
-
-full_plt_dat <- full_dat %>% select(bias.est,bias.se,param,n,conc) %>%
-  pivot_longer(cols=c(bias.est,bias.se))
-
-nlabs <- c("average bias of \nposterior median (%)","average bias of \nposterior se (%)")
-names(nlabs)<-c("bias.est","bias.se")
-
-pltw<-10
-plth<-5
-atxtsz<-9
-fctsiz<-13
-
-full_plt_dat %>%
+# full outcome plot
+full_plt_dat %>% 
   ggplot(aes(x=value,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
-  facet_grid(name ~ param,
-             labeller = labeller(param=label_parsed,
-                                 name=nlabs)) +
-  ylab("sample size")+
-  theme(axis.title.x=element_blank(),
-        axis.title.y = element_text(size=fctsiz),
-        axis.text =  element_text(size=atxtsz),
-        strip.text = element_text(size=fctsiz),
-        strip.text.y = element_text(angle=0))
-
-#ggsave(file.path(figdir,"sim_param_full2.png"),width=pltw,height=plth)
+  facet_grid(. ~ name,labeller = labeller(name=label_parsed))+
+  xlab("average percent bias of posterior median")+ylab("sample size")+
+    theme(axis.title.x = element_text(size=fctsiz),
+          axis.title.y = element_text(size=fctsiz),
+          axis.text =  element_text(size=atxtsz),
+          strip.text = element_text(size=fctsiz),
+          strip.text.y = element_text(angle=0))
 
 
+# full_plt_dat %>%
+#   ggplot(aes(x=value,y=n,col=conc,shape=conc)) +
+#   geom_point(size=3,alpha=0.75)  +
+#   facet_grid(name ~ param, 
+#              labeller = labeller(param=label_parsed,
+#                                  name=nlabs)) +
+#   ylab("sample size")+
+#   theme(axis.title.x=element_blank(),
+#         axis.title.y = element_text(size=fctsiz),
+#         axis.text =  element_text(size=atxtsz),
+#         strip.text = element_text(size=fctsiz),
+#         strip.text.y = element_text(angle=0))
 
-#sim_n100[[1]]["md.beta.est"]
+ggsave(file.path(figdir,"sim_param_full2.png"),width=pltw,height=plth)
 
-## outcome censored at y=0
-# sim_coeff.summary(sim_n25[[2]])
-# sim_coeff.summary(sim_n50[[2]])
-# sim_coeff.summary(sim_n100[[2]])
-# sim_coeff.summary(sim_n200[[2]])
-# sim_coeff.summary(sim_n400[[2]])
-
-#! old
-if(1){
-sim_coeff.a0.n25.cens <- conv(sim_n25[[2]]) %>% mutate(n=25,conc='1/J')
-sim_coeff.a0.n50.cens <- conv(sim_n50[[2]]) %>% mutate(n=50,conc='1/J')
-sim_coeff.a0.n100.cens <- conv(sim_n100[[2]]) %>% mutate(n=100,conc='1/J')
-sim_coeff.a0.n200.cens <- conv(sim_n200[[2]]) %>% mutate(n=200,conc='1/J')
-sim_coeff.a0.n400.cens <- conv(sim_n400[[2]]) %>% mutate(n=400,conc='1/J')
-
-sim_coeff.a1.n25.cens <- conv(sim_a1_n25[[2]]) %>% mutate(n=25,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n50.cens <- conv(sim_a1_n50[[2]]) %>% mutate(n=50,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n100.cens <- conv(sim_a1_n100[[2]]) %>% mutate(n=100,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n200.cens <- conv(sim_a1_n200[[2]]) %>% mutate(n=200,conc='1/(0.8 + 0.35*J)')
-sim_coeff.a1.n400.cens <- conv(sim_a1_n400[[2]]) %>% mutate(n=400,conc='1/(0.8 + 0.35*J)')
-
-sim_coeff.a2.n25.cens <- conv(sim_a2_n25[[2]]) %>% mutate(n=25,conc='1/(2+(J/3))')
-sim_coeff.a2.n50.cens <- conv(sim_a2_n50[[2]]) %>% mutate(n=50,conc='1/(2+(J/3))')
-sim_coeff.a2.n100.cens <- conv(sim_a2_n100[[2]]) %>% mutate(n=100,conc='1/(2+(J/3))')
-sim_coeff.a2.n200.cens <- conv(sim_a2_n200[[2]]) %>% mutate(n=200,conc='1/(2+(J/3))')
-sim_coeff.a2.n400.cens <- conv(sim_a2_n400[[2]]) %>% mutate(n=400,conc='1/(2+(J/3))')
-
-cens_dat_old <- bind_rows(sim_coeff.a1.n100.cens,
-                      sim_coeff.a1.n200.cens,
-                      sim_coeff.a1.n25.cens,
-                      sim_coeff.a1.n400.cens,
-                      sim_coeff.a1.n50.cens,
-                      sim_coeff.a2.n100.cens,
-                      sim_coeff.a2.n200.cens,
-                      sim_coeff.a2.n25.cens,
-                      sim_coeff.a2.n400.cens,
-                      sim_coeff.a2.n50.cens,
-                      sim_coeff.a0.n100.cens,
-                      sim_coeff.a0.n200.cens,
-                      sim_coeff.a0.n25.cens,
-                      sim_coeff.a0.n400.cens,
-                      sim_coeff.a0.n50.cens) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25))) %>% filter(!true %in% c(-1.00,-0.33))
-
-all.equal(cens_dat_old,cens_dat)
-}
-
-
-
-cens_plt_dat <- cens_dat %>% select(bias.est,bias.se,param,n,conc) %>%
-  pivot_longer(cols=c(bias.est,bias.se))
-
-cens_plt_dat %>%
-  ggplot(aes(x=value,y=n,color=conc,shape=conc)) +
+# censored outcome plot
+cens_plt_dat %>% 
+  ggplot(aes(x=value,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
-  facet_grid(name ~ param,
-             labeller = labeller(param=label_parsed,
-                                 name=nlabs)) +
-  ylab("sample size")+
-  theme(axis.title.x=element_blank(),
+  facet_grid(. ~ name,labeller = labeller(name=label_parsed))+
+  xlab("average percent bias of posterior median")+ylab("sample size")+
+  theme(axis.title.x = element_text(size=fctsiz),
         axis.title.y = element_text(size=fctsiz),
         axis.text =  element_text(size=atxtsz),
         strip.text = element_text(size=fctsiz),
         strip.text.y = element_text(angle=0))
 
-#ggsave(file.path(figdir,"sim_param_cens2.png"),width=pltw,height=plth)
+# cens_plt_dat %>%
+#   ggplot(aes(x=value,y=n,color=conc,shape=conc)) +
+#   geom_point(size=3,alpha=0.75)  +
+#   facet_grid(name ~ param,
+#              labeller = labeller(param=label_parsed,
+#                                  name=nlabs)) +
+#   ylab("sample size")+
+#   theme(axis.title.x=element_blank(),
+#         axis.title.y = element_text(size=fctsiz),
+#         axis.text =  element_text(size=atxtsz),
+#         strip.text = element_text(size=fctsiz),
+#         strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_param_cens2.png"),width=pltw,height=plth)
