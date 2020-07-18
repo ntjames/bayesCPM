@@ -11,7 +11,8 @@
 #' dat1_stan <- mkStanDat(dat1, "outcome_var", c("pred1","pred2"), 2)
 
 #' @export
-mkStanDat <- function(ds, outcome, preds, link){
+mkStanDat<-function(ds, outcome, preds, link, conc=function(n) 1/n){
+  require(dplyr)
 
   N <- nrow(ds)
 
@@ -28,7 +29,7 @@ mkStanDat <- function(ds, outcome, preds, link){
 
   K <- ncol(Q)
 
-  alpha <- 1/ncat
+  alpha <- conc(ncat)
 
   ydat <- as.character(y) %>% as.numeric()
 

@@ -1,10 +1,10 @@
 Package: bayesCPM
 Title: Bayesian Cumulative Probability Models For Continuous and Mixed Outcomes
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: person("Nathan T.", "James", email = "nathan.t.james@vanderbilt.edu", role = c("aut", "cre"))
 Description: Bayesian cumulative probability models (CPMs) for continuous and
     mixed outcomes. This package includes functions to fit a Bayesian CPM using
-    the R interface to Stan.
+    the R interface to Stan and calculate posterior CDF, mean, and quantiles.
 License: What license it uses
 Encoding: UTF-8
 LazyData: true
