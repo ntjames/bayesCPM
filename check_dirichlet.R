@@ -3,6 +3,20 @@
 library(plotly)
 library(tibble)
 library(MCMCpack)
+library(gtools)
+
+# from Wikipedia
+# Values of the concentration parameter above 1 prefer variates that are dense, evenly distributed distributions, i.e. all the values within a single sample are similar to each other. Values of the concentration parameter below 1 prefer sparse distributions, i.e. most of the values within a single sample will be close to 0, and the vast majority of the mass will be concentrated in a few of the values. 
+
+# alpha (conc) = 1, uniform over discrete dists with 4 categories
+d1<-rdirichlet(20, c(1,1,1,1))
+
+# alpha (conc) = 15, discrete dists with 4 balanced category probabilities more likely
+d2<-rdirichlet(20, c(15,15,15,15))
+
+# alpha (conc) = 0.5, discrete dists with 4 unbalanced category probabilities more likely
+d3<-rdirichlet(20, c(0.5,0.5,0.5,0.5))
+
 
 a<-rdirichlet(5,rep(1,7)) 
 b<-rdirichlet(5,rep(10,7)) 
@@ -52,6 +66,12 @@ alp<-c(1,1,1,1)
 thet<-c(.1,.2,.6,.1)
 
 (gamma(sum(alp))/prod(sapply(alp,gamma)))*prod(thet^(alp-1))
+
+
+
+
+
+
 
 
 # prior
