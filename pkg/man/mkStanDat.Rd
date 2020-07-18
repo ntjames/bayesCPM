@@ -4,7 +4,7 @@
 \alias{mkStanDat}
 \title{Format data for CPM models using Stan}
 \usage{
-mkStanDat(ds, outcome, preds, link)
+mkStanDat(ds, outcome, preds, link, conc = function(n) 1/n)
 }
 \arguments{
 \item{ds}{a data frame}
@@ -15,6 +15,9 @@ mkStanDat(ds, outcome, preds, link)
 
 \item{link}{the link function to be used (1 = logistic; 2 = probit;
 3 = loglog; 4 = cloglog; 5 = cauchit)}
+
+\item{conc}{concentration parameter for Dirichlet distribution as a function
+of the number of categories, n. The default is 1/n}
 }
 \value{
 a list containing the data to be used for the model
