@@ -1,0 +1,18 @@
+simulations
+
+1) model misspecified? using normal error, but fitting with logistic link
+
+2) with default draws what is MCMC simulation error for intercept coefs? are diffs just due to sim error
+
+3) compare posterior mode coef(b,stat='mode') to MLE from lrm()
+
+4) got some warning messages after running through the simulation loops
+add checks for convergence, etc of models in simulations
+
+5) why use closeness to MLE to determine prior?
+
+either smallest prior or
+prior based on minimizing contrib from dirichlet & Jacobian
+should be closest to MLE
+
+not clear why this is best
