@@ -13,12 +13,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 
 #rm(list=ls())
-libs <- c("rstan", "rms", "dplyr", "stringr", "readr", "pammtools")
+libs <- c("rstan", "rms", "dplyr", "stringr", "readr", "pammtools", "bayesCPM")
 invisible(lapply(libs, library, character.only = TRUE))
 
 # CPM functions
-dir <- file.path("/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm")
-source(file.path(dir,"cpm_functions.r"))
+#dir <- file.path("/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm"#)
+#source(file.path(dir,"cpm_functions.r"))
 
 # dir for figures
 figdir <- file.path(dir,"biostat_sem","fig")
@@ -30,7 +30,7 @@ options(mc.cores=parallel::detectCores())
 ```{r}
 # compile/read in CPM models
 # concentration (alpha) is given as a scalar parameter along with in data
-ord_mod1 <- readRDS(file.path(dir,"ordinal_model_1.rds"))
+#ord_mod1 <- readRDS(file.path(dir,"ordinal_model_1.rds"))
 ```
 
 <!-- similar to orm() example 4a -->
@@ -49,9 +49,13 @@ dat3 <- data.frame(y=ordered(y),y_num=y,x1)
 # mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=2) # probit link
 mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=1)
 
-bg <- sampling(ord_mod1, data=mod_data, seed=6472, 
+bg <- bayes_cpm(mod_data, seed=6472, 
                  iter=3250, warmup=2000, chains=4,
                  control = list(adapt_delta = 0.8))
+
+#bg <- sampling(ord_mod1, data=mod_data, seed=6472, 
+#                 iter=3250, warmup=2000, chains=4,
+#                 control = list(adapt_delta = 0.8))
 ```
 
 
@@ -111,5 +115,40 @@ ggsave(file.path(figdir,"cond_md2.png"),width=6,height=3)
 q50_x0_samps<-q50_dat %>% filter(x1==0) %>% pull(qtile)
 
 mean(q50_x0_samps > 0.25 | q50_x0_samps < -0.25)
+
+```
+
+
+```{r}
+# posterior predictive check
+# cdf_dat <- getCDF(bg, mod_data, newdata=data.frame(x1=rnorm(10)),summ=FALSE) 
+cdf_dat <- getCDF(bg, mod_data, newdata=data.frame(x1=x1),summ=FALSE) 
+
+y_rep <- cdf_dat %>% filter(Var1 %in% LETTERS[1:10]) %>% group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
+
+ggplot(data=y_rep, aes(x=yval, group=Var1)) + 
+  geom_density(col="lightblue") +
+  geom_density(data=data.frame(yval=y), aes(x=yval),color="blue", inherit.aes = FALSE)
+```
+
+```{r}
+x2 <- rexp(n)
+y2 <- 0.9*x1 + 1.7*x2 + rlogis(n)
+dat4 <- data.frame(y=ordered(y2),y_num=y2,x1,x2)
+
+# mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=2) # probit link
+mod_data4  <- mkStanDat(dat4, outcome="y", preds = c("x1","x2"), link=1)
+
+bg2 <- bayes_cpm(mod_data4, seed=2782, 
+                 iter=3250, warmup=2000, chains=4,
+                 control = list(adapt_delta = 0.8))
+
+cdf_dat2 <- getCDF(bg2, mod_data4, newdata=data.frame(x1=x1,x2=x2),summ=FALSE) 
+
+y_rep2 <- cdf_dat2 %>% filter(Var1 %in% LETTERS[1:10]) %>% group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
+
+ggplot(data=y_rep2, aes(x=yval, group=Var1)) + 
+  geom_density(col="lightblue") +
+  geom_density(data=data.frame(yval=y2), aes(x=yval),color="blue", inherit.aes = FALSE)
 
 ```
