@@ -1,0 +1,236 @@
+---
+title: "Posterior check (Probability scale residuals) Bayesian CPM example"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#rm(list=ls())
+libs <- c("rstan", "rms", "dplyr", "stringr", "readr", "pammtools", "bayesCPM")
+invisible(lapply(libs, library, character.only = TRUE))
+
+dir <- file.path("/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm")
+# CPM functions
+#source(file.path(dir,"cpm_functions.r"))
+
+# dir for figures
+#figdir <- file.path(dir,"biostat_sem","fig")
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+<!-- similar to orm() example 4a -->
+
+```{r ex4a.1, cache=TRUE, eval=FALSE}
+# Compare predicted mean with ols for a continuous x
+set.seed(1567)
+n <- 100
+x1 <- rnorm(n)
+# y <- 0.9*x1 + rnorm(n) # old w/ normal error
+y <- 0.9*x1 + rlogis(n)
+dat3 <- data.frame(y=ordered(y),y_num=y,x1)
+```
+
+```{r ex4a.2, cache=TRUE, eval=FALSE}
+# mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=2) # probit link
+mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=1)
+
+bg <- bayes_cpm(mod_data, seed=6472, 
+                 iter=3250, warmup=2000, chains=4,
+                 control = list(adapt_delta = 0.8))
+
+#bg <- sampling(ord_mod1, data=mod_data, seed=6472, 
+#                 iter=3250, warmup=2000, chains=4,
+#                 control = list(adapt_delta = 0.8))
+```
+
+```{r, eval=FALSE}
+#plots, etc for biostat seminar
+bg_df <- as.data.frame(bg)
+
+#head(bg_df[,c("cutpoints[98]")])
+#head(bg_df[,c("b[1]")])
+
+head(bg_df[,c("cutpoints[1]","cutpoints[2]","cutpoints[3]","cutpoints[98]","cutpoints[99]","b[1]")])
+```
+
+```{r, eval=FALSE}
+cdf_bg <- getCDF(bg, mod_data, newdata=data.frame(x1=c(-2,0,2))) 
+
+cdf_bg %>% filter(ndrow %in% c(1,2,3)) %>% ggplot(aes(group=ndrow)) +
+  geom_stepribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, 
+                      fill=factor(ndrow)) , alpha=0.4) +
+  geom_step(aes(x=yval, y=med_cdf,color=factor(ndrow))) +
+  xlab("y") + ylab("Conditional CDF") + 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -2", "x = 0", "x = 2")) + 
+  scale_color_discrete(name = "covariate value", 
+                       labels=c("x = -2", "x = 0", "x = 2")) +
+  stat_function(fun=plogis,color="darkgreen",
+                linetype=2, alpha=0.4) + 
+  stat_function(fun=function(x) plogis(x,2*0.9), color="blue",
+                linetype=2, alpha=0.4) +
+  stat_function(fun=function(x) plogis(x,-2*0.9),color="red",
+                linetype=2, alpha=0.4)
+
+ggsave(file.path(figdir,"cond_cdf2.png"),width=6,height=3)
+
+
+mn_dat<-getMean(bg, mod_data, newdata=data.frame(x1=c(-2,0,2)),summ=FALSE)
+
+ggplot(mn_dat,aes(x=mn,fill=factor(x1)))+geom_density(alpha=0.6,color=NA)+ 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -2", "x = 0", "x = 2")) + 
+  xlab("") + ylab("conditional mean density")
+
+ggsave(file.path(figdir,"cond_mn2.png"),width=6,height=3)
+
+mn_dat %>% filter(x1==2) %>% pull(mn) %>% quantile(probs=c(0.025,0.975))
+
+q50_dat <- getQuantile(bg, mod_data, newdata=data.frame(x1=c(-2,0,2)),q=0.50,summ=FALSE)
+
+ggplot(q50_dat,aes(x=qtile,fill=factor(x1)))+
+  geom_density(alpha=0.6, color=NA, adjust=3)+ 
+  scale_fill_discrete(name = "covariate value", 
+                      labels=c("x = -2", "x = 0", "x = 2")) + 
+  xlab("") + ylab("conditional median density")
+
+ggsave(file.path(figdir,"cond_md2.png"),width=6,height=3)
+
+q50_x0_samps<-q50_dat %>% filter(x1==0) %>% pull(qtile)
+
+mean(q50_x0_samps > 0.25 | q50_x0_samps < -0.25)
+
+```
+
+```{r, eval=FALSE}
+# posterior predictive check
+# cdf_dat <- getCDF(bg, mod_data, newdata=data.frame(x1=rnorm(10)),summ=FALSE) 
+cdf_dat <- getCDF(bg, mod_data, newdata=data.frame(x1=x1),summ=FALSE) 
+
+y_rep <- cdf_dat %>% filter(Var1 %in% LETTERS[1:10]) %>% group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
+
+ggplot(data=y_rep, aes(x=yval, group=Var1)) + 
+  geom_density(col="lightblue") +
+  geom_density(data=data.frame(yval=y), aes(x=yval),color="blue", inherit.aes = FALSE)
+
+
+```
+
+```{r}
+# try with new data
+set.seed(237)
+n <- 100
+x1 <- rnorm(n)
+x2 <- x1^2
+y2 <- 0.9*x1 + 1.2*x2 + rlogis(n)
+dat4 <- data.frame(y=ordered(y2), y_num=y2, x1, x2)
+
+# mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=2) # probit link
+mod_data4  <- mkStanDat(dat4, outcome="y", preds = c("x1","x2"), link=1)
+
+bg2 <- bayes_cpm(mod_data4, seed=2782, 
+                 iter=2500, warmup=2000, chains=4,
+                 control = list(adapt_delta = 0.85))
+
+cdf_dat2 <- getCDF(bg2, mod_data4, newdata=data.frame(x1=x1,x2=x2),summ=FALSE) 
+
+# prob scale residuals
+cdf_dat_tst2 <- cdf_dat2 %>% filter(Var1 %in% LETTERS[1:20])
+
+# prob scale residuals
+# verify calcs are correct!!
+# check Liu_orm_code.r for presid.orm() 
+# pr(y>Y) - pr(y<Y) = - pr(y<Y) + pr(y>Y)
+cdf_mrg2 <- merge(dat4, cdf_dat_tst2, by=c("x1","x2")) %>% mutate(y_chk=as.numeric(as.character(y)), flg=(y_chk==yval),
+       surv=1-cdf, psr=surv-cdf) %>% 
+  filter(flg==TRUE)
+
+
+cdf_mrg2 %>% ggplot(aes(sample=psr,group=Var1)) + 
+#  geom_qq(distribution = stats::qunif,
+#          dparams=list(min=-1,max=1),
+#          alpha=0.2) + 
+  geom_qq(distribution = stats::qunif,
+          dparams=list(min=-1,max=1),
+          geom="path", alpha=0.2) + 
+  geom_qq_line(aes(sample=psr),
+               distribution = stats::qunif,
+               dparams=list(min=-1,max=1),line.p=c(0.01,0.99),
+               inherit.aes=FALSE)
+```
+
+```{r}
+cdf_mrg2 %>% ggplot(aes(x=x1,y=psr,group=Var1))+
+  geom_point(alpha=0.2)+
+  geom_smooth(se=FALSE,alpha=0.2) 
+```
+
+```{r}
+# scratch
+# y_rep2 <- cdf_dat2 %>% filter(Var1 %in% LETTERS[1:10]) %>% group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
+# 
+# ggplot(data=y_rep2, aes(x=yval, group=Var1)) + 
+#   geom_density(col="lightblue") +
+#   geom_density(data=data.frame(yval=y2), aes(x=yval),color="blue", inherit.aes = FALSE)
+```
+
+```{r}
+#misspecified model (dropped x2)
+mod_data5  <- mkStanDat(dat4, outcome="y", preds = c("x1"), link=1)
+
+bg3 <- bayes_cpm(mod_data5, seed=2782, 
+                 iter=2500, warmup=2000, chains=4,
+                 control = list(adapt_delta = 0.85))
+
+cdf_dat3 <- getCDF(bg3, mod_data5, newdata=data.frame(x1=x1), summ=FALSE) 
+
+
+
+# prob scale residuals
+cdf_dat_tst3 <- cdf_dat3 %>% filter(Var1 %in% LETTERS[1:20])
+
+# prob scale residuals
+# check Liu_orm_code.r for presid.orm() 
+# pr(y>Y) - pr(y<Y) = - pr(y<Y) + pr(y>Y)
+cdf_mrg3 <- merge(dat4, cdf_dat_tst3, by=c("x1")) %>% mutate(y_chk=as.numeric(as.character(y)), flg=(y_chk==yval),
+       surv=1-cdf, psr=surv-cdf) %>% 
+  filter(flg==TRUE)
+
+
+cdf_mrg3 %>% ggplot(aes(sample=psr,group=Var1)) + 
+#  geom_qq(distribution = stats::qunif,
+#          dparams=list(min=-1,max=1),
+#          alpha=0.2) + 
+  geom_qq(distribution = stats::qunif,
+          dparams=list(min=-1,max=1),
+          geom="path", alpha=0.2) + 
+  geom_qq_line(aes(sample=psr),
+               distribution = stats::qunif,
+               dparams=list(min=-1,max=1),line.p=c(0.01,0.99),
+               inherit.aes=FALSE)
+```
+
+```{r}
+cdf_mrg3 %>% ggplot(aes(x=x1,y=psr,group=Var1))+geom_point()+geom_smooth(se=FALSE) 
+```
+
+
+```{r}
+# scratch
+# --> seems to show this procedure is not actually posterior predictive check, more like bootstrap draws from outcome
+# y_rep3 <- cdf_dat3 %>% filter(Var1 %in% LETTERS[1:10]) %>% group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
+# 
+# ggplot(data=y_rep3, aes(x=yval, group=Var1)) + 
+#   geom_density(col="lightblue") +
+#   geom_density(data=data.frame(yval=y2), aes(x=yval),color="blue", inherit.aes = FALSE)
+
+```
