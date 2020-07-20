@@ -1,0 +1,448 @@
+---
+title: "Bayesian CPM for HIV example"
+output:
+  html_document:
+    toc: no
+    toc_depth: 3
+    number_sections: false
+    code_folding: hide
+    theme: paper
+---
+
+<!-- 
+HIV Biomarker example 
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+libs <- c("rstan", "brms" ,"dplyr", "stringr", "readr", "tidyr", "magrittr", "bayesCPM","bayesplot","cowplot")
+invisible(lapply(libs, library, character.only = TRUE))
+
+dir <- file.path("~/Dropbox/njames/school/PhD/orise_ra/bayes_cpm")
+
+# figdir<-file.path(dir,"biostat_sem","fig") # old
+figdir<-file.path(dir,"paper","fig") # for paper
+
+# read in functions
+#source(file.path(dir,"cpm_functions.r"))
+
+set.seed(88711)
+
+# call this once to distribute MCMC chains across cpu cores:
+options(mc.cores=parallel::detectCores())
+```
+
+## HIV example using Stan and linear regression
+
+```{r}
+datdir <- file.path(dir,"data")
+hivdat0 <- read_csv(file.path(datdir,"koethe-biomarker-data.csv"))
+
+# make censored and transformed outcomes, center predictors 
+hivdat0 %<>% mutate(il_6_cens=if_else(il_6==0,-1,0),
+                    sqrt_il_6=sqrt(il_6),
+                    il_1_beta_cens=if_else(il_1_beta==0,-1,0),
+                    bmi_c = bmi-mean(bmi),
+                    age_c = age-mean(age),
+                    cd4_c = cd4-mean(cd4),
+                    cd4_100_c= (cd4_c)/100)
+
+# change outcomes to ordered factors
+hivdat <- hivdat0 %>% mutate(il_6=ordered(il_6),
+                             il_1_beta=ordered(il_1_beta),
+                             hscrp=ordered(hscrp), 
+                             cd14=ordered(cd14),
+                             leptin=ordered(leptin))
+
+# for plots
+seq_ln <- 30
+newdat1 <- data.frame(bmi_c=seq(-10,15,length=seq_ln),
+                     age_c=rep(0,seq_ln),
+                     male=rep(1,seq_ln),
+                     nonwhite=rep(0,seq_ln),
+                     study.linc=rep(1,seq_ln),
+                     cd4_100_c=rep(0,seq_ln),
+                     smoker=rep(0,seq_ln))
+
+```
+
+```{r}
+summary(hivdat0)
+hivdat0
+ggplot(data=hivdat0)+geom_histogram(aes(x=il_1_beta))
+ggplot(data=hivdat0)+geom_histogram(aes(x=il_6))
+ggplot(data=hivdat0)+geom_histogram(aes(x=leptin))
+```
+
+### with brms
+
+```{r, eval=FALSE}
+# censored normal linear regression with outcome transformation for conditional mean
+brm_fit_il_6 <- brm(sqrt_il_6|cens(il_6_cens) ~ bmi_c + age_c + male + nonwhite +
+                      study.linc + cd4_100_c + smoker,
+                    data = hivdat0, family=gaussian)
+
+# two censored quantile regression models for conditional median and 90th quantile
+# ! not sure these are correct
+brm_fit_il_6_q50 <-brm(bf(sqrt_il_6|cens(il_6_cens) ~ bmi_c + age_c + male + 
+                            nonwhite + study.linc + cd4_100_c + smoker,
+                          quantile = 0.5), data = hivdat0, 
+                       family = asym_laplace())
+
+brm_fit_il_6_q90 <-brm(bf(sqrt_il_6|cens(il_6_cens) ~ bmi_c + age_c + male + 
+                            nonwhite + study.linc + cd4_100_c + smoker,
+                          quantile = 0.1), data = hivdat0, 
+                       family = asym_laplace())
+
+
+brm_il_6_mn_dat0<-fitted(brm_fit_il_6,newdata=newdat1)
+brm_il_6_md_dat0<-fitted(brm_fit_il_6_q50,newdata=newdat1)
+brm_il_6_q90_dat0<-fitted(brm_fit_il_6_q90,newdata=newdat1)
+
+brm_il_6_mn_dat<-brm_il_6_mn_dat0 %>% 
+  as_tibble() %>% mutate(bmi_c=seq(-10,15,length=seq_ln)) %>%
+  mutate(statistic="mean") %>% 
+  rename(`il-6`=Estimate)
+
+brm_il_6_md_dat<-brm_il_6_md_dat0 %>% 
+#  as_tibble() %>% mutate(bmi=seq(20,45,length=seq_ln)) %>%
+  as_tibble() %>% mutate(bmi_c=seq(-10,15,length=seq_ln)) %>%
+  mutate(statistic="median") %>%
+  rename(`il-6`=Estimate)
+
+brm_il_6_q90_dat<-brm_il_6_q90_dat0 %>% 
+ # as_tibble() %>% mutate(bmi=seq(20,45,length=seq_ln)) %>%
+  as_tibble() %>% mutate(bmi_c=seq(-10,15,length=seq_ln)) %>%
+  mutate(statistic="q90") %>%
+  rename(`il-6`=Estimate)
+
+brm_il_6_plt_dat <- rbind(brm_il_6_mn_dat, brm_il_6_md_dat, brm_il_6_q90_dat) 
+
+ggplot(brm_il_6_plt_dat) + geom_line(aes(x=bmi_c,y=`il-6`,color=statistic)) +
+geom_ribbon(aes(x=bmi_c,ymin=Q2.5,ymax=Q97.5,fill=statistic),alpha=0.2)+ylab("IL-6")+xlab("BMI (centered)")
+
+
+#marginal_effects(brm_fit_il_6, "bmi")
+
+brm_il_6_mn_dat %>% as_tibble() %>% mutate(bmi_c=seq(-10,15,length=seq_ln)) %>%
+  ggplot() + geom_line(aes(x=bmi_c,y=`il-6`)) +
+  geom_ribbon(aes(x=bmi_c,ymin=Q2.5,ymax=Q97.5),alpha=0.2)
+
+
+plot(brm_fit_il_6)
+
+plot(brm_fit_il_6_q50)
+
+# posterior samples
+brm_post<-as.data.frame(brm_fit_il_6)
+
+```
+
+
+## HIV example using Bayesian CPM model
+
+```{r hiv_stan_dat}
+hiv_dat_il_6 <- mkStanDat(hivdat, outcome="il_6", link = 2,
+                          preds = c("bmi_c", "age_c", "male", "nonwhite",
+                                 "study.linc", "cd4_100_c", "smoker"))
+
+hiv_dat_il_6_nocnt <- mkStanDat(hivdat, outcome="il_6", link = 2,
+                          preds = c("bmi", "age", "male", "nonwhite",
+                                 "study.linc", "cd4", "smoker"))
+
+hiv_dat_hscrp <- mkStanDat(hivdat, outcome="hscrp", link = 2,
+                          preds = c("bmi_c", "age_c", "male", "nonwhite",
+                                 "study.linc", "cd4_100_c", "smoker"))
+
+hiv_dat_il_1_beta <- mkStanDat(hivdat, outcome="il_1_beta", link = 2,
+                          preds = c("bmi_c", "age_c", "male", "nonwhite",
+                                 "study.linc", "cd4_100_c", "smoker"))
+
+hiv_dat_cd14 <- mkStanDat(hivdat, outcome="cd14", link = 2,
+                          preds = c("bmi_c", "age_c", "male", "nonwhite",
+                                 "study.linc", "cd4_100_c", "smoker"))
+
+hiv_dat_leptin <- mkStanDat(hivdat, outcome="leptin", link = 2,
+                          preds = c("bmi_c", "age_c", "male", "nonwhite",
+                                 "study.linc", "cd4_100_c", "smoker"))
+```
+
+```{r il_6_fit}
+
+#!! find better inits?
+fit_il_6 <- bayes_cpm(hiv_dat_il_6, seed=77845, 
+                 iter=4000, warmup=2000, chains=2, init="0", 
+                 control = list(adapt_delta = 0.95))
+
+if(0){
+fit_il_6_nocnt <- bayes_cpm(hiv_dat_il_6_nocnt, seed=77845, 
+                 iter=4000, warmup=2000, chains=2, init="0", 
+                 control = list(adapt_delta = 0.95))
+}
+
+qplot(summary(fit_il_6)$summary[,"Rhat"])
+
+main_pars <- c("b[1]","b[2]","b[3]","b[4]","b[5]","b[6]","b[7]")
+main_pars_labs <-c("bmi_c", "age_c", "male", "nonwhite", "study.linc", "cd4_100_c", "smoker")
+main_pars_labs2 <-c("BMI", "Age", "Male", "Nonwhite", "Study.linc", "CD4/100", "Smoker")
+
+summary(fit_il_6, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
+
+rstan::traceplot(fit_il_6, pars=main_pars) 
+# https://stackoverflow.com/questions/57411900/changing-the-title-of-individual-plots-within-a-panel-of-traceplots-in-ggplot-st
+
+
+il_6_posta <- as.matrix(fit_il_6, pars=main_pars[c(1,2,6)])  %>%
+mcmc_intervals() + scale_y_discrete(labels =main_pars_labs2[c(1,2,6)] )
+
+il_6_postb <- as.matrix(fit_il_6, pars=main_pars[c(3,4,5,7)])  %>%
+mcmc_intervals() + scale_y_discrete(labels = main_pars_labs2[c(3,4,5,7)])
+
+
+plot_grid(il_6_posta,il_6_postb,ncol=1)
+
+ggsave(file.path(figdir,"il_6_post.png"),width=6,height=4)
+
+stan_plot(fit_il_6, pars=main_pars) + 
+  scale_y_discrete(breaks=paste0("b[",1:7,"]"),
+        labels=letters[1:7])
+
+# cutpoints
+il_6_ct_plt<-plot(fit_il_6,pars=c(paste0("cutpoints[",1:173,"]")),
+                  ci_level = 0.5)
+
+il_6_ct_plt$data %>% mutate(y_rev=rev(y)) %>% 
+  ggplot(aes(x=y_rev,y=m)) + geom_point()
+
+il_6_ct_plt$data %>% mutate(y_rev=rev(y)) %>% 
+  ggplot(aes(x=y_rev,y=m)) + geom_line(aes(color='median')) +
+  geom_ribbon(aes(ymin=l,ymax=h,fill='50% int'))+
+  geom_ribbon(aes(ymin=ll,ymax=hh,fill='95% int'))+
+  scale_color_manual(labels = c('median'),
+                     values = c('blue')) +
+  scale_fill_manual(labels= c('50% int','95% int'),
+                    values = alpha('blue',c(0.4,0.2))) +
+  labs(color='', fill='') +
+  ylab(expression(hat(gamma)[j]))+xlab("j")
+
+ggsave(file.path(figdir,"il_6_post_ct.png"),width=6,height=4)
+
+# +
+#   theme(axis.title.x=element_text(size=fctsiz),
+#         axis.title.y = element_text(size=fctsiz),
+#         axis.text =  element_text(size=atxtsz),
+#         strip.text = element_text(size=fctsiz),
+#         legend.text = element_text(size=fctsiz))
+
+
+pltdt %>% 
+  ggplot(aes(x=cpt,y=`50%`)) + 
+  geom_line(aes(color='median')) +
+  geom_ribbon(aes(ymin=`25%`,ymax=`75%`,fill='50% int'))+
+  geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`,fill='95% int'))+
+  scale_color_manual(labels = c('median'),
+                     values = c('blue')) +
+  scale_fill_manual(labels= c('50% int','95% int'),
+                    values = alpha('blue',c(0.4,0.2)))
+
+if(0){
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",1:20,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",21:40,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",41:60,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",61:80,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",81:100,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",101:120,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",121:140,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",141:160,"]")))
+traceplot(fit_il_6, pars=c(paste0("cutpoints[",161:173,"]")))
+}
+
+# cell probs
+if(0){
+plot(fit_il_6,pars=c(paste0("pi[",1:20,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",21:40,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",41:60,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",61:80,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",81:100,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",101:120,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",121:140,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",141:160,"]")))
+plot(fit_il_6,pars=c(paste0("pi[",161:174,"]")))
+}
+
+```
+
+
+<!-- estimated transformation -->
+```{r il_6_trans}
+cp_il_6 <- summary(fit_il_6, pars=c(paste0("cutpoints[",1:173,"]")))$summary[,"50%"]
+
+cp_il_6_nocnt <- summary(fit_il_6_nocnt, pars=c(paste0("cutpoints[",1:173,"]")))$summary[,"50%"]
+
+il_6_trans_dat <- cbind(hiv_dat_il_6$truey0[2:174], cp_il_6) %>% as.data.frame() %>% rename(`IL-6`=V1)
+
+il_6_trans_dat_nocnt <- cbind(hiv_dat_il_6$truey0[2:174], cp_il_6_nocnt) %>% as.data.frame() %>% rename(`IL-6`=V1)
+
+qplot(hivdat0$il_6,bins=35)+xlab("IL-6") + 
+  annotate(geom="text", x=18, y=32, 
+           label="3% below detection limit", color="red")
+#ggsave(file.path(figdir,"il_6_hist.png"),width=6,height=4)
+
+ggplot(data=il_6_trans_dat, aes(x=`IL-6`,y=cp_il_6, color="est")) + geom_step() + ylab(expression(gamma[j])) + xlim(c(1,10)) + 
+  stat_function(fun=log, mapping = aes(color = "log")) + 
+  stat_function(fun=sqrt, mapping = aes(color = "sqrt")) +
+  scale_color_manual(name = "transformation",
+                       values = c("black", "blue", "red"), # Color specification
+                       labels = c("Bayes CPM estimate","log", "sqrt"))
+  
+ggsave(file.path(figdir,"il_6_trans.png"),width=6,height=4)
+
+
+ggplot(data=il_6_trans_dat_nocnt, aes(x=`IL-6`,y=cp_il_6_nocnt, color="est")) + geom_step() + ylab(expression(gamma[j])) + xlim(c(1,10)) + 
+  stat_function(fun=log, mapping = aes(color = "log")) + 
+  stat_function(fun=sqrt, mapping = aes(color = "sqrt")) +
+  scale_color_manual(name = "transformation",
+                       values = c("black", "blue", "red"), # Color specification
+                       labels = c("Bayes CPM estimate","log", "sqrt"))
+
+ggsave(file.path(figdir,"il_6_trans_nocnt.png"),width=6,height=4)
+
+```
+
+```{r il_6_bmi_dat}
+mn_summ_il_6 <- getMean(fit_il_6, hiv_dat_il_6, newdat1)
+#mn_vals_il_6 <- getMean(fit_il_6, hiv_dat_il_6, newdat1, summ=FALSE)
+med_summ_il_6 <- getQuantile(fit_il_6, hiv_dat_il_6, newdat1, q=0.5)
+q90_summ_il_6 <- getQuantile(fit_il_6, hiv_dat_il_6, newdat1, q=0.9)
+```
+
+```{r il_6_bmi_plt}
+il_6_mn_dat<-mn_summ_il_6 %>% 
+  select(med_mn, mn_q2.5, mn_q97.5, bmi_c) %>% 
+  mutate(statistic="mean") %>% 
+  rename(`il-6`=med_mn,q2.5=mn_q2.5,q97.5=mn_q97.5)
+
+il_6_med_dat<-med_summ_il_6 %>% 
+  select(med_qtile, qtile_q2.5, qtile_q97.5, bmi_c) %>%
+  mutate(statistic="median") %>%
+  rename(`il-6`=med_qtile,q2.5=qtile_q2.5,q97.5=qtile_q97.5)
+
+il_6_q90_dat<-q90_summ_il_6 %>% 
+  select(med_qtile, qtile_q2.5, qtile_q97.5, bmi_c) %>%
+  mutate(statistic="q90") %>%
+  rename(`il-6`=med_qtile,q2.5=qtile_q2.5,q97.5=qtile_q97.5)
+
+il_6_plt_dat <- rbind(il_6_mn_dat,il_6_med_dat,il_6_q90_dat) 
+
+ggplot(il_6_plt_dat) + geom_line(aes(x=bmi_c,y=`il-6`,color=statistic)) +
+geom_ribbon(aes(x=bmi_c,ymin=q2.5,ymax=q97.5,fill=statistic),alpha=0.2)+ylab("IL-6")+xlab("Difference from mean BMI")
+ggsave(file.path(figdir,"il_6_bmi.png"),width=6,height=3.5)
+```
+
+```{r, eval=FALSE}
+
+if (0){
+mn_summ_brm_il_6_0 <- fitted(brm_fit_il_6, newdata=newdat1)
+mn_summ_brm_il_6<-cbind(newdat1,mn_summ_brm_il_6_0)
+
+mn_summ_il_6 %>% 
+  ggplot(aes(x=bmi,y=med_mn)) + geom_line() +
+  geom_ribbon(aes(ymin=mn_q2.5,ymax=mn_q97.5),alpha=0.2) +
+  geom_line(data=mn_summ_brm_il_6,aes(x=bmi,y=Estimate^2,color="red"))+
+  geom_ribbon(data=mn_summ_brm_il_6,aes(x=bmi,ymin=Q2.5^2,ymax=Q97.5^2,fill="red"),alpha=0.2,inherit.aes = FALSE)
+}
+
+mn_summ_il_6 %>% 
+  ggplot(aes(x=bmi,y=med_mn)) + geom_line() +
+  geom_ribbon(aes(ymin=mn_q5,ymax=mn_q95),alpha=0.2)
+
+med_summ_il_6 %>% 
+  ggplot(aes(x=bmi,y=med_qtile)) + geom_line() +
+  geom_ribbon(aes(ymin=qtile_q5,ymax=qtile_q95),alpha=0.2)
+```
+
+
+
+
+```{r il_1_beta_fit}
+fit_il_1_beta <- bayes_cpm(hiv_dat_il_1_beta, seed=77845, 
+                 iter=4000, warmup=2000, chains=2, init="0", 
+                 control = list(adapt_delta = 0.95))
+
+qplot(summary(fit_il_1_beta)$summary[,"Rhat"])
+
+summary(fit_il_1_beta, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
+
+traceplot(fit_il_1_beta, pars=main_pars)
+plot(fit_il_1_beta, pars=main_pars)
+
+as.matrix(fit_il_1_beta, pars=main_pars)  %>%
+mcmc_intervals() + scale_y_discrete(labels = c("bmi_c", "age_c", "male", "nonwhite",
+                                 "study.linc", "cd4_100_c", "smoker"))
+
+fit_il_1_betaa<-as.matrix(fit_il_1_beta, pars=main_pars[c(1,2,6)])  %>%
+mcmc_intervals() + scale_y_discrete(labels =main_pars_labs2[c(1,2,6)] )
+
+fit_il_1_betab<-as.matrix(fit_il_1_beta, pars=main_pars[c(3,4,5,7)])  %>%
+mcmc_intervals() + scale_y_discrete(labels = main_pars_labs2[c(3,4,5,7)])
+plot_grid(fit_il_1_betaa,fit_il_1_betab,ncol=1)
+
+ggsave(file.path(figdir,"il_1_beta_post.png"),width=6,height=4)
+
+#traceplot(fit_il_1_beta, pars=c("cutpoints"))
+#plot(fit_il_1_beta,pars=c(paste0("pi[",1:40,"]")))
+```
+
+```{r il_1_beta_trans}
+cp_il_1_beta <- summary(fit_il_1_beta, pars=c(paste0("cutpoints[",1:113,"]")))$summary[,"mean"]
+
+il_1_beta_trans_dat <- cbind(hiv_dat_il_1_beta$truey0[2:114], cp_il_1_beta) %>% as.data.frame() %>%
+  rename(`IL-1-beta`=V1)
+
+qplot(hivdat0$il_1_beta,bins=35)+xlab(expression(IL-1-beta)) + 
+  annotate(geom="text", x=19, y=98, label="39% below detection limit", color="red")
+#ggsave(file.path(figdir,"il_1_beta_hist.png"),width=6,height=4)
+
+ggplot(data=il_1_beta_trans_dat,aes(x=`IL-1-beta`,y=cp_il_1_beta,color = "est")) + geom_step() + ylab(expression(gamma[j])) + ylim(c(-0.5,2.5)) + xlim(c(0,3.0)) + xlab(expression(IL-1-beta)) +
+  stat_function(fun=log, mapping = aes(color = "log")) + 
+  stat_function(fun=sqrt, mapping = aes(color = "sqrt")) +
+  scale_color_manual(name = "transformation",
+                       values = c("black", "blue", "red"), # Color specification
+                       labels = c("Bayes CPM estimate","log", "sqrt"))
+
+ggsave(file.path(figdir,"il_1_beta_trans.png"),width=6,height=4)
+```
+
+```{r il_6_bmi_dat}
+mn_summ_il_1_beta <- getMean(fit_il_1_beta, hiv_dat_il_1_beta, newdat1)
+med_summ_il_1_beta <- getQuantile(fit_il_1_beta, hiv_dat_il_1_beta, newdat1, q=0.5)
+q90_summ_il_1_beta <- getQuantile(fit_il_1_beta, hiv_dat_il_1_beta, newdat1, q=0.9)
+
+```
+
+```{r il_6_bmi_plt}
+il_1_beta_mn_dat <- mn_summ_il_1_beta %>% 
+  select(med_mn, mn_q2.5, mn_q97.5, bmi_c) %>% 
+  mutate(statistic="mean") %>% 
+  rename(`il-1-beta`=med_mn,q2.5=mn_q2.5,q97.5=mn_q97.5)
+
+il_1_beta_med_dat <- med_summ_il_1_beta %>% 
+  select(med_qtile, qtile_q2.5, qtile_q97.5, bmi_c) %>%
+  mutate(statistic="median") %>%
+  rename(`il-1-beta`=med_qtile,q2.5=qtile_q2.5,q97.5=qtile_q97.5)
+
+il_1_beta_q90_dat <- q90_summ_il_1_beta %>% 
+  select(med_qtile, qtile_q2.5, qtile_q97.5, bmi_c) %>%
+  mutate(statistic="q90") %>%
+  rename(`il-1-beta`=med_qtile,q2.5=qtile_q2.5,q97.5=qtile_q97.5)
+
+il_1_beta_plt_dat <- rbind(il_1_beta_mn_dat,il_1_beta_med_dat,il_1_beta_q90_dat) 
+
+ggplot(il_1_beta_plt_dat) + geom_line(aes(x=bmi_c,y=`il-1-beta`,color=statistic)) +
+geom_ribbon(aes(x=bmi_c,ymin=q2.5,ymax=q97.5,fill=statistic),alpha=0.2)+
+  xlab("Difference from mean BMI")+ylab(expression(IL-1-beta))
+ggsave(file.path(figdir,"il_1_beta_bmi.png"),width=6,height=3.5)
+```
+
