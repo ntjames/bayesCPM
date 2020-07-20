@@ -137,9 +137,7 @@ A primary challenge for the implementation of Bayesian CPMs for continuous outco
 
 # Methods
 
-## Cumulative Probability Models
-
-### Model formulation
+## Cumulative Probability Model formulation
 <!-- see Albert & Chib 1997 - sec 2, and Johnson & Albert Ordinal Data Modeling to clean up this section-->
 Let $Y_i$ be the outcome for individual $i=1,\ldots,n$ with $p$ associated covariates $\boldsymbol{X_i}=(X_{i1},\ldots,X_{ip})$ such that each $Y_i$ falls into one of $j=1,\ldots, J$ ordered categories. The $Y_i$ can be modeled using a $Categorical(\boldsymbol{\pi_i})$ or $Multinomial(1,\boldsymbol{\pi_i})$ distribution where $\boldsymbol{\pi_i}=(\pi_{i1}, \ldots, \pi_{iJ})$ are the probabilities of individual $i$ being in category $j$ and $\sum_{j=1}^{J}=1$. Note that the value of the $\pi_{ij}$ are dependent on $x_i$, but we suppress the conditional notation except where it is needed for clarity. The cumulative probability of falling into category $j$ or a lower category is $Pr(Y_i \le j)=\eta_{ij}=\sum_{k=1}^{j}\pi_{ik}$. The CPM relates the cumulative probabilities to the observed covariates through a monotonically increasing link function $G^{-1}(\eta_{ij})=\gamma_{j}-\boldsymbol{x_i'\beta}$ or equivalently
 \begin{gather}
@@ -174,15 +172,14 @@ p(\boldsymbol{\gamma},\boldsymbol{\beta})\prod_{i=1}^{n}[F(\gamma_{y_i}-\boldsym
 !!! in above need summation/prod over $j$??, or indicator that for obs $i$ it is in category $j$ !!!
 -->
 
-To complete the model specification we define priors for the parameters $p(\boldsymbol{\beta},\boldsymbol{\gamma})$. We assume a priori independence between $\beta$ and $\gamma$ so $p(\boldsymbol{\beta},\boldsymbol{\gamma})=p(\boldsymbol{\beta})p(\boldsymbol{\gamma})$. To simplify the model formulation we also assume noninformative priors for the regression coefficients, $p(\boldsymbol{\beta}) \propto \boldsymbol{1}$ however weakly informative or informative priors can also be used. <!--conditional means approach for defining joint prior fro Johnson & ALbert sec 4.2.2 pp 132 --> Several approaches have been suggested to specify priors for $\boldsymbol{\gamma}$ in the traditional CPM setting where $J \ll n$. McKinley et al. [@mckinley_bayesian_2015] and Congdon [@congdon_bayesian_2005] describe a sequentially truncated prior distribution that takes the form $p(\boldsymbol{\gamma})=p(\gamma_1)\prod_{j=2}^{J-1}p(\gamma_i|\gamma_{j-1})$ where the support of $p(\gamma_1)$ is $\mathbb{R}$ and the support of $p(\gamma_j)$ for $j=2,\ldots, J-1$ is $(\gamma_{j-1},\infty)$. For example using normal and truncated normal priors, $p(\gamma_1)\sim N(0, \sigma_\gamma^2)$ and $\gamma_j|\gamma_{j-1} \sim N(0, \sigma_\gamma^2)I(\gamma_{j-1},\infty)$. A second approach described by Albert and Chib [@albert_bayesian_1997] defines a prior on a transformation of the cutpoints to an unconstrained space. Let $\delta_1=\log(\gamma_1)$ and $\delta_j=\log(\gamma_j - \gamma_{j-1}),\, 2 \le j \le J-1$. Then a multivariate prior can be assigned to $\boldsymbol{\delta}$, e.g. $\boldsymbol{\delta} \sim N_{J-1}(\boldsymbol{\mu_0},\boldsymbol{\Sigma_0})$. 
-Both approaches provide priors that satisfy the ordering restriction for $\boldsymbol{\gamma}$, but may present challenges for the CPM when the number of unique continuous data values is high.
+To complete the model specification we define priors for the parameters $p(\boldsymbol{\beta},\boldsymbol{\gamma})$. We assume *a priori* independence between $\beta$ and $\gamma$ so $p(\boldsymbol{\beta},\boldsymbol{\gamma})=p(\boldsymbol{\beta})p(\boldsymbol{\gamma})$. To simplify the model formulation we also assume noninformative priors for the regression coefficients, $p(\boldsymbol{\beta}) \propto \boldsymbol{1}$ however weakly informative or informative priors can also be used. <!--conditional means approach for defining joint prior fro Johnson & ALbert sec 4.2.2 pp 132 -->
 
-!!!
-First approach, recursive dependence of priors
-The second approach requires specification of the $J-1$ $\mu_0$ vector and the $J-1 \times J-1$ covariance matrix.
+Specifying priors for $\boldsymbol{\gamma}$ is more challenging because of the ordering restriction. Several approaches have been suggested in the traditional CPM setting where $J \ll n$. McKinley et al. [@mckinley_bayesian_2015] and Congdon [@congdon_bayesian_2005] describe a sequentially truncated prior distribution that takes the form $p(\boldsymbol{\gamma})=p(\gamma_1)\prod_{j=2}^{J-1}p(\gamma_i|\gamma_{j-1})$ where the support of $p(\gamma_1)$ is $\mathbb{R}$ and the support of $p(\gamma_j)$ for $j=2,\ldots, J-1$ is $(\gamma_{j-1},\infty)$. For example using normal and truncated normal priors, $p(\gamma_1)\sim N(0, \sigma_\gamma^2)$ and $\gamma_j|\gamma_{j-1} \sim N(0, \sigma_\gamma^2)I(\gamma_{j-1},\infty)$. A second approach described by Albert and Chib [@albert_bayesian_1997] defines the prior on a transformation of the cutpoints to an unconstrained space. Let $\delta_1=\log(\gamma_1)$ and $\delta_j=\log(\gamma_j - \gamma_{j-1}),\, 2 \le j \le J-1$. Then a multivariate prior can be assigned to $\boldsymbol{\delta}$, e.g. $\boldsymbol{\delta} \sim N_{J-1}(\boldsymbol{\mu_0},\boldsymbol{\Sigma_0})$. 
+Both approaches provide priors that satisfy the ordering restriction for $\boldsymbol{\gamma}$, but may be cumbersome when the number of unique continuous data values is high.
 
 <!--
-This approach may also be challenging for our situation when the number of unique continuous data values is high because of the need to specify the $J-1$ $\mu_0$ vector and the $J-1 \times J-1$ covariance matrix.
+First approach requires recursive dependence of priors, need to tune variance then sample from sequential series of truncated distributions
+The second approach requires specification of the $J-1$ $\mu_0$ vector and the $J-1 \times J-1$ covariance matrix.
 
 Specifying priors for $\boldsymbol{\gamma}$ presents a challenge because of the ordering restriction and high dimensionality.
  noninformative has undesirable properties with low cell counts, see Johnson & Albert 4.2.1
@@ -190,31 +187,30 @@ Specifying priors for $\boldsymbol{\gamma}$ presents a challenge because of the 
 -->
 
 We instead adopt a third approach which defines a prior on $\boldsymbol{\pi_i}$ for a prespecified covariate vector and utilizes the transformation defined by $G(\cdot)$ to induce a prior on the $\boldsymbol{\gamma}$ [@betancourt_ordinal_2019].
-Let $\pi_{.j} \equiv Pr(r(y)=j|x=0)$ be the probability of being in category $j$ when all the covariates are 0 and $\boldsymbol{\pi_{.}}=(\pi_{.1},\ldots,\pi_{.J})$. From equation \ref{eq:cellprobs} it follows that
+Let $\pi_{.j} \equiv Pr(r(y)=j|x=0)$ be the probability of being in category $j$ when all the covariates are 0 (or at their mean values if covariates have been centered) and $\boldsymbol{\pi_{.}}=(\pi_{.1},\ldots,\pi_{.J})$. From equation (\ref{eq:cellprobs}) it follows that
 \begin{gather}
 \pi_{.j}=G(\gamma_j-0)-G(\gamma_{j-1}-0)=G(\gamma_j)-G(\gamma_{j-1})
 \end{gather}
-These equations define a transformation $h(\boldsymbol{\gamma})=\boldsymbol{\pi_{.}}$ between the cutpoints and probabilities of category membership when all the covariates are 0 (or at their mean values if covariates have been centered). Conversely,
+These equations define a transformation $h(\boldsymbol{\gamma})=\boldsymbol{\pi_{.}}$ between the cutpoints and probabilities of category membership when $\boldsymbol{X}=\boldsymbol{0}$. Conversely,
 \begin{gather}
 \sum_{k=1}^{j}\pi_{.k}=\sum_{k=1}^{j}\left[G(\gamma_k)-G(\gamma_{k-1})\right]=G(\gamma_j)
 \end{gather}
 so $G^{-1}\left(\sum_{k=1}^{j}\pi_{.k}\right)=\gamma_j$ defines the inverse transformation. 
 
-Because $\boldsymbol{y}$ has a multinomial distribution a conjugate Dirichlet distribution is a natural choice of prior for $\boldsymbol{\pi_{.}}$. Setting $p(\boldsymbol{\pi_{.}}) \propto \prod_{j=1}^{J}\pi_{.j}^{\alpha_j-1}$ the posterior distribution is
+Because $\boldsymbol{y}$ has a multinomial distribution a conjugate Dirichlet distribution is a natural choice of prior for $\boldsymbol{\pi_{.}}$. Setting $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha}) \propto \prod_{j=1}^{J}\pi_{.j}^{\alpha_j-1}$ the posterior distribution is
 \begin{align}
 p(\boldsymbol{\gamma},\boldsymbol{\beta}|\boldsymbol{x},\boldsymbol{y}) & \propto p(\boldsymbol{\gamma})p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})\\
 &\propto p(h(\boldsymbol{\gamma}))|\mathcal{J}|p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})\\
-&\propto p(\boldsymbol{\pi_{\cdot}})|\mathcal{J}|p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})
+\label{eq:post}
+&\propto p(\boldsymbol{\pi_{\cdot}}|\boldsymbol{\alpha})|\mathcal{J}|p(\boldsymbol{\beta}) p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})
 \end{align}
 where $\mathcal{J}$ is the Jacobian of the transformation $h(\boldsymbol{\gamma})=\boldsymbol{\pi_{.}}$. Letting $\Omega=\sum_{j=1}^J\pi_{.j}=1$ be the constraint that the category probabilites must sum to 1, the entries in $\mathcal{J}$ where $\mathcal{J}_{r,c}$ is the term in row $r$ and column $c$ are
-\begin{align}
-\mathcal{J}_{j,1}&=\frac{\partial \pi_{.j}}{\partial \Omega}=1\\
-\mathcal{J}_{j+1,j+1}&=\frac{\partial \pi_{.j+1}}{\partial \gamma_j}=\frac{\partial}{\partial \gamma_j}\left[G(\gamma_{j+1})-G(\gamma_{j})\right]=-g(\gamma_j)\\
+\begin{align*}
+\mathcal{J}_{j,1}&=\frac{\partial \pi_{.j}}{\partial \Omega}=1 \quad
+\mathcal{J}_{j+1,j+1}&=\frac{\partial \pi_{.j+1}}{\partial \gamma_j}=\frac{\partial}{\partial \gamma_j}\left[G(\gamma_{j+1})-G(\gamma_{j})\right]=-g(\gamma_j) \quad
 \mathcal{J}_{j,j+1}&=\frac{\partial \pi_{.j}}{\partial \gamma_j}=\frac{\partial}{\partial \gamma_j}\left[G(\gamma_{j})-G(\gamma_{j-1})\right]=g(\gamma_j)
-\end{align}
-Where $j=1,\ldots,J-1$, $g(\cdot)$ is the pdf of the distribution $G(\cdot)$, and $\mathcal{J}_{r,c}=0$ for all other entries. The form of the Jacobian is
-<!--!!!! NB: $G^{-1}()$ is cdf so $g()$ is pdf, need to correct notation throughout so that $G^{-1}()$ is inverse cdf/quantile and $G()$ is cdf
--->
+\end{align*}
+Where $j=1,\ldots,J-1$, $g(\cdot)$ is the pdf of the distribution $G(\cdot)$, and $\mathcal{J}_{r,c}=0$ for all other entries so the form of the Jacobian is
 
 <!--
  \begin{vmatrix} 
@@ -223,9 +219,8 @@ Where $j=1,\ldots,J-1$, $g(\cdot)$ is the pdf of the distribution $G(\cdot)$, an
  \mathcal{J}_{31} & \mathcal{J}_{32} & \mathcal{J}_{33} & \mathcal{J}_{34}\\
  \mathcal{J}_{41} & \mathcal{J}_{42} & \mathcal{J}_{43} & \mathcal{J}_{44}\\
  \end{vmatrix}\\
- =
+ = 
 -->
-
 \begin{equation}
 \begin{vmatrix} 
 1      &  g(\gamma_1)  &  0            & 0           & \cdots           & 0 \\
@@ -237,34 +232,32 @@ Where $j=1,\ldots,J-1$, $g(\cdot)$ is the pdf of the distribution $G(\cdot)$, an
 \end{vmatrix}
 \end{equation}
 
+While it is possible to define separate $\alpha_j$ parameters, we restrict our attention to symmetric Dirichlet distributions which use a single $\alpha$ value for all categories (i.e., $\alpha_1 = \alpha_2 = \cdots = \alpha_J$). The symmetric Dirichlet prior on $\boldsymbol{\pi_{.}}$ along with the transformation $h(\cdot)$ induces a prior for the $\boldsymbol{\gamma}$ with $\boldsymbol{\alpha}$ controlling the concentration of the induced prior. Figure \@ref(fig:probit-induced) shows induced $\boldsymbol{\gamma}$ priors assuming a probit link for several possible choices of concentration parameter and number of categories. The choices correspond to several options for a multinomial-Dirichlet model [@gelman_bayesian_2014] <!-- sec 3.4 -->: a uniform Dirichlet ($\boldsymbol{\alpha}=1$), Jeffrey's prior ($\boldsymbol{\alpha}=1/2$), an overall objective prior recommended by Berger et al. [@berger_overall_2015] ($\boldsymbol{\alpha}=1/J$), and an additional empirical determined reciprocal formula ($\boldsymbol{\alpha}=1/(0.8+0.35J)$).
 
-The Dirichlet prior on $\boldsymbol{\pi_{.}}$ along with the transformation $h(\cdot)$ induces a prior for the $\boldsymbol{\gamma}$. The choice of $\alpha_j$ controls how concentrated the induced prior is around the MLEs for the cutpoints when $X=0$.
+In multiparameter models, the optimal choice of reference prior depends on the parameter or statistic of interest (e.g. $\beta$, conditional CDF, conditional mean) [@berger_overall_2015].  Without prior information, we seek a value of $\alpha$ that will have a minimal impact on inference for a variety of settings and quantities of interest while still producing posterior estimates that can be well sampled by the MCMC algorithm.
 
-Figure \@ref(fig:probit-induced) shows induced priors
+The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs sampling using Hamiltonian Monte Carlo.
 
-```{r probit-induced, fig.cap="Induced priors", fig.align='center', out.width='90%'}
+[Note: the Berger et al. manuscript provides an approach for determining an 'overall objective prior' more systematically, but may be difficult to implement if interested in posterior parameters and functions of parameters (mean, CDF) simultaneously]
+
+<!--
+how concentrated the induced prior is around the MLEs for the cutpoints when $X=0$.-->
+
+```{r probit-induced, fig.cap="Induced $\\boldsymbol{\\gamma}$ priors under $G^{-1}(\\cdot)=\\Phi^{-1}(\\cdot)$", fig.align='center', out.width='95%'}
 knitr::include_graphics(file.path(wd,"fig","probit_induced.png"))
 ```
 
-Assuming a symmetric Dirichlet distribution $\alpha_1 = \alpha_2 = \cdots = \alpha_n$, we explore several possible choices for the $\alpha_j$ parameters
 
-show draws of $\boldsymbol{\gamma}$ induced priors for each of the possible prior choices for $\alpha_j$
-
+<!--
 [possible choices Uniform 1, Jeffrey's 1/2, Objective?? $\alpha_j =\frac{1}{J}$ for all $j$, 1/(0.8 + 0.35 * max(n, 3))]. 
 
-
-
-In multi-parameter models, the optimal choice of reference prior depends on the parameter or statistic of interest (e.g. $\beta$, conditional CDF, conditional mean)  so we seek a value of $\alpha$ that will provide a overall default for a variety of settings and quantities of interest ... following the approach of Berger et al. [@berger_overall_2015].  
-
 We explore several choices of prior with a goal of fin
-
 
 (prior predictive distribution - first draw params from Dirichlet, then draw cdf vals see BDA3 p 7, plot ranks on x-axis and cdf val on y-axis)
 
 Under conjugacy, the $\alpha_j$ can be interpreted as the number of pseudo-observations in each category contributed by the prior, so the choice of $\alpha_j =\frac{1}{J}$ implies a total prior contribution equivalent to 1 observation. <- what about Jacobian though
 
 
-<!--
 $\alpha=1$ equally favor all vectors $p_i$ such that $\sum p_i =1$
 $\alpha < 1$ favors sparsity in most cells with high prob for small number of cells
 $\alpha > 1$ favors equally distributed counts (If all concentration parameters are equal but greater than 1 then the prior mode is that the categories are equiprobable, and the larger the value of the identical concentration parameters, the more sharply peaked the distribution is at the mode. )
@@ -275,19 +268,18 @@ using a symmetric Dirichlet distribution so $\alpha_1=\alpha_2=\cdots=\alpha_n=1
 
 
 
-### Conditional Functionals
+### Posterior Conditional Quantities
 
 <!--
 [description of how to use Bayesian CPM to get parameter ests. for shifts in distribution and other quantities of interest, e.g. conditional CDF Mean, Quantiles, using a single model]
 -->
 
-Using MCMC samples from the posterior distribution ($\tilde{\gamma}$, $\tilde{\beta}$) it is straightforward to calculate the posterior conditional CDF, mean, quantiles or other functionals as shown in the table.
+Using samples from the posterior distribution ($\tilde{\gamma}$, $\tilde{\beta}$) for the model defined in (\ref{eq:post}) it is straightforward to calculate the posterior conditional CDF, mean, quantiles or other functions of the parameters
 
 - Posterior conditional CDF:  $\tilde{F}(y_i|\boldsymbol{x}_i)=G(\tilde{\gamma}_{r(y_i)}-\boldsymbol{x}_i^{T}\tilde{\boldsymbol{\beta}})$
 
 - Posterior conditional mean:
 $\tilde{E}[Y|\boldsymbol{x}_i]=\sum_{i=1}^{n}y_i\tilde{f}(y_i|\boldsymbol{x}_i)$ where $\tilde{f}(y_i|\boldsymbol{x}_i)=\tilde{F}(y_i|\boldsymbol{x}_i)-\tilde{F}(y_{i-1}|\boldsymbol{x}_i)$
-
 
 - Posterior conditional quantile:
 To estimate the $q^{th}$ quantile 
@@ -359,17 +351,13 @@ add hyperprior so $\alpha \sim Gamma(a,b)$ (some sort of weakly informative, pos
 
 ## Simulations
 
-To evaluate the long-run frequency properties of the Bayesian CPM we generate data from two simulation models.
-
-The first model for a continuous outcome is:
+To evaluate the long-run frequency properties of the Bayesian CPM we generate data from two simulation models. Both models begin with continuous data using:
 $$Y=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim N(0,1)$$
 where $\beta_1=1$, $\beta_2=-0.5$, $X_1 \sim Bernoulli(0.5)$ and $X_2 \sim N(0,1)$
 
-The second simulation model uses identical datasts, but sets values of $Y<0$ to 0 to produce a mixed discrete/continuous outcome. $1000$ datasets were simulated for sample sizes $n=25,50,100,200$ and $400$
+The second model then sets values of $Y<0$ to 0 to produce a mixed discrete/continuous outcome simulating a lower limit of detection. $1000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$
 
-A Bayesian CPM using three $\alpha$ concentration hyperparameters for $p(\boldsymbol{\pi_{.}})$ with the properly specified probit link was fit to each simulated dataset across the two outcome models. <!-- For comparison, the NPMLE CPM model [and the BNP model for residuals] were also fit to each dataset. --> The average bias of the posterior medians and standard errors of $\beta_1$ and $\beta_2$ were compared for the three models. In addition, five posterior intercept parameter estimates were compared for the Bayesian and frequentist CPM models.
-
-add sims for conditional CDF, mean, and quantile
+A Bayesian CPM using three $\boldsymbol{\alpha}$ concentration hyperparameters for $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha})$ with the properly specified probit link was fit to each simulated dataset across the two outcome models. <!-- For comparison, the NPMLE CPM model [and the BNP model for residuals] were also fit to each dataset. --> We examine the average percent bias of the posterior median parameters $\beta_1$ and $\beta_2$ and five posterior median $\gamma_j$ parameters corresponding to $y$ values $y_1=e^{-1},y_2=e^{-0.33},y_3=e^{0.5},y_4=e^{1.33},y_5=e^2$. We also calculate average percent bias for: the conditional CDF for the same $y$ values at $X_1=1$ and $X_2=1$ (Note: cdf at $X_1=1$ and $X_2=0$ not shown), the conditional median at $X_1=1$ and $X_2=1$, and for the uncensored outcome simulations, the conditional mean and 20$^{th}$ percentile. 
 
 <!--
 additional sims
@@ -379,7 +367,7 @@ case where likelihood not well approximated by quadratic function (ie NPMLE does
 weird shapes (i.e. mixture distributions); mixture continuous/discrete (lower limit of detection) - see Yuqi's paper for ideas
 -->
 
-Describe posterior predictive checks, Bayesian p-value or some additional Bayesian model checking
+[Describe posterior predictive checks, Bayesian p-value or some additional Bayesian model checking]
 
 
 [section describing how models were actually fit, i.e. used HMC implemented in Stan, JAGS, etc?]
@@ -393,65 +381,105 @@ Use HIV data from Dr. Koethe. Describe background, data and modeling approach
 
 The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in ???. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates (age, sex, race, smoking status, study location and CD4 cell count).
 
-The biomarkers of interest are (IL-6) and IL-1-$\beta$. Both biomarkers are skewed and have values censored below a lower limit of detection. To account for skewness and censoring in the outcomes we fit a Bayesian CPM model using a probit link function to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
+The biomarkers of interest are (IL-6) and IL-1-$\beta$. Both biomarkers are skewed and have values censored below a lower limit of detection. To account for skewness and censoring in the outcomes we fit a Bayesian CPM model using a probit link function to estimate the association between BMI and the conditional median, and 90th quantile of each biomarker.
 
 # Results
 
 
 ## Simulations
 
-!!! add new sim plots !!!
+Overall, the Bayesian CPM had relatively good performance under the simulation settings explored, especially for larger values of $n$. The three $\boldsymbol{\alpha}$ values produced similar results for most scenarios 
 
-Figure \@ref(fig:simplt1) presents the results of the Bayesian CPM model for the uncensored simulation data 
 
-```{r simplt1, fig.cap="Bias in uncensored simulations", fig.align='center', out.width='90%'}
+The average percent bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars1) and \@ref(fig:simplt-pars2) for the uncensored and censored outcome data, respectively. 
+
+```{r simplt-pars1, fig.cap="Bias in parameters for uncensored simulations", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_param_full2.png"))
 ```
 
-```{r simplt2, fig.cap="Bias in censored simulations", fig.align='center', out.width='90%'}
+```{r simplt-pars2, fig.cap="Bias in parameters for censored simulations", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_param_cens2.png"))
 ```
 
-Describe results from graphs, compare and contrast the prior models
+
+Figures \@ref(fig:simplt-cdf1) and \@ref(fig:simplt-cdf2) show the bias in the posterior conditional CDF.
+
+```{r simplt-cdf1, fig.cap="Bias in conditional CDF for uncensored simulations", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_cdf_full.png"))
+```
+
+```{r simplt-cdf2, fig.cap="Bias in conditional CDF for censored simulations", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_cdf_cens.png"))
+```
+
+The results for the conditional posterior median are shown in figures \@ref(fig:simplt-med1) and \@ref(fig:simplt-med2).
+
+```{r simplt-med1, fig.cap="Bias in conditional median for uncensored simulations", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_med_full.png"))
+```
+
+```{r simplt-med2, fig.cap="Bias in conditional median for censored simulations", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_med_cens.png"))
+```
+
+
+Figure \@ref(fig:simplt-mn) presents the average bias in the posterior conditional mean for the uncensored simulation data. 
+
+```{r simplt-mn, fig.cap="Bias in conditional mean for uncensored simulations", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_mn_full.png"))
+```
+
+Figure \@ref(fig:simplt-q20-1) presents the  results of the Bayesian CPM model for the uncensored simulation data 
+
+```{r simplt-q20-1, fig.cap="Bias in conditional 20th percentile for uncensored simulations", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_q20_full.png"))
+```
 
 
 ## Case Study 
 
+
+Posterior parameter estimates for each of the biomarker outcomes in the HIV case study data are shown in \@ref(fig:il6-1) and \@ref(fig:il-1-beta-1). BMI is positively associated with increased IL-6
+
 Add sensitivity analysis and other Bayesian modeling checks (convergence and model)
 
-```{r il6_1, fig.align='center', out.width='75%'}
+```{r il6-1, fig.cap='Posterior parameters for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
 ```
 
-
-```{r il6_2, fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_6_bmi.png"))
-```
-
-
-```{r il_1_beta_1, fig.align='center', out.width='75%'}
+```{r il-1-beta-1, fig.cap='Posterior parameters for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
 ```
 
 
-```{r il_1_beta_2, fig.align='center', out.width='75%'}
+```{r il6-2, fig.align='center', out.width='75%'}
+knitr::include_graphics(file.path(wd,"fig","il_6_bmi.png"))
+```
+
+```{r il-1-beta-2, fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_bmi.png"))
 ```
 
 # Discussion
 
-Bayesian CPMs are a versatile modeling approach with many advantages
+Bayesian CPMs are a versatile modeling approach with many advantages:
 
-Avoid specification of outcome transformation, handle continuous and discrete ordered outcomes, estimate full conditional CDF, conditional mean and quantiles using a single model, provide exact inference 
+- Avoid specification of outcome transformation 
+- handle continuous and discrete ordered outcomes 
+- estimate full conditional CDF, conditional mean and quantiles using a single model
+- provide inference without asymptotic assumptions
 
 ## Limitations
 
-- bias for small $n$
-- Another potential limitation of the formulation above is that the number of distinct outcome values must be known *a priori*, that is we condition on $J$ categories. Some discussion of extensions using  e.g. Dirichlet process mixture or Polya trees (ref semiparameteric surv. analysis papers?)
-- speed?
+- Bias for small $n$
+- The number of distinct outcome values must be known *a priori*, that is we condition on $J$ categories. In practice, the number of distinct outcome values is unlikely to be known prior to data collection, so this formulation violates the principle that the prior should be specified without reference to the observed data.<!-- Some discussion of extensions using  e.g. Dirichlet process mixture or Polya trees (ref semiparameteric surv. analysis papers?) -->
+- Computation time
 
 ## Extensions
 
+- fully nonparametric priors, e.g. Dirichlet process mixture or Polya trees
+- partial proportional odds 
+- relaxation of link function specification
 
 <!--
 
