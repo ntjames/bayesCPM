@@ -96,45 +96,52 @@ plot_induced_full_gg_dat <- function(conc_fun, cats, link=qlogis,
   
   ctpt <- apply(cdraws,1,link)[,1:(cats-1)] # cutpoints
   
-  # ctpoints based on MLE when beta_x is 0
-  mlectpt <- link(cumsum(rep(1/cats,cats)))[1:(cats-1)]
-  
   ctpt_qt <- apply(ctpt, 2, quantile, probs=prbs, na.rm=TRUE)
   
   dt <- as_tibble(t(ctpt_qt)) %>% add_rownames() %>% 
     rename(cpt=rowname) %>% 
     mutate(cpt=as.numeric(cpt),ncats=cats,fun=deparse(conc_fun)[2])
+  
+  if(mleplt){
+  # ctpoints based on MLE when beta_x is 0
+  mlectpt <- link(cumsum(rep(1/cats,cats)))[1:(cats-1)]
+  dt <- dt %>% mutate(mlectpt=mlectpt)
+  }
+  
 dt
 }
 
 #plot_induced_full_gg_dat(funb,cats=100,n=10)
 
-plotmle<-FALSE
+plotmle<-TRUE
 lnk <- qnorm
 a1<-plot_induced_full_gg_dat(funb,cats=25,link=lnk,mleplt=plotmle) # 1/ncats
 a2<-plot_induced_full_gg_dat(funi,cats=25,link=lnk,mleplt=plotmle)
-a3<-plot_induced_full_gg_dat(funk,cats=25,link=lnk,mleplt=plotmle) # 1/2
-a4<-plot_induced_full_gg_dat(funj,cats=25,link=lnk,mleplt=plotmle) # 1
+a3<-plot_induced_full_gg_dat(funh,cats=25,link=lnk,mleplt=plotmle)
+a4<-plot_induced_full_gg_dat(funk,cats=25,link=lnk,mleplt=plotmle) # 1/2
+a5<-plot_induced_full_gg_dat(funj,cats=25,link=lnk,mleplt=plotmle) # 1
 
 b1<-plot_induced_full_gg_dat(funb,cats=50,link=lnk,mleplt=plotmle) # 1/ncats
 b2<-plot_induced_full_gg_dat(funi,cats=50,link=lnk,mleplt=plotmle)
-b3<-plot_induced_full_gg_dat(funk,cats=50,link=lnk,mleplt=plotmle) # 1/2
-b4<-plot_induced_full_gg_dat(funj,cats=50,link=lnk,mleplt=plotmle) # 1
+b3<-plot_induced_full_gg_dat(funh,cats=50,link=lnk,mleplt=plotmle)
+b4<-plot_induced_full_gg_dat(funk,cats=50,link=lnk,mleplt=plotmle) # 1/2
+b5<-plot_induced_full_gg_dat(funj,cats=50,link=lnk,mleplt=plotmle) # 1
 
 c1<-plot_induced_full_gg_dat(funb,cats=100,link=lnk,mleplt=plotmle) # 1/ncats
 c2<-plot_induced_full_gg_dat(funi,cats=100,link=lnk,mleplt=plotmle)
-c3<-plot_induced_full_gg_dat(funk,cats=100,link=lnk,mleplt=plotmle) # 1/2
-c4<-plot_induced_full_gg_dat(funj,cats=100,link=lnk,mleplt=plotmle) # 1
+c3<-plot_induced_full_gg_dat(funh,cats=100,link=lnk,mleplt=plotmle)
+c4<-plot_induced_full_gg_dat(funk,cats=100,link=lnk,mleplt=plotmle) # 1/2
+c5<-plot_induced_full_gg_dat(funj,cats=100,link=lnk,mleplt=plotmle) # 1
 
 ppr_fig_dir<-file.path('/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm/paper/fig')
 
-pltw<-10
+pltw<-12
 plth<-9
 atxtsz<-9
 fctsiz<-13
 
-pltdt<-bind_rows(a1,a2,a3,a4,b1,b2,b3,b4,c1,c2,c3,c4) %>% 
-  mutate(conc=factor(fun,levels=c('1/J','1/(0.8 + 0.35 * J)','1/2','1'))) 
+pltdt<-bind_rows(a1,a2,a3,a4,a5,b1,b2,b3,b4,b5,c1,c2,c3,c4,c5) %>% 
+  mutate(conc=factor(fun,levels=c('1/J','1/(2 + (J/3))','1/(0.8 + 0.35 * J)','1/2','1'))) 
 
 pltdt %>% 
   ggplot(aes(x=cpt,y=`50%`)) + 
@@ -145,7 +152,7 @@ pltdt %>%
                      values = c('blue')) +
   scale_fill_manual(labels= c('50% int','95% int'),
                     values = alpha('blue',c(0.4,0.2))) +
-  facet_wrap(~ncats+conc, labeller= label_both, scales = "free_x", nrow=4, ncol=4) +
+  facet_wrap(~ncats+conc, labeller= label_both, scales = "free_x", nrow=4, ncol=5) +
   labs(color='', fill='') +
   coord_cartesian(ylim=c(-10,10))+
   ylab(expression(gamma[j]))+xlab("j")+
@@ -156,6 +163,28 @@ pltdt %>%
         legend.text = element_text(size=fctsiz))
 
 ggsave(file.path(ppr_fig_dir,'probit_induced.png'),width=pltw,height=plth)
+
+
+pltdt %>% pivot_longer(cols=c(`50%`,mlectpt)) %>% 
+  ggplot(aes(x=cpt,y=value)) + 
+  geom_ribbon(aes(ymin=`25%`,ymax=`75%`,fill='50% int'))+
+  geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`,fill='95% int'))+
+  geom_line(aes(color=name, linetype = name)) +
+  scale_color_manual(name='',labels=c('median','MLE'), values = c('blue','red')) +
+  scale_linetype_manual(name='',labels=c('median','MLE'),values = c('solid','dashed')) +
+  scale_fill_manual(labels= c('50% int','95% int'),
+                    values = alpha('blue',c(0.4,0.2))) +
+  facet_wrap(~ncats+conc, labeller= label_both, scales = "free_x", nrow=4, ncol=5) +
+  labs(color='', fill='') +
+  coord_cartesian(ylim=c(-10,10))+
+  ylab(expression(gamma[j]))+xlab("j")+
+  theme(axis.title.x=element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        legend.text = element_text(size=fctsiz))
+
+ggsave(file.path(ppr_fig_dir,'probit_induced_mle.png'),width=pltw,height=plth)
 
 # can try this for better legend
 # https://stackoverflow.com/questions/28714492/legend-with-geom-line-and-geom-ribbon
