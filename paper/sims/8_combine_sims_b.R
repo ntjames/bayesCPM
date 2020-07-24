@@ -184,6 +184,17 @@ rm(cn0,cn1,cn2,fl0,fl1,fl2,nmlist,nm,nm0,n,pre)
 # true cdf values
 if(0){
 # beta[1]*z1+beta[2]*z2
+plnorm(exp(c(-1, -0.33, 0.5, 1.33, 2)),1*1-0.5*1,1)
+curve(plnorm(x,1*1-0.5*1,1),0,10,xlab='y')
+segments(x0=exp(c(-1, -0.33, 0.5, 1.33, 2)),
+         y0=rep(0,5),
+         y1=plnorm(exp(c(-1, -0.33, 0.5, 1.33, 2)),1*1-0.5*1,1),
+         lty=2)
+segments(x0=rep(-3,5),
+         x1=exp(c(-1, -0.33, 0.5, 1.33, 2)),
+         y0=plnorm(exp(c(-1, -0.33, 0.5, 1.33, 2)),1*1-0.5*1,1),
+         lty=2)
+  
 pnorm(c(-1, -0.33, 0.5, 1.33, 2),1*1-0.5*1,1)
 curve(pnorm(x,1*1-0.5*1,1),-3,3, xlab='log(y)')
 segments(x0=c(-1, -0.33, 0.5, 1.33, 2),
