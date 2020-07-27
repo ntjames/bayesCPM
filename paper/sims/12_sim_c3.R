@@ -193,7 +193,7 @@ sim3_coeff.fun <- function(sim=5, seed=1, n=50, p=0.5, alpha=0, beta=c(1,-0.5),
       mod_data <- mkStanDat(data, outcome="y",
                             preds = c("z1", "z2"),
                             link=1, #logistic link
-                            conc=function(n) 1/n)
+                            conc=function(n) 1/2)
 
       cpm_fit <- sampling(ord_mod1, data=mod_data, seed=seeds[i],
                  iter=4000, warmup=2000, chains=2, refresh=2000,
@@ -235,7 +235,7 @@ sim3_coeff.fun <- function(sim=5, seed=1, n=50, p=0.5, alpha=0, beta=c(1,-0.5),
       mod_data_cn <- mkStanDat(data, outcome="y.cens",
                             preds = c("z1", "z2"),
                             link=1, #logistic link
-                            conc=function(n) 1/n)
+                            conc=function(n) 1/2)
 
       cpm_fit_cn <- sampling(ord_mod1, data=mod_data_cn, seed=seeds[i],
                  iter=4000, warmup=2000, chains=2, refresh=2000,
@@ -311,7 +311,7 @@ sim3_coeff.fun <- function(sim=5, seed=1, n=50, p=0.5, alpha=0, beta=c(1,-0.5),
 # foo2<-rbind(foo[[1]])
 # foo3<-lapply(foo2, bind_rows)
 
-simout <- paste0("sim_c0_n",nsamps,"_",rep)
+simout <- paste0("sim_c3_n",nsamps,"_",rep)
 assign(simout, sim3_coeff.fun(sim=200, seed=seed, n=nsamps))
 
 saveRDS(get(simout), file = file.path(dir,"out",paste0(simout,".rds")))
