@@ -19,16 +19,16 @@ in addition to stan_polr
 knitr::opts_chunk$set(echo = TRUE)
 
 #rm(list=ls())
-libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "ordinal", "MASS")
+libs <- c("rstan", "rstanarm", "rms", "dplyr", "stringr", "readr", "ordinal", "MASS","bayesCPM")
 invisible(lapply(libs, library, character.only = TRUE))
 
 # CPM functions
-dir<-getwd()
-source(file.path(dir,"cpm_functions.r"))
+#dir<-getwd()
+#source(file.path(dir,"cpm_functions.r"))
 
 # for _dt versions of cpm functions
-library(data.table)
-library(dtplyr)
+# library(data.table)
+# library(dtplyr)
 
 
 set.seed(4991)
@@ -41,14 +41,14 @@ options(mc.cores=parallel::detectCores())
 ```{r}
 # compile/read in CPM models
 
-# concentration (alpha) is given as a scalar parameter along with in data
-if (0){
-ord_mod_file1 <- read_file(file.path(getwd(),"ordinal_model_1.stan"))
-ord_mod1 <- stan_model(model_code = ord_mod_file1)
-saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
-}
-
-ord_mod1 <- readRDS(file.path(getwd(),"ordinal_model_1.rds"))
+# # concentration (alpha) is given as a scalar parameter along with in data
+# if (0){
+# ord_mod_file1 <- read_file(file.path(getwd(),"ordinal_model_1.stan"))
+# ord_mod1 <- stan_model(model_code = ord_mod_file1)
+# saveRDS(ord_mod1, file = file.path(getwd(),"ordinal_model_1.rds"))
+# }
+# 
+# ord_mod1 <- readRDS(file.path(getwd(),"ordinal_model_1.rds"))
 ```
 
 
@@ -81,7 +81,7 @@ g
 ```{r ex1.2, cache=TRUE}
 mod_data1 <- mkStanDat(dat1, outcome="y", preds = c("x1","x2"), link=1)
 
-fit_ord1 <- sampling(ord_mod1, data=mod_data1, seed=12345, 
+fit_ord1 <- bayes_cpm(mod_data1, data=mod_data1, seed=12345, 
                  iter=8000, warmup=2000, chains=4,
                  control = list(adapt_delta = 0.8))
 
@@ -122,7 +122,8 @@ mod_data1_cp_init <- qlogis(cumsum(mod_data1_pis))[1:66]
 ini <- list(cutpoints=mod_data1_cp_init )
 ini_list <- lapply(1:4, function(x) lapply(ini,jitter))
 
-fit_ord1b <- sampling(ord_mod1, data=mod_data1, seed=12345, 
+
+fit_ord1b <- bayes_cpm(ord_mod1, data=mod_data1, seed=12345, 
                  iter=8000, warmup=2000, chains=4, 
                  init = ini_list,
                  control = list(adapt_delta = 0.8))
@@ -130,6 +131,7 @@ fit_ord1b <- sampling(ord_mod1, data=mod_data1, seed=12345,
 fit_ord1b
 ```
 
+<!--- modify below here to use bayesCPM --->
 
 ```{r ex1.3, cache=TRUE}
 # compare intercepts from lrm, orm, ordinal (clm), polr, and bayes_cpm
