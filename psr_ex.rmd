@@ -131,18 +131,25 @@ set.seed(237)
 n <- 100
 x1 <- rnorm(n)
 x2 <- x1^2
-y2 <- 0.9*x1 + 1.2*x2 + rlogis(n)
-dat4 <- data.frame(y=ordered(y2), y_num=y2, x1, x2)
+x3 <- rexp(n)
+y2 <- 0.9*x1 + 1.2*x2 - 3.7*x3 + rlogis(n)
+# try with categorized y2, trad. ordinal model
+y2 <- cut(y2,breaks=15) %>% as.numeric()
+dat4 <- data.frame(y=ordered(y2), y_num=y2, x1, x2, x3)
 
 # mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=2) # probit link
-mod_data4  <- mkStanDat(dat4, outcome="y", preds = c("x1","x2"), link=1)
+mod_data4  <- mkStanDat(dat4, outcome="y", preds = c("x1","x2","x3"), link=1)
 
 bg2 <- bayes_cpm(mod_data4, seed=2782, 
                  iter=2500, warmup=2000, chains=4,
                  control = list(adapt_delta = 0.85))
 
-cdf_dat2 <- getCDF(bg2, mod_data4, newdata=data.frame(x1=x1,x2=x2),summ=FALSE) 
+summary(bg2,pars="b")$summary
 
+cdf_dat2 <- getCDF(bg2, mod_data4, newdata=data.frame(x1=x1,x2=x2,x3=x3),summ=FALSE) 
+```
+
+```{r}
 # prob scale residuals
 cdf_dat_tst2 <- cdf_dat2 %>% filter(Var1 %in% LETTERS[1:20])
 
@@ -150,7 +157,7 @@ cdf_dat_tst2 <- cdf_dat2 %>% filter(Var1 %in% LETTERS[1:20])
 # verify calcs are correct!!
 # check Liu_orm_code.r for presid.orm() 
 # pr(y>Y) - pr(y<Y) = - pr(y<Y) + pr(y>Y)
-cdf_mrg2 <- merge(dat4, cdf_dat_tst2, by=c("x1","x2")) %>% mutate(y_chk=as.numeric(as.character(y)), flg=(y_chk==yval),
+cdf_mrg2 <- merge(dat4, cdf_dat_tst2, by=c("x1","x2","x3")) %>% mutate(y_chk=as.numeric(as.character(y)), flg=(y_chk==yval),
        surv=1-cdf, psr=surv-cdf) %>% 
   filter(flg==TRUE)
 
@@ -175,28 +182,77 @@ cdf_mrg2 %>% ggplot(aes(x=x1,y=psr,group=Var1))+
 ```
 
 ```{r}
-# scratch
-# y_rep2 <- cdf_dat2 %>% filter(Var1 %in% LETTERS[1:10]) %>% group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
-# 
-# ggplot(data=y_rep2, aes(x=yval, group=Var1)) + 
-#   geom_density(col="lightblue") +
-#   geom_density(data=data.frame(yval=y2), aes(x=yval),color="blue", inherit.aes = FALSE)
+# posterior predictive check?
+y_rep2 <- cdf_dat2 %>% filter(Var1 %in% paste0(LETTERS,1:50)) %>% mutate(yy=yval,yy=if_else(yy==-Inf,0,yy),yy=yy+1) %>%  group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
+
+ggplot(data=y_rep2, aes(x=yy, group=Var1)) +
+  geom_density(col="lightblue") +
+  geom_density(data=data.frame(yval=y2), aes(x=yval),color="blue", inherit.aes = FALSE)
+
+```
+
+
+```{r}
+# posterior predictive check (betancourt)?
+c_light <- c("#DCBCBC")
+c_light_highlight <- c("#C79999")
+c_mid <- c("#B97C7C")
+c_mid_highlight <- c("#A25050")
+c_dark <- c("#8F2727")
+c_dark_highlight <- c("#7C0000")
+
+B <- 15
+idx <- rep(1:B, each=2)
+x <- sapply(1:length(idx), function(b) if(b %% 2 == 0) idx[b] + 0.5 else idx[b] - 0.5)
+
+obs_counts <- hist(dat4$y_num, breaks=(1:(B + 1)) - 0.5, plot=FALSE)$counts
+pad_obs_counts <- sapply(idx, function(n) obs_counts[n])
+
+pc0<-lapply(paste0(LETTERS,1:50), function(n) y_rep2 %>% filter(Var1==n) %>% select("yy") %>% pull())
+
+pred_counts <-sapply(pc0, function(x) hist(x,breaks=(1:(B + 1)) - 0.5, plot=FALSE)$counts)
+
+probs = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+cred <- sapply(1:B, function(b) quantile(pred_counts[b,], probs=probs))
+pad_cred <- do.call(cbind, lapply(idx, function(n) cred[1:9,n]))
+
+plot(1, type="n", main="Posterior Predictive Distribution",
+     xlim=c(0.5, B + 0.5), xlab="y",
+     ylim=c(0, max(c(obs_counts, cred[9,]))), ylab="")
+
+polygon(c(x, rev(x)), c(pad_cred[1,], rev(pad_cred[9,])),
+        col = c_light, border = NA)
+polygon(c(x, rev(x)), c(pad_cred[2,], rev(pad_cred[8,])),
+        col = c_light_highlight, border = NA)
+polygon(c(x, rev(x)), c(pad_cred[3,], rev(pad_cred[7,])),
+        col = c_mid, border = NA)
+polygon(c(x, rev(x)), c(pad_cred[4,], rev(pad_cred[6,])),
+        col = c_mid_highlight, border = NA)
+lines(x, pad_cred[5,], col=c_dark, lwd=2)
+
+lines(x, pad_obs_counts, col="white", lty=1, lw=2.5)
+lines(x, pad_obs_counts, col="black", lty=1, lw=2)
+
 ```
 
 ```{r}
-#misspecified model (dropped x2)
-mod_data5  <- mkStanDat(dat4, outcome="y", preds = c("x1"), link=1)
+#misspecified model (dropped x2 & x3, wrong link)
+mod_data5  <- mkStanDat(dat4, outcome="y", preds = c("x1"), link=3)
 
 bg3 <- bayes_cpm(mod_data5, seed=2782, 
                  iter=2500, warmup=2000, chains=4,
                  control = list(adapt_delta = 0.85))
 
+summary(bg3,par="b")$summary
+
 cdf_dat3 <- getCDF(bg3, mod_data5, newdata=data.frame(x1=x1), summ=FALSE) 
 
+```
 
-
+```{r}
 # prob scale residuals
-cdf_dat_tst3 <- cdf_dat3 %>% filter(Var1 %in% LETTERS[1:20])
+cdf_dat_tst3 <- cdf_dat3 %>% filter(Var1 %in% paste0(LETTERS,1:20))
+
 
 # prob scale residuals
 # check Liu_orm_code.r for presid.orm() 
@@ -217,20 +273,53 @@ cdf_mrg3 %>% ggplot(aes(sample=psr,group=Var1)) +
                distribution = stats::qunif,
                dparams=list(min=-1,max=1),line.p=c(0.01,0.99),
                inherit.aes=FALSE)
-```
 
-```{r}
 cdf_mrg3 %>% ggplot(aes(x=x1,y=psr,group=Var1))+geom_point()+geom_smooth(se=FALSE) 
 ```
 
 
 ```{r}
-# scratch
-# --> seems to show this procedure is not actually posterior predictive check, more like bootstrap draws from outcome
-# y_rep3 <- cdf_dat3 %>% filter(Var1 %in% LETTERS[1:10]) %>% group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()  
-# 
-# ggplot(data=y_rep3, aes(x=yval, group=Var1)) + 
-#   geom_density(col="lightblue") +
-#   geom_density(data=data.frame(yval=y2), aes(x=yval),color="blue", inherit.aes = FALSE)
+# posterior predictive check?
+# --> is procedure more like bootstrap draws from outcome?
+# is it a useful ppc??
+#!! ---> redo this procedure (correct & misspecified mod) with rstanarm and look at ppcs <--- !!#
+y_rep3 <- cdf_dat3 %>% filter(Var1 %in% paste0(LETTERS,1:50)) %>%
+  mutate(yy=yval,yy=if_else(yy==-Inf,0,yy),yy=yy+1) %>%  group_by(Var1,ndrow) %>% mutate(rand=runif(1)) %>% filter(cdf<rand) %>% slice_tail(n=1) %>% ungroup()
+
+ggplot(data=y_rep3, aes(x=yy, group=Var1)) +
+  geom_density(col="lightblue") +
+  geom_density(data=data.frame(yval=y2), aes(x=yval),color="blue", inherit.aes = FALSE)
+```
+
+
+```{r}
+#ppc (betancourt)
+obs_counts <- hist(dat4$y_num, breaks=(1:(B + 1)) - 0.5, plot=FALSE)$counts
+pad_obs_counts <- sapply(idx, function(n) obs_counts[n])
+
+pc0<-lapply(paste0(LETTERS,1:50), function(n) y_rep3 %>% filter(Var1==n) %>% select("yy") %>% pull())
+
+pred_counts <-sapply(pc0, function(x) hist(x,breaks=(1:(B + 1)) - 0.5, plot=FALSE)$counts)
+
+probs = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+cred <- sapply(1:B, function(b) quantile(pred_counts[b,], probs=probs))
+pad_cred <- do.call(cbind, lapply(idx, function(n) cred[1:9,n]))
+
+plot(1, type="n", main="Posterior Predictive Distribution",
+     xlim=c(0.5, B + 0.5), xlab="y",
+     ylim=c(0, max(c(obs_counts, cred[9,]))), ylab="")
+
+polygon(c(x, rev(x)), c(pad_cred[1,], rev(pad_cred[9,])),
+        col = c_light, border = NA)
+polygon(c(x, rev(x)), c(pad_cred[2,], rev(pad_cred[8,])),
+        col = c_light_highlight, border = NA)
+polygon(c(x, rev(x)), c(pad_cred[3,], rev(pad_cred[7,])),
+        col = c_mid, border = NA)
+polygon(c(x, rev(x)), c(pad_cred[4,], rev(pad_cred[6,])),
+        col = c_mid_highlight, border = NA)
+lines(x, pad_cred[5,], col=c_dark, lwd=2)
+
+lines(x, pad_obs_counts, col="white", lty=1, lw=2.5)
+lines(x, pad_obs_counts, col="black", lty=1, lw=2)
 
 ```
