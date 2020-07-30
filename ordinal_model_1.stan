@@ -32,7 +32,7 @@ transformed parameters {
 
 model {
   
-  //prior for counts (is it on right scale? transform to scale of cutpoints/intercepts??)
+  //prior for counts
   // repeat alpha for all params (i.e. symmetric Dirichlet)
   target += dirichlet_lpdf(pi | rep_vector(alpha, ncat));
   // equivalently
