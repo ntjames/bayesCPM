@@ -45,6 +45,38 @@ help(package="bayesm")
 
 ?rDPGibbs
 ?rivDP
+
+if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=2000} else {R=10}
+
+R <- 2000
+set.seed(66)
+
+## simulate univariate data from Chi-Sq
+N = 200
+chisqdf = 8
+y1 = as.matrix(rchisq(N,df=chisqdf))
+
+## set arguments for rDPGibbs
+Data1 = list(y=y1)
+Prioralpha = list(Istarmin=1, Istarmax=10, power=0.8)
+Prior1 = list(Prioralpha=Prioralpha)
+Mcmc = list(R=R, keep=1, maxuniq=200)
+
+out1 = rDPGibbs(Prior=Prior1, Data=Data1, Mcmc=Mcmc)
+
+if(0){
+## plotting examples
+rgi = c(0,20)
+grid = matrix(seq(from=rgi[1],to=rgi[2],length.out=50), ncol=1)
+deltax = (rgi[2]-rgi[1]) / nrow(grid)
+plot(out1$nmix, Grid=grid, Data=y1)
+
+## plot true density with historgram
+plot(range(grid[,1]), 1.5*range(dchisq(grid[,1],df=chisqdf)),type="n", xlab=paste("Chisq ; ",N," obs",sep=""), ylab="")
+hist(y1, xlim=rgi, freq=FALSE, col="yellow", breaks=20, add=TRUE)
+lines(grid[,1], dchisq(grid[,1],df=chisqdf) / (sum(dchisq(grid[,1],df=chisqdf))*deltax),col="blue", lwd=2)
+}
+
 ```
 
 ## Using 'DPpackage'
@@ -59,16 +91,169 @@ dpsourcefile <- file.path("~","Downloads","DPpackage_1.1-7.4.tar.gz")
 install.packages(pkgs=dpsourcefile, repos=NULL, type="source")
 ```
 
-```{r}
+```{r dppackage1}
 library(DPpackage)
 help(package="DPpackage")
 
-?DPglmm
-?DPlmm
-?DPMlmm
+## DPcdensity - Bayesian Semiparametric Conditional Density Estimation using a DPM of normals
+## This function generates a posterior density sample for a Bayesian density regression model with continuous predictors using a Dirichlet process mixture of normals model.
 ?DPcdensity
+
+if(0){
+dtrue <- function(grid,x)
+    {
+        exp(-2*x)*dnorm(grid,mean=x,sd=sqrt(0.01))+
+        (1-exp(-2*x))*dnorm(grid,mean=x^4,sd=sqrt(0.04))
+    } 
+
+nobs <- 500
+x <- runif(nobs)
+y1 <- x + rnorm(nobs, 0, sqrt(0.01))
+y2 <- x^4 + rnorm(nobs, 0, sqrt(0.04))
+
+u <- runif(nobs)
+prob <- exp(-2*x)
+y <- ifelse(u<prob,y1,y2)
+
+# Prior information
+w <- cbind(y,x)  
+wbar <- apply(w,2,mean)
+wcov <- var(w)
+
+prior <- list(a0=10,
+              b0=1,
+              nu1=4,
+              nu2=4,
+              s2=0.5*wcov,
+              m2=wbar,
+              psiinv2=2*solve(wcov),
+              tau1=6.01,
+              tau2=2.01)
+
+# Initial state
+state <- NULL
+
+# MCMC parameters
+
+mcmc <- list(nburn=5000,
+             nsave=5000,
+             nskip=3,
+             ndisplay=100)
+
+# fitting the model
+xpred <- c(0.00,0.05,0.10,0.15,0.20,0.25,
+           0.30,0.35,0.40,0.45,0.49,0.55,
+           0.60,0.65,0.70,0.75,0.80,0.85,
+           0.88,0.95,1.00)     
+
+fit <- DPcdensity(y=y,x=x,xpred=xpred,ngrid=100, 
+                  prior=prior, 
+                  mcmc=mcmc, 
+                  state=state, 
+                  status=TRUE,
+                  compute.band=TRUE,type.band="PD")
+
+# true model and estimates
+par(mfrow=c(2,3))      
+
+plot(fit$grid,fit$densp.h[3,],lwd=1,type="l",lty=2,
+     main="x=0.10",xlab="values",ylab="density",ylim=c(0,4))
+lines(fit$grid,fit$densp.l[3,],lwd=1,type="l",lty=2)
+lines(fit$grid,fit$densp.m[3,],lwd=2,type="l",lty=1)
+lines(fit$grid,dtrue(fit$grid,xpred[3]),lwd=2,
+      type="l",lty=1,col="red")
+
+plot(fit$grid,fit$densp.h[6,],lwd=1,type="l",lty=2,
+     main="x=0.25",xlab="values",ylab="density",ylim=c(0,4))
+lines(fit$grid,fit$densp.l[6,],lwd=1,type="l",lty=2)
+lines(fit$grid,fit$densp.m[6,],lwd=2,type="l",lty=1)
+lines(fit$grid,dtrue(fit$grid,xpred[6]),lwd=2,
+      type="l",lty=1,col="red")
+
+plot(fit$grid,fit$densp.h[11,],lwd=1,type="l",lty=2,
+     main="x=0.49",xlab="values",ylab="density",ylim=c(0,4))
+lines(fit$grid,fit$densp.l[11,],lwd=1,type="l",lty=2)
+lines(fit$grid,fit$densp.m[11,],lwd=2,type="l",lty=1)
+lines(fit$grid,dtrue(fit$grid,xpred[11]),lwd=2,type="l",
+      lty=1,col="red")
+
+plot(fit$grid,fit$densp.h[16,],lwd=1,type="l",lty=2,
+     main="x=0.75",xlab="values",ylab="density",ylim=c(0,4))
+lines(fit$grid,fit$densp.l[16,],lwd=1,type="l",lty=2)
+lines(fit$grid,fit$densp.m[16,],lwd=2,type="l",lty=1)
+lines(fit$grid,dtrue(fit$grid,xpred[16]),lwd=2,type="l",
+      lty=1,col="red")
+
+plot(fit$grid,fit$densp.h[19,],lwd=1,type="l",lty=2,
+     main="x=0.75",xlab="values",ylab="density",ylim=c(0,4))
+lines(fit$grid,fit$densp.l[19,],lwd=1,type="l",lty=2)
+lines(fit$grid,fit$densp.m[19,],lwd=2,type="l",lty=1)
+lines(fit$grid,dtrue(fit$grid,xpred[19]),lwd=2,type="l",
+      lty=1,col="red")
+
+# data and mean function
+plot(x,y,xlab="x",ylab="y",main="")
+lines(xpred,fit$meanfp.m,type="l",lwd=2,lty=1)
+lines(xpred,fit$meanfp.l,type="l",lwd=2,lty=2)
+lines(xpred,fit$meanfp.h,type="l",lwd=2,lty=2)
+
+  
+}
+```
+
+```{r dppackage2}
+## DPglmm
+?DPglmm
+
+```
+
+```{r dppackage3}
+## DPlmm
+?DPlmm
+
+if(0){
+# School Girls Data Example
+
+data(schoolgirls)
+attach(schoolgirls)
+
+# Prior information
+
+prior<-list(alpha=1,nu0=4.01,tau1=0.01,tau2=0.01,
+            tinv=diag(10,2),mub=rep(0,2),Sb=diag(1000,2))
+
+# Initial state
+state <- NULL
+
+# MCMC parameters
+
+nburn<-5000
+nsave<-10000
+nskip<-20
+ndisplay<-1000
+mcmc <- list(nburn=nburn,nsave=nsave,nskip=nskip,ndisplay=ndisplay)
+
+# Fit the model: First run
+
+fit1<-DPlmm(fixed=height~1,random=~age|child,prior=prior,mcmc=mcmc,
+            state=state,status=TRUE)
+fit1
+}
+```
+
+```{r dppackage4}
+?DPMlmm
+```
+
+```{r dppackage5}
 ?DPMolmm
+
+```
+
+```{r dppackage6}
 ?DPolmm
+
+
 ```
 
 ```{r PTlm_ex}
