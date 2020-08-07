@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cpm_ppr1_d0
+#SBATCH --job-name=cpm_ppr1_d1
 #SBATCH --mail-user=nathan.t.james@vanderbilt.edu
 #SBATCH --mail-type=ALL
 #SBATCH --ntasks=1
@@ -9,7 +9,7 @@
 #SBATCH --constraint=sandybridge|haswell
 #SBATCH --partition=production ## change from debug to production for real run
 #SBATCH --array=1-50 ## use array=1-50 for production
-#SBATCH --output=out/sim_d0_%a.out
+#SBATCH --output=out/sim_d1_%a.out
 
 module restore R_360
 R --version
@@ -22,4 +22,4 @@ echo "SLURM_ARRAY_JOB_ID: " $SLURM_ARRAY_JOB_ID
 ## Rscript --no-save 1_compile_mod_paper_a.R
 
 ## run array job there are 50 rows
-Rscript --no-save 15_sim_d0.R $SLURM_ARRAY_TASK_ID
+Rscript --no-save 16_sim_d1.R $SLURM_ARRAY_TASK_ID
