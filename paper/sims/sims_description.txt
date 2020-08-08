@@ -1,0 +1,91 @@
+.../bayes_cpm/biostat_sem/sims/2_sim.R -
+probit link, 'log' transform, conc 1/ncats,
+estimate beta and select gamma (alpha in code)
+for full and censored outcome with standard normal error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/2_sim_a1.R -
+probit link, 'log' transform, conc 1/(0.8 + 0.35*max(ncats, 3)),
+estimate beta and select gamma (alpha in code)
+for full and censored outcome with standard normal error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/3_sim_a2.R -
+probit link, 'log' transform, conc 1/(2+(ncats/3)),
+estimate beta and select gamma (alpha in code)
+for full and censored outcome with standard normal error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/5_sim_b0.R -
+probit link, 'log' transform, conc 1/ncats,
+estimate conditional cdf, conditional mean & contrast, conditional median & contrast,
+conditional q20 & contrast for full and censored outcome with standard normal error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/6_sim_b1.R -
+probit link, 'log' transform, conc 1/(0.8 + 0.35*max(ncats, 3)),
+estimate conditional cdf, conditional mean & contrast, conditional median & contrast,
+conditional q20 & contrast for full and censored outcome with standard normal error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/7_sim_b2.R -
+probit link, 'log' transform, conc 1/(2+(ncats/3)),
+estimate conditional cdf, conditional mean & contrast, conditional median & contrast,
+conditional q20 & contrast for full and censored outcome with standard normal error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/9_sim_c0.R -
+logistic link, log transform, conc 1/ncats,
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with logistic(loc=0, scale=1/3) error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/10_sim_c1.R -
+logistic link, log transform, conc 1/(0.8 + 0.35*max(ncats, 3)),
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with logistic(loc=0, scale=1/3) error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/11_sim_c2.R -
+logistic link, log transform, conc 1/(2+(n/3)),
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with logistic(loc=0, scale=1/3) error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/12_sim_c3.R -
+logistic link, log transform, conc 1/2,
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with logistic(loc=0, scale=1/3) error
+5 reps of 200 sims each
+
+.../bayes_cpm/paper/sims/15_sim_d0.R -
+loglog link, identity transform, conc 1/ncats,
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with standard Gumbel error
+10 reps of 100 sims each
+
+.../bayes_cpm/paper/sims/16_sim_d1.R -
+loglog link, identity transform, conc 1/(0.8 + 0.35*max(ncats, 3)),
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with standard Gumbel error
+10 reps of 100 sims each
+
+.../bayes_cpm/paper/sims/17_sim_d2.R -
+loglog link, identity transform, conc 1/(2+(ncats/3)),
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with standard Gumbel error
+10 reps of 100 sims each
+
+.../bayes_cpm/paper/sims/18_sim_d3.R -
+loglog link, identity transform, conc 1/2,
+estimate beta and select gamma, conditional cdf,
+conditional mean, conditional median, conditional q20, conditional q80
+for full and censored outcome with standard Gumbel error
+10 reps of 100 sims each
