@@ -12,8 +12,6 @@ psdir <- file.path(pdir,"sims","out")
 
 figdir <- file.path(pdir,"fig")
 
-#source(file.path(dir,"cpm_functions.r"))
-
 # load sim array
 simarray <- readRDS(file.path(sdir,"sims","bayes_cpm_simarray.rds"))
 
@@ -173,124 +171,16 @@ for (n in c(25,50,100,200,400)){
   nm <- paste0(nm0, "_", 1:5)
   nmlist <- map(nm,get)
   
-  fl0 <- map(nmlist, function(x) x[[1]])
-  cn0 <- map(nmlist, function(x) x[[2]])
-  
-  fl <- pmap(fl0,rbind)
-  cn <- pmap(cn0,rbind)
+  fl <- map(nmlist, function(x) x[[1]]) %>% pmap(rbind)
+  cn <- map(nmlist, function(x) x[[2]]) %>% pmap(rbind)
   
   assign(nm0,list(full=fl,cens=cn))
   rm(list=nm)
   }
 }
 
-rm(cn,cn0,fl,fl0,nmlist,nm,nm0,n,pre)
+rm(cn,fl,nmlist,nm,nm0,n,pre)
 
-if(0){
-# function to summarize sims
-# first 2 rows are betas, next 5 rows are log.y values
-sim_coeff.summary <- function(result, md=FALSE, beta=c(1, -0.5),
-                              alpha.y=c(-1, -0.33, 0.5, 1.33, 2)){
-
-  # mn.beta.est or md.beta.est
-  bt <- result[[2]] # result$mn.beta.est
-  if(md) bt <- result[[1]] #result$md.beta.est
-
-  bt.se <- result[[3]] #result$beta.se
-  #alph.cln <- ifelse(is.infinite(result$alpha.y), NA, result$alpha.y)
-  alph.cln <- ifelse(is.infinite(result[[4]]), NA, result[[4]])
-  #alph.se.cln <- ifelse(is.infinite(result$alpha.y.se), NA, result$alpha.y.se)
-  alph.se.cln <- ifelse(is.infinite(result[[5]]), NA, result[[5]])
-
-  mean.est <- c(colMeans(bt, na.rm=TRUE),
-                colMeans(alph.cln, na.rm=TRUE))
-
-  mean.se <- c(colMeans(bt.se, na.rm=TRUE),
-               colMeans(alph.se.cln, na.rm=TRUE))
-
-  emp.se <- c(apply(bt, 2, function(x) sd(x, na.rm=TRUE)),
-              apply(alph.cln, 2, function(x) sd(x, na.rm=TRUE)))
-
-  mse <- c(colMeans((bt-matrix(beta, nrow=dim(bt)[1],
-                               ncol=length(beta),byrow=TRUE))^2, na.rm=TRUE),
-           colMeans((alph.cln-matrix(alpha.y, nrow=dim(alph.cln)[1],
-                                     ncol=length(alpha.y), byrow=TRUE))^2,
-                    na.rm=TRUE))
-
-  # coverage - need to get 95% cred interval for Bayes version of this
-  if(0){
-    beta.lb <-result$beta.est+qnorm(0.025, 0, 1)*result$beta.se
-    beta.ub <- result$beta.est-qnorm(0.025, 0, 1)*result$beta.se
-
-    alpha.lb <- cbind(result$alpha.y+qnorm(0.025, 0, 1)*result$alpha.y.se)
-    alpha.ub <- cbind(result$alpha.y-qnorm(0.025, 0, 1)*result$alpha.y.se)
-    alpha.lb <- ifelse(is.infinite(alpha.lb), NA, alpha.lb)
-    alpha.ub <- ifelse(is.infinite(alpha.ub), NA, alpha.ub)
-
-    alpha.coverage <- rep(NA, length(alpha.y))
-    for(i in 1:length(alpha.y)){
-      alpha.coverage[i] <-mean(apply(cbind(alpha.lb[,i], alpha.ub[,i]), 1, FUN=function(x) alpha.y[i]>=x[1] & alpha.y[i]<=x[2]), na.rm=TRUE)
-
-    }
-
-    beta.coverage <- rep(NA, length(beta))
-    for(i in 1:length(beta)){
-      beta.coverage[i] <-mean(apply(cbind(beta.lb[,i], beta.ub[,i]), 1, FUN=function(x) beta[i]>=x[1] & beta[i]<=x[2]), na.rm=TRUE)
-    }
-
-    coverage <- c(beta.coverage, alpha.coverage)
-  }
-
-  result <- cbind(format(c(beta, alpha.y), nsmall=1),
-                  format(round(mean.est, 2), nsmall=2),
-                  format(round(mean.se, 3) , nsmall=3),
-                  format(round(emp.se, 3) , nsmall=3),
-                  format(round(mse, 4) , nsmall=3))
-  return(result)
-
-}
-
-
-# function to convert summary to data.frame, get bias, and rename rows & cols
-conv <- function(summ){
-  out0<-sim_coeff.summary(summ) %>%
-    as.data.frame(stringsAsFactors=FALSE) %>%
-    mutate_all(as.numeric)
-  
-  names(out0)<-c("true","mean.est","mean.se","emp.se","mse")
-  
-  out<-out0 %>% mutate(bias.est=100*(mean.est-true)/true,
-                       bias.se=100*(mean.se-emp.se)/emp.se,
-                       param=c("beta[1]","beta[2]",
-                               "gamma[y[1]]","gamma[y[2]]",
-                               "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
-  return(out)
-}
-}
-
-if(0){ # scratch
-head(sim_n50[[1]][[1]])
-head(sim_n50[[1]][[1]]- matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2) )
-head((sim_n50[[1]][[1]]- matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2))/
-       abs(matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2)))
-
-
-matrix(c(1,-0.5),byrow=TRUE,nrow=1000,ncol=2)
-
-bt - matrix(beta,byrow=TRUE,nrow=nrow(bt),ncol=length(beta))
-  
-apply(sim_n50[[1]][[1]],)
-head(sim_n50[[1]][[3]])
-head(apply(sim_n50[[1]][[1]], 2, function(x) sd(x, na.rm=TRUE)))
-
-
-alph.cln <- ifelse(is.infinite(sim_n50[[1]][[4]]), NA, sim_n50[[1]][[4]])
-
-head(alph.cln)
-
-head(alph.cln - matrix(c(-1, -0.33, 0.5, 1.33, 2),byrow=TRUE,nrow=1000,ncol=5))
-
-}
 
 sim_summary <- function(result, md=TRUE, beta=c(1, -0.5),
                               alpha.y=c(-1, -0.33, 0.5, 1.33, 2)){
@@ -323,7 +213,7 @@ sim_summary <- function(result, md=TRUE, beta=c(1, -0.5),
   return(result)
 }
 
-sim_summary(sim_a2_n25[[1]]) 
+# sim_summary(sim_a2_n25[[1]]) 
 
 
 
@@ -332,21 +222,6 @@ nsamps <- c(25,50,100,200,400)
 concs <- c('1/J','1/(0.8 + 0.35*J)','1/(2+(J/3))')
 pres <- c('sim_n','sim_a1_n','sim_a2_n')
 outcome <- c('full.','cens.')
-
-# old
-if(0){ 
-for (k in seq_along(outcome)){
-  for (j in seq_along(pres)){
-    for (i in nsamps){
-     nm0 <- paste0(pres[j], i)
-     dd <- conv(get(nm0)[[k]]) %>% mutate(n=i, conc=concs[j])
-     nm <- paste0(outcome[k],nm0)
-     assign(nm,dd)
-    }
-  }
-}
-
-}
 
 for (k in seq_along(outcome)){
   for (j in seq_along(pres)){
@@ -371,27 +246,16 @@ full_plt_dat <- full_dat %>%
                "gamma[y[1]]","gamma[y[2]]",
                "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
 
-# old
-# full_plt_dat <- full_dat %>% select(bias.est,bias.se,param,n,conc) %>%
-#   pivot_longer(cols=c(bias.est,bias.se))
-
 ## censored outcome dataset
 cens_dat <- bind_rows( lapply(ls()[grep('cens.sim',ls())],get) ) %>%
   mutate(n=factor(n,levels=c(400,200,100,50,25))) %>%
   select(-c("gamma[y[1]]","gamma[y[2]]"))
-
-#old
-# cens_dat <- bind_rows( lapply(ls()[grep('cens.sim',ls())],get) ) %>%
-#   mutate(n=factor(n,levels=c(400,200,100,50,25))) %>% 
-#   filter(!true %in% c(-1.00,-0.33))
 
 # for plotting
 cens_plt_dat <- cens_dat %>%  
   pivot_longer(cols=c("beta[1]","beta[2]",
                       "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
 
-# cens_plt_dat <- cens_dat %>% select(bias.est,bias.se,param,n,conc) %>%
-#   pivot_longer(cols=c(bias.est,bias.se))
 
 # labels and plot params
 #! nlabs <- c("average bias of \nposterior median (%)","average bias of \nposterior se (%)")
@@ -411,21 +275,7 @@ full_plt_dat %>%
           strip.text = element_text(size=fctsiz),
           strip.text.y = element_text(angle=0))
 
-
-# full_plt_dat %>%
-#   ggplot(aes(x=value,y=n,col=conc,shape=conc)) +
-#   geom_point(size=3,alpha=0.75)  +
-#   facet_grid(name ~ param, 
-#              labeller = labeller(param=label_parsed,
-#                                  name=nlabs)) +
-#   ylab("sample size")+
-#   theme(axis.title.x=element_blank(),
-#         axis.title.y = element_text(size=fctsiz),
-#         axis.text =  element_text(size=atxtsz),
-#         strip.text = element_text(size=fctsiz),
-#         strip.text.y = element_text(angle=0))
-
-ggsave(file.path(figdir,"sim_param_full2.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_a_pars_full.png"),width=pltw,height=plth)
 
 # censored outcome plot
 cens_plt_dat %>% 
@@ -439,17 +289,4 @@ cens_plt_dat %>%
         strip.text = element_text(size=fctsiz),
         strip.text.y = element_text(angle=0))
 
-# cens_plt_dat %>%
-#   ggplot(aes(x=value,y=n,color=conc,shape=conc)) +
-#   geom_point(size=3,alpha=0.75)  +
-#   facet_grid(name ~ param,
-#              labeller = labeller(param=label_parsed,
-#                                  name=nlabs)) +
-#   ylab("sample size")+
-#   theme(axis.title.x=element_blank(),
-#         axis.title.y = element_text(size=fctsiz),
-#         axis.text =  element_text(size=atxtsz),
-#         strip.text = element_text(size=fctsiz),
-#         strip.text.y = element_text(angle=0))
-
-ggsave(file.path(figdir,"sim_param_cens2.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_a_pars_cens.png"),width=pltw,height=plth)
