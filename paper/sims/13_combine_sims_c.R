@@ -2,13 +2,15 @@ rm(list=ls())
 libs <- c("dplyr", "stringr", "readr", "tidyr", "purrr", "ggplot2")
 invisible(lapply(libs, library, character.only = TRUE))
 
+# for log logistic dist.
+# https://www.rdocumentation.org/packages/actuar/versions/3.0-0/topics/Loglogistic
+library(actuar) 
+
 #paper directory (sims for other functions)
 pdir <- file.path("/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm/paper")
 psdir <- file.path(pdir,"sims","out")
 
 figdir <- file.path(pdir,"fig")
-
-#!!! modify for sims c, add summaries of beta and gammas (formerly alpha) from 4_combine_sims_a.R
 
 #source(file.path(dir,"cpm_functions.r"))
 
@@ -17,152 +19,300 @@ simarray <- readRDS(file.path(pdir,"sims","bayes_cpm_simarray.rds"))
 
 # load sim data
 for (j in 1:25){
-  nam_b0 <- paste0("sim_c0_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
-  fp_b0 <- file.path(psdir,paste0(nam_b0,".rds"))
-  nam_b1 <- paste0("sim_c1_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
-  fp_b1 <- file.path(psdir,paste0(nam_b1,".rds"))
-  nam_b2 <- paste0("sim_c2_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
-  fp_b2 <- file.path(psdir,paste0(nam_b2,".rds"))
-  try(assign(nam_b0, readRDS(fp_b0)))
-  try(assign(nam_b1, readRDS(fp_b1)))
-  try(assign(nam_b2, readRDS(fp_b2)))
+  nam_c0 <- paste0("sim_c0_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
+  fp_c0 <- file.path(psdir,paste0(nam_c0,".rds"))
+  nam_c1 <- paste0("sim_c1_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
+  fp_c1 <- file.path(psdir,paste0(nam_c1,".rds"))
+  nam_c2 <- paste0("sim_c2_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
+  fp_c2 <- file.path(psdir,paste0(nam_c2,".rds"))
+  nam_c3 <- paste0("sim_c3_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
+  fp_c3 <- file.path(psdir,paste0(nam_c3,".rds"))
+  try(assign(nam_c0, readRDS(fp_c0)))
+  try(assign(nam_c1, readRDS(fp_c1)))
+  try(assign(nam_c2, readRDS(fp_c2)))
+  try(assign(nam_c3, readRDS(fp_c3)))
 }
 
-rm(nam_b0,nam_b1,nam_b2,fp_b0,fp_b1,fp_b2,j)
+rm(nam_c0,nam_c1,nam_c2,nam_c3,fp_c0,fp_c1,fp_c2,fp_c3,j)
+
 
 # for reference
 if (0){
-generate.data.2 <- function(seed=1, n=50, p=0.5, alpha=0, beta=c(1.0, -0.5), sigma=1){
+
+generate.data.2 <- function(seed=1, n=50, p=0.5, alpha=0, beta=c(1.0, -0.5), scale=1){
   set.seed(seed)
   z1 <- sample(c(0,1), size=n, replace=TRUE, prob=c(1-p, p))
   z2 <- rnorm(n, 0, 1)
-  y0 <- rlogis(n, alpha+beta[1]*z1 + beta[2]*z2, sigma)
+  y0 <- rlogis(n, alpha+beta[1]*z1 + beta[2]*z2, scale)
   log.y <- exp(y0) #log logistic
   data <- data.frame(y=ordered(log.y), z1=z1, z2=z2)
   return(data)
 }
-  
 
-get_cutpoints <- function(fit,cps=cp_seq,summ_stat='50%',pr=c(0.5)){
-    summary(fit, pars=paste0("cutpoints[",cps,"]"), probs=pr)$summary[,summ_stat]
-  }
+
+# get_cutpoints <- function(fit,cps=cp_seq,summ_stat='50%',pr=c(0.5)){
+#   summary(fit, pars=paste0("cutpoints[",cps,"]"), probs=pr)$summary[,summ_stat]
+# }
 
 cutpoint_est <- function(post,fitdata,y){
-    truey<-c(-Inf,fitdata$truey0,Inf)
-
-    if (y<=min(fitdata$truey0)){
-      return(-Inf)
-    }
-    else if (y > max(fitdata$truey0)) {
-      return(Inf)
-    }
-    else {
-      post[which(fitdata$truey0>=y)[1]-1]
-    }
+  truey<-c(-Inf,fitdata$truey0,Inf)
+  
+  if (y<=min(fitdata$truey0)){
+    # return(-Inf)
+    return(c(mean=-Inf,se_mean=NA,sd=NA,`2.5%`=NA,`25%`=NA,`50%`=NA,
+             `75%`=NA,`97.5%`=NA, n_eff=NA,  Rhat=NA))
+  }
+  else if (y > max(fitdata$truey0)) {
+    #  return(Inf)
+    return(c(mean=Inf,se_mean=NA,sd=NA,`2.5%`=NA,`25%`=NA,`50%`=NA,
+             `75%`=NA,`97.5%`=NA, n_eff=NA,  Rhat=NA))
+  }
+  else {
+    post[which(fitdata$truey0>=y)[1]-1,]
+  }
 }
 
-sim1_coeff.fun <- function(sim=5, seed=1, n=50, p=0.5, alpha=0, beta=c(1,-0.5),
-                          sigma=1, log.y=c(-1, -0.33, 0.5, 1.33, 2)){
+# get CDF at given y value
+# fit_cdf is conditional cdf
+# fitdata is data used for BayesCPM fit
+cdf_val_est <- function(fit_cdf,fitdata,y){
+  truey<-c(-Inf,fitdata$truey0,Inf)
+  
+  if (y<=min(fitdata$truey0)){
+    fit_cdf %>% filter(Var2==-Inf) %>% mutate(yin=y)
+  }
+  else if (y > max(fitdata$truey0)) {
+    fit_cdf %>% filter(Var2==Inf) %>% mutate(yin=y)
+  }
+  else {
+    idx0<-which(fitdata$truey0>=y)[1]
+    V2<-fit_cdf %>% pull(Var2)
+    fit_cdf %>% filter(Var2==V2[idx0]) %>% mutate(yin=y)
+  }
+}
+
+# get contrast between two conditional means
+getMeanContrast<-function(fit, fitdata, cont.df, sm=TRUE){
+  fit_raw <- getMean(fit, fitdata, newdata=cont.df, summ=FALSE)
+  
+  a<-fit_raw %>% filter(ndrow==1) %>% select(mn)
+  b<-fit_raw %>% filter(ndrow==2) %>% select(mn)
+  cont.vals<-b-a
+  
+  if (sm){
+    mn_cont_summ <- cont.vals %>%
+      dplyr::summarize(mn_cont_mean=mean(mn),
+                       mn_cont_med=median(mn),
+                       mn_cont_sd=sd(mn),
+                       mn_cont_q2.5=quantile(mn,probs=0.025),
+                       mn_cont_q5=quantile(mn,probs=0.05),
+                       mn_cont_q10=quantile(mn,probs=0.10),
+                       mn_cont_q25=quantile(mn,probs=0.25),
+                       mn_cont_q75=quantile(mn,probs=0.75),
+                       mn_cont_q90=quantile(mn,probs=0.90),
+                       mn_cont_q95=quantile(mn,probs=0.95),
+                       mn_cont_q97.5=quantile(mn,probs=0.975))
+    return(mn_cont_summ)
+  } else {
+    return(cont.vals)
+  }
+  
+}
+
+# get contrast between two conditional quantiles
+getQuantileContrast<-function(fit, fitdata, cont.df, q, sm=TRUE){
+  fit_raw <- getQuantile(fit, fitdata, newdata=cont.df, q=q, summ=FALSE)
+  
+  a<-fit_raw %>% filter(ndrow==1) %>% select(qtile)
+  b<-fit_raw %>% filter(ndrow==2) %>% select(qtile)
+  cont.vals<-b-a
+  
+  if (sm){
+    qtile_cont_summ <- cont.vals %>%
+      dplyr::summarize(qtile_cont_mean=mean(qtile),
+                       qtile_cont_med=median(qtile),
+                       qtile_cont_sd=sd(qtile),
+                       qtile_cont_q2.5=quantile(qtile,probs=0.025),
+                       qtile_cont_q5=quantile(qtile,probs=0.05),
+                       qtile_cont_q10=quantile(qtile,probs=0.10),
+                       qtile_cont_q25=quantile(qtile,probs=0.25),
+                       qtile_cont_q75=quantile(qtile,probs=0.75),
+                       qtile_cont_q90=quantile(qtile,probs=0.90),
+                       qtile_cont_q95=quantile(qtile,probs=0.95),
+                       qtile_cont_q97.5=quantile(qtile,probs=0.975))
+    return(qtile_cont_summ)
+  } else {
+    return(cont.vals)
+  }
+  
+}
+
+
+sim3_coeff.fun <- function(sim=5, seed=1, n=50, p=0.5, alpha=0, beta=c(1,-0.5),
+                           scale = 1/3, yvals=exp(c(-0.5, 0, 0.5, 1, 1.5)),
+                           zvals = data.frame(z1=c(1,1),z2=c(1,0))){
   set.seed(seed)
   seeds <- unique(round(runif(sim*10,0,10)*sim,0))[seq(sim)]
-
-  # cutpoints
-  alpha.y <- matrix(NA, ncol=length(log.y), nrow=sim)
-  alpha.y.se <- matrix(NA, ncol=length(log.y), nrow=sim)
-  alpha.y_cn <- matrix(NA, ncol=length(log.y), nrow=sim)
-  alpha.y.se_cn <- matrix(NA, ncol=length(log.y), nrow=sim)
-
+  
+  ## preallocate matrices & lists
+  
   # betas
-  md.beta.est <- matrix(NA, ncol=length(beta), nrow=sim)
-  mn.beta.est <- matrix(NA, ncol=length(beta), nrow=sim)
-  beta.se <- matrix(NA, ncol=length(beta), nrow=sim)
-  md.beta.est_cn <- matrix(NA, ncol=length(beta), nrow=sim)
-  mn.beta.est_cn <- matrix(NA, ncol=length(beta), nrow=sim)
-  beta.se_cn <- matrix(NA, ncol=length(beta), nrow=sim)
-
+  beta.est <- beta.est.cn <- vector("list",sim)
+  
+  # cutpoints
+  gamma.y <- gamma.y.cn <- vector("list",sim)
+  
+  # conditional cdf at y values
+  cond.cdf <- cond.cdf.cn <- vector("list",sim)
+  
+  # conditional mean & contrast
+  cond.mn <- cond.mn.cn <- vector("list",sim)
+  cond.mn.cnt <- cond.mn.cnt.cn <- vector("list",sim)
+  
+  # conditional median & contrast
+  cond.med <- cond.med.cn <- vector("list",sim)
+  cond.med.cnt <- cond.med.cnt.cn <- vector("list",sim)
+  
+  # conditional q20 & contrast
+  cond.q20 <- cond.q20.cn <- vector("list",sim)
+  cond.q20.cnt <- cond.q20.cnt.cn <- vector("list",sim)
+  
+  # conditional q80 & contrast
+  cond.q80 <- cond.q80.cn <- vector("list",sim)
+  cond.q80.cnt <- cond.q80.cnt.cn <- vector("list",sim)
+  
   for(i in 1:sim){
     print(i)
     try({
-      data <- generate.data.1(seed=seeds[i], n=n, p=p,
-                              alpha=alpha, beta=beta, sigma=sigma)
-
-      ycens <- as.numeric(levels(data$log.y)[as.numeric(data$log.y)])
-      ycens[ycens < 0]<- 0
-      data$log.y.cens<-ordered(ycens)
-
-      mod_data <- mkStanDat(data, outcome="log.y",
+      data <- generate.data.2(seed=seeds[i], n=n, p=p,
+                              alpha=alpha, beta=beta, scale=scale)
+      
+      ycens <- as.numeric(levels(data$y)[as.numeric(data$y)])
+      ycens[ycens < 1] <- 1
+      data$y.cens<-ordered(ycens)
+      
+      ## fit full outcome model
+      mod_data <- mkStanDat(data, outcome="y",
                             preds = c("z1", "z2"),
-                            link=2) #probit link
-
+                            link=1, #logistic link
+                            conc=function(n) 1/n)
+      
       cpm_fit <- sampling(ord_mod1, data=mod_data, seed=seeds[i],
-                 iter=4000, warmup=2000, chains=2, refresh=2000,
-                 control = list(adapt_delta = 0.9))
-
-      fit_summ_beta<-summary(cpm_fit, pars=c("b[1]","b[2]"),
-                             use_cache=FALSE)$summary
-
-      md.beta.est[i,] <- fit_summ_beta[,'50%']
-      mn.beta.est[i,] <- fit_summ_beta[,'mean']
-      beta.se[i, ] <- fit_summ_beta[,'sd']
-
-      # median and sd of posterior cutpoints
-      cp_seq <- 1:(mod_data$ncat - 1)
-
-      cp_md <- get_cutpoints(cpm_fit, cps=cp_seq)
-      cp_sd <- get_cutpoints(cpm_fit, cps=cp_seq, summ_stat='sd')
-
-      # cutpoint estimates at given log(y) values
-      alpha.y[i,] <- sapply(log.y, function(x) cutpoint_est(cp_md,mod_data,x))
-      alpha.y.se[i,] <- sapply(log.y, function(x) cutpoint_est(cp_sd,mod_data,x))
-
-      mod_data_cn <- mkStanDat(data, outcome="log.y.cens",
-                            preds = c("z1", "z2"),
-                            link=2) #probit link
-
+                          iter=4000, warmup=2000, chains=2, refresh=2000,
+                          control = list(adapt_delta = 0.9))
+      
+      # beta
+      beta.est[[i]] <- summary(cpm_fit, pars=c("b[1]","b[2]"), use_cache=FALSE)$summary %>%
+        as_tibble() %>% mutate(par=c("b[1]","b[2]"))
+      
+      # gamma cutpoint estimates at given y values
+      cpout <- summary(cpm_fit, pars="cutpoints", use_cache=FALSE)$summary
+      #! gamma.y[[i]] <- lapply(yvals, function(x) cutpoint_est(cpout,mod_data,x)) %>% bind_rows() %>%
+      #!   mutate(par=c("gamma[y1]","gamma[y2]","gamma[y3]","gamma[y4]","gamma[y5]"))
+      gamma.y[[i]] <- lapply(yvals, function(x) cutpoint_est(cpout,mod_data,x)) %>% do.call(rbind,.) %>%
+        as_tibble() %>% mutate(par=c("gamma[y1]","gamma[y2]","gamma[y3]","gamma[y4]","gamma[y5]"))
+      
+      # conditional cdf at y values
+      fit_cdf <- try(getCDF(cpm_fit, mod_data, newdata=zvals))
+      #! cond.cdf[[i]] <- try(lapply(yvals,function(x) cdf_val_est(fit_cdf, mod_data,x)) %>% bind_rows())
+      cond.cdf[[i]] <- try(lapply(yvals,function(x) cdf_val_est(fit_cdf, mod_data,x)) %>% do.call(rbind,.) %>% as_tibble())
+      
+      # conditional mean (& contrast)
+      cond.mn[[i]] <- try(getMean(cpm_fit, mod_data, newdata=zvals))
+      # cond.mn.cnt[[i]] <- try(getMeanContrast(cpm_fit, mod_data, cont.df=zvals))
+      
+      # conditional median (& contrast)
+      cond.med[[i]] <- try(getQuantile(cpm_fit, mod_data, newdata=zvals, q=0.5))
+      #  cond.med.cnt[[i]] <- try(getQuantileContrast(cpm_fit, mod_data, cont.df=zvals, q=0.5))
+      
+      # conditional q20 (& contrast)
+      cond.q20[[i]] <- try(getQuantile(cpm_fit, mod_data, newdata=zvals, q=0.2))
+      # cond.q20.cnt[[i]] <- try(getQuantileContrast(cpm_fit, mod_data, cont.df=zvals, q=0.2))
+      
+      # conditional q80 (& contrast)
+      cond.q80[[i]] <- try(getQuantile(cpm_fit, mod_data, newdata=zvals, q=0.8))
+      # cond.q80.cnt[[i]] <- try(getQuantileContrast(cpm_fit, mod_data, cont.df=zvals, q=0.8))
+      
+      ## fit censored outcome model
+      mod_data_cn <- mkStanDat(data, outcome="y.cens",
+                               preds = c("z1", "z2"),
+                               link=1, #logistic link
+                               conc=function(n) 1/n)
+      
       cpm_fit_cn <- sampling(ord_mod1, data=mod_data_cn, seed=seeds[i],
-                 iter=4000, warmup=2000, chains=2, refresh=2000,
-                 control = list(adapt_delta = 0.9))
-
-      fit_summ_beta_cn<-summary(cpm_fit_cn, pars=c("b[1]","b[2]"),
-                             use_cache=FALSE)$summary
-
-      md.beta.est_cn[i,] <- fit_summ_beta_cn[,'50%']
-      mn.beta.est_cn[i,] <- fit_summ_beta_cn[,'mean']
-      beta.se_cn[i, ] <- fit_summ_beta_cn[,'sd']
-
-      # median and sd of posterior cutpoints
-      cp_seq_cn <- 1:(mod_data_cn$ncat - 1)
-      cp_md_cn <- get_cutpoints(cpm_fit_cn, cps=cp_seq_cn)
-      cp_sd_cn <- get_cutpoints(cpm_fit_cn, cps=cp_seq_cn, summ_stat='sd')
-
-      # cutpoint estimates at given log(y) values
-      alpha.y_cn[i,] <- sapply(log.y, function(x) cutpoint_est(cp_md_cn,mod_data_cn,x))
-      alpha.y.se_cn[i,] <- sapply(log.y, function(x) cutpoint_est(cp_sd_cn,mod_data_cn,x))
-
+                             iter=4000, warmup=2000, chains=2, refresh=2000,
+                             control = list(adapt_delta = 0.9))
+      
+      # beta
+      beta.est.cn[[i]] <- summary(cpm_fit_cn, pars=c("b[1]","b[2]"),use_cache=FALSE)$summary %>%
+        as_tibble() %>% mutate(par=c("b[1]","b[2]"))
+      
+      # gamma cutpoint estimates at given y values
+      cpout.cn <- summary(cpm_fit_cn, pars="cutpoints",use_cache=FALSE)$summary
+      #! gamma.y.cn[[i]] <- lapply(yvals, function(x) cutpoint_est(cpout.cn,mod_data_cn,x)) %>% bind_rows()
+      gamma.y.cn[[i]] <- lapply(yvals, function(x) cutpoint_est(cpout.cn,mod_data_cn,x)) %>% do.call(rbind,.) %>%
+        as_tibble() %>% mutate(par=c("gamma[y1]","gamma[y2]","gamma[y3]","gamma[y4]","gamma[y5]"))
+      
+      # conditional cdf at yvals values
+      fit_cdf_cn <- try(getCDF(cpm_fit_cn, mod_data_cn, newdata=zvals))
+      #! cond.cdf.cn[[i]] <- try(lapply(yvals,function(x) cdf_val_est(fit_cdf_cn, mod_data_cn, x)) %>% bind_rows())
+      cond.cdf.cn[[i]] <- try(lapply(yvals,function(x) cdf_val_est(fit_cdf_cn, mod_data_cn, x)) %>% do.call(rbind,.) %>% as_tibble())
+      
+      
+      # conditional mean (& contrast)
+      cond.mn.cn[[i]] <- try(getMean(cpm_fit_cn, mod_data_cn, newdata=zvals))
+      #  cond.mn.cnt.cn[[i]] <- try(getMeanContrast(cpm_fit_cn, mod_data_cn, cont.df=zvals))
+      
+      # conditional median (& contrast)
+      cond.med.cn[[i]] <- try(getQuantile(cpm_fit_cn, mod_data_cn, newdata=zvals, q=0.5))
+      # cond.med.cnt.cn[[i]] <- try(getQuantileContrast(cpm_fit_cn, mod_data_cn, cont.df=zvals, q=0.5))
+      
+      # conditional q20 (& contrast)
+      cond.q20.cn[[i]] <- try(getQuantile(cpm_fit_cn, mod_data_cn, newdata=zvals, q=0.2))
+      #cond.q20.cnt.cn[[i]] <- try(getQuantileContrast(cpm_fit_cn, mod_data_cn, cont.df=zvals, q=0.2))
+      
+      # conditional q80 (& contrast)
+      cond.q80.cn[[i]] <- try(getQuantile(cpm_fit_cn, mod_data_cn, newdata=zvals, q=0.8))
+      #cond.q80.cnt.cn[[i]] <- try(getQuantileContrast(cpm_fit_cn, mod_data_cn, cont.df=zvals, q=0.8))
     })
   }
-
-  return(list(full=list(md.beta.est=md.beta.est,
-                    mn.beta.est=mn.beta.est,
-                    beta.se=beta.se,
-                    alpha.y=alpha.y,
-                    alpha.y.se=alpha.y.se),
-              cens=list(md.beta.est_cn=md.beta.est_cn,
-                    mn.beta.est_cn=mn.beta.est_cn,
-                    beta.se_cn=beta.se_cn,
-                    alpha.y_cn=alpha.y_cn,
-                    alpha.y.se_cn=alpha.y.se_cn)))
+  
+  
+  return(list(full=list(beta.est=beta.est,
+                        gamma.y=gamma.y,
+                        cond.cdf=cond.cdf,
+                        cond.mn=cond.mn,
+                        cond.mn.cnt=cond.mn.cnt,
+                        cond.med=cond.med,
+                        cond.med.cnt=cond.med.cnt,
+                        cond.q20=cond.q20,
+                        cond.q20.cnt=cond.q20.cnt,
+                        cond.q80=cond.q80,
+                        cond.q80.cnt=cond.q80.cnt),
+              cens=list(beta.est.cn=beta.est.cn,
+                        gamma.y.cn=gamma.y.cn,
+                        cond.cdf.cn=cond.cdf.cn,
+                        cond.mn.cn=cond.mn.cn,
+                        cond.mn.cnt.cn=cond.mn.cnt.cn,
+                        cond.med.cn=cond.med.cn,
+                        cond.med.cnt.cn=cond.med.cnt.cn,
+                        cond.q20.cn=cond.q20.cn,
+                        cond.q20.cnt.cn=cond.q20.cnt.cn,
+                        cond.q80.cn=cond.q80.cn,
+                        cond.q80.cnt.cn=cond.q80.cnt.cn)) )
 }
 
+
 }
 
-# sim_n - probit link, conc=1/ncats
-# sim_a1_n - probit link, conc=1/(0.8 + 0.35*max(ncats, 3))
-# sim_a2_n - probit link, conc=1/(2+(ncats/3))
+# sim_c0_n - logistic link, conc=1/ncats
+# sim_c1_n - logistic link, conc=1/(0.8 + 0.35*max(ncats, 3))
+# sim_c2_n - logistic link, conc=1/(2+(ncats/3))
+# sim_c3_n - logistic link, conc=1/2
 
 # combine 5 reps of 200 sims for each setting
 for (n in c(25,50,100,200,400)){
-  for (pre in c("sim_c0_n","sim_c1_n","sim_c2_n")){
+  for (pre in c("sim_c0_n","sim_c1_n","sim_c2_n","sim_c3_n")){
     nm0 <- paste0(pre, n)
     nm <- paste0(nm0, "_", 1:5)
     nmlist <- map(nm,get)
@@ -182,112 +332,219 @@ for (n in c(25,50,100,200,400)){
 
 rm(cn0,cn1,cn2,fl0,fl1,fl2,nmlist,nm,nm0,n,pre)
 
-# true cdf values
-if(0){
-# for log logistic dist.
-# https://www.rdocumentation.org/packages/actuar/versions/3.0-0/topics/Loglogistic
-library(actuar) 
 
-# relationship between logistic and log-logistic
-# https://en.wikipedia.org/wiki/Log-logistic_distribution#Related_distributions
-y0 <- exp(rlogis(1e7, log(1*1-0.5*1), 1/2)); mean(y0)
-y1 <- rllogis(1e7, shape = 2, scale = 1*1-0.5*1); mean(y1)
-((0.5*pi)/2)/sin(pi/2)
+## summarize betas
 
+sim_beta_summ <- function(result){
+  
+  if (names(result[1])=='beta.est'){
+    sims_sub <- result[['beta.est']] %>% select(mean, `50%`, par)
+  } else {
+    sims_sub <- result[['beta.est.cn']] %>% select(mean, `50%`, par)
+  }
 
-y0 <- exp(rlogis(1e7, 1*1-0.5*1, 1/3)); mean(y0)
-y1 <- rllogis(1e7, shape = 3, scale = exp(1*1-0.5*1)); mean(y1)
-((exp(0.5)*pi)/3)/sin(pi/3) # analytic mean
+truebeta <- data.frame(par=c("b[1]","b[2]"),trueval=c(1,-0.5))  # scaled truebeta <- c(1/(1/3),-0.5/(1/3))
 
-yvals <- c(-0.5, 0, 0.5, 1, 1.5)
-pllogis(exp(yvals),shape = 3, scale = exp(1*1-0.5*1))
-curve(pllogis(x,shape = 3, scale = exp(1*1-0.5*1)),0,6,xlab='y')
-segments(x0=exp(yvals),
-         y0=rep(0,5),
-         y1=pllogis(exp(yvals),shape = 3, scale = exp(1*1-0.5*1)),
-         lty=2)
-segments(x0=rep(-3,5),
-         x1=exp(yvals),
-         y0=pllogis(exp(yvals),shape = 3, scale = exp(1*1-0.5*1)),
-         lty=2)
+mrg_df <- merge(sims_sub,truebeta,by="par",all.y=FALSE) %>% 
+  mutate(bias=`50%`-trueval, pct.bias = 100*(bias/abs(trueval))) %>% 
+  group_by(par) %>% 
+  summarize(avg.pct.bias=mean(pct.bias),
+            avg.bias=mean(bias),
+            mse=mean((bias^2)))
 
-plogis(yvals,1*1-0.5*1,1/3)
-curve(plogis(x,1*1-0.5*1,1/3),-3,3, xlab='log(y)')
-segments(x0=yvals,
-         y0=rep(0,5),
-         y1=plogis(yvals,1*1-0.5*1,1/3),
-         lty=2)
-segments(x0=rep(-3,5),
-         x1=yvals,
-         y0=plogis(yvals,1*1-0.5*1,1/3),
-         lty=2)
-
-qlogis(c(0.1, 0.4, 0.5, 0.6, 0.9),1*1-0.5*1,1/3)  
-
-curve(dllogis(x,shape = 3, scale = exp(1*1-0.5*1)),-0.5,6)
+return(mrg_df)
 }
 
+sim_beta_summ(sim_c0_n400[['full']])
+sim_beta_summ(sim_c0_n400[['cens']])
+
+
+## summarize gamma
+
+# foo<-sim_c0_n400[['full']]
+# 
+# goo<- foo[['gamma.y']] %>% select(mean, `50%`, par) %>% group_by(par) %>% 
+#   summarize(mn=mean(`50%`))
+# truegammas<-c(-0.5,  0.0,  0.5,  1.0,  1.5)
+# estimates are scaled by 1/3 i.e estimate=truegammas*3?
+# 
+# tb <- data.frame(par=c("b[1]","b[2]"),trueval=c(1,-0.5))
+# 
+# merge(goo,tb,by="par",all.y=FALSE) %>% 
+#   mutate(bias=`50%`-trueval, pct.bias = 100*(bias/abs(trueval))) %>% 
+#   group_by(par) %>% 
+#   summarize(avg.pct.bias=mean(pct.bias))
+
+# pct bias doesn't really make sense when denom is 0, maybe change to show bias??
+
+sim_gamma_summ <- function(result){
+  
+  if (names(result[2])=='gamma.y'){
+    sims_sub <- result[['gamma.y']] %>% select(mean, `50%`, par)
+  } else {
+    sims_sub <- result[['gamma.y.cn']] %>% select(mean, `50%`, par)
+  }
+  
+  truegamma <- data.frame(par=c("gamma[y1]","gamma[y2]","gamma[y3]","gamma[y4]","gamma[y5]"),
+                          trueval=c(-0.5,  0.0,  0.5,  1.0,  1.5))  
+  # scaled trueval = c(-0.5,  0.0,  0.5,  1.0,  1.5)*3
+  
+  mrg_df <- merge(sims_sub,truegamma,by="par",all.y=FALSE) %>% 
+    mutate(bias=`50%`-trueval, pct.bias = 100*(bias/abs(trueval))) %>% 
+    group_by(par) %>% 
+    summarize(avg.pct.bias=mean(pct.bias),
+              avg.bias=mean(bias),
+              mse=mean((bias^2)))
+  
+return(mrg_df)
+}
+
+sim_gamma_summ(sim_c0_n400[['full']])
+sim_gamma_summ(sim_c0_n400[['cens']])
+
 ## summarize conditional CDF
-sim_cdf_summ <- function(result, beta=c(1, -0.5), sigma=1/3,
-                          alpha.y=c(-0.5, 0, 0.5, 1, 1.5),
+
+# true cdf values
+if(0){
+  # relationship between logistic and log-logistic
+  # https://en.wikipedia.org/wiki/Log-logistic_distribution#Related_distributions
+  y0 <- exp(rlogis(1e7, log(1*1-0.5*1), 1/2)); mean(y0)
+  y1 <- rllogis(1e7, shape = 2, scale = 1*1-0.5*1); mean(y1)
+  ((0.5*pi)/2)/sin(pi/2)
+  
+  ## setting used for sims
+  y0 <- exp(rlogis(1e7, 1*1-0.5*1, 1/3)); mean(y0)
+  y1 <- rllogis(1e7, shape = 3, scale = exp(1*1-0.5*1)); mean(y1)
+  ((exp(0.5)*pi)/3)/sin(pi/3) # analytic mean
+  
+  yvals <- c(-0.5, 0, 0.5, 1, 1.5)
+  pllogis(exp(yvals),shape = 3, scale = exp(1*1-0.5*1))
+  curve(pllogis(x,shape = 3, scale = exp(1*1-0.5*1)),0,6,xlab='y')
+  segments(x0=exp(yvals),
+           y0=rep(0,5),
+           y1=pllogis(exp(yvals),shape = 3, scale = exp(1*1-0.5*1)),
+           lty=2)
+  segments(x0=rep(-3,5),
+           x1=exp(yvals),
+           y0=pllogis(exp(yvals),shape = 3, scale = exp(1*1-0.5*1)),
+           lty=2)
+  
+  # at z1=0, z2=0
+  pllogis(exp(yvals),shape = 3, scale = exp(0))
+  curve(pllogis(x,shape = 3, scale = exp(0)),0,6,xlab='y')
+  segments(x0=exp(yvals),
+           y0=rep(0,5),
+           y1=pllogis(exp(yvals),shape = 3, scale = exp(0)),
+           lty=2)
+  segments(x0=rep(-3,5),
+           x1=exp(yvals),
+           y0=pllogis(exp(yvals),shape = 3, scale = exp(0)),
+           lty=2)
+  
+  # log scale
+  plogis(yvals,1*1-0.5*1,1/3)
+  curve(plogis(x,1*1-0.5*1,1/3),-3,3, xlab='log(y)')
+  segments(x0=yvals,
+           y0=rep(0,5),
+           y1=plogis(yvals,1*1-0.5*1,1/3),
+           lty=2)
+  segments(x0=rep(-3,5),
+           x1=yvals,
+           y0=plogis(yvals,1*1-0.5*1,1/3),
+           lty=2)
+  
+  # at z1=0, z2=0
+  plogis(yvals,0,1/3)
+  curve(plogis(x,0,1/3),-3,3, xlab='log(y)')
+  segments(x0=yvals,
+           y0=rep(0,5),
+           y1=plogis(yvals,0,1/3),
+           lty=2)
+  segments(x0=rep(-3,5),
+           x1=yvals,
+           y0=plogis(yvals,0,1/3),
+           lty=2)
+  
+  qlogis(c(0.1, 0.4, 0.5, 0.6, 0.9),1*1-0.5*1,1/3)  
+  
+  curve(dllogis(x,shape = 3, scale = exp(1*1-0.5*1)),-0.5,6)
+}
+
+sim_cdf_summ <- function(result, beta=c(1, -0.5), scale=1/3,
+                          gamma.y=c(-0.5, 0, 0.5, 1, 1.5),
                           zvals = c(1,1)){
   
-  if (names(result[1])=='cond.cdf'){
+  if (names(result[3])=='cond.cdf'){
     sims_sub <- result[['cond.cdf']] %>% filter(z1==zvals[1] & z2==zvals[2])
   } else {
     sims_sub <- result[['cond.cdf.cn']] %>% filter(z1==zvals[1] & z2==zvals[2])
-    alpha.y<-alpha.y[3:5]
+    gamma.y<-gamma.y[3:5]
   }
   
-  truevals <- pnorm(alpha.y,beta[1]*zvals[1]+ beta[2]*zvals[2],sigma)
-  true_df <- data.frame(yin=alpha.y, true_cdf=truevals)
+  truevals <- pllogis(exp(gamma.y),shape = 3, scale = exp(beta[1]*zvals[1]+ beta[2]*zvals[2]))
+  true_df <- data.frame(yin=exp(gamma.y), true_cdf=truevals)
   
   mrg_df <- merge(sims_sub, true_df, by='yin',all.y=FALSE) %>% 
     mutate(bias=med_cdf-true_cdf, pct.bias = 100*(bias/abs(true_cdf))) %>% 
     group_by(yin) %>% 
-    summarize(avg.pct.bias=mean(pct.bias))
+    summarize(avg.pct.bias=mean(pct.bias),
+              avg.bias=mean(bias),
+              mse=mean((bias^2)))
   
   return(mrg_df)
 }
 
 
+sim_cdf_summ(sim_c0_n400[['full']])
+sim_cdf_summ(sim_c0_n400[['cens']])
+
 
 ## summarize conditional mean
 
+if(0){
 # true mean
 #beta1*z1+beta2*z2
 #1*1-0.5*1
 mean(exp(rlogis(1e7, 1*1-0.5*1, 1/3)))
 mean(rllogis(1e7, shape = 3, scale = exp(1*1-0.5*1)))
-((exp(0.5)*pi)/3)/sin(pi/3)
+((exp(1*1-0.5*1)*pi)/3)/sin(pi/3)
 
 #1*1-0.5*0
 mean(exp(rlogis(1e7, 1*1-0.5*0, 1/3)))
 mean(rllogis(1e7, shape = 3, scale = exp(1*1-0.5*0)))
-((exp(1)*pi)/3)/sin(pi/3)
+((exp(1*1-0.5*0)*pi)/3)/sin(pi/3)
+}
 
-# update
+
 sim_mn_summ <- function(result, beta=c(1, -0.5),
                          zdf = data.frame(z1=c(1,1),z2=c(1,0))){
   
-  true_df <- data.frame(zdf,true_mn=c(sum(zdf[1]*beta), sum(zdf[2]*beta)))
-
-  if (names(result[2])=='cond.mn'){
-    sims_sub <- result[['cond.mn']] 
+  true_df <- data.frame(zdf,true_mn=c(((exp(beta[1]*zdf[1,1]+beta[2]*zdf[1,2])*pi)/3)/sin(pi/3),
+                            ((exp(beta[1]*zdf[2,1]+beta[2]*zdf[2,2])*pi)/3)/sin(pi/3)))
+  
+  if (names(result[4])=='cond.mn'){
+    sims_sub <- result[['cond.mn']]
   } else {
     sims_sub <- result[['cond.mn.cn']]
   }
-  
-  mrg_df <- merge(sims_sub, true_df, by=c('z1','z2'), all.y=FALSE) %>% 
-    mutate(bias=med_mn-true_mn, pct.bias = 100*(bias/abs(true_mn))) %>% 
-     group_by(ndrow,z1,z2) %>% 
-     summarize(avg.pct.bias=mean(pct.bias))
-  
+
+  mrg_df <- merge(sims_sub, true_df, by=c('z1','z2'), all.y=FALSE) %>%
+    mutate(bias=med_mn-true_mn, pct.bias = 100*(bias/abs(true_mn))) %>%
+     group_by(ndrow,z1,z2) %>%
+     summarize(avg.pct.bias=mean(pct.bias),
+               avg.bias=mean(bias),
+               mse=mean((bias^2)))
+
   return(mrg_df)
 }
 
+sim_mn_summ(sim_c0_n25[['full']])
+sim_mn_summ(sim_c0_n25[['cens']])
+
+
 # summarize conditional quantile
 
+if(0){
 # true median
 qllogis(0.5, shape = 3, scale = exp(1*1-0.5*1))
 qllogis(0.5, shape = 3, scale = exp(1*1-0.5*0))
@@ -299,36 +556,51 @@ qllogis(0.2, shape = 3, scale = exp(1*1-0.5*0))
 # true 80th qtile
 qllogis(0.8, shape = 3, scale = exp(1*1-0.5*1))
 qllogis(0.8, shape = 3, scale = exp(1*1-0.5*0))
+}
 
-#! update
+
 sim_qtile_summ <- function(result, beta=c(1, -0.5),
                         zdf = data.frame(z1=c(1,1),z2=c(1,0)),
                         q = 0.5, statnm='cond.med'){
   
-  true_df <- data.frame(zdf,true_qtile=c(qnorm(q,sum(zdf[1]*beta),1),
-                                       qnorm(q,sum(zdf[2]*beta),1)))
+  true_df <- data.frame(zdf, true_qtile = 
+                          c(qllogis(q, shape = 3, scale = exp(beta[1]*zdf[1,1]+beta[2]*zdf[1,2])),
+                            qllogis(q, shape = 3, scale = exp(beta[1]*zdf[2,1]+beta[2]*zdf[2,2]))))
   
-  if (names(result[4])==statnm|names(result[6])==statnm){
+  if(q==0.5 & statnm != 'cond.med'|
+     q==0.2 & statnm != 'cond.q20'|
+     q==0.8 & statnm != 'cond.q80') {stop("q must match statnm!")}    
+                    
+  if (names(result[6])==statnm|names(result[8])==statnm|names(result[10])==statnm){
     sims_sub <- result[[statnm]] 
   } else {
     sims_sub <- result[[paste0(statnm,".cn")]]
   }
   
-
   mrg_df <- merge(sims_sub, true_df, by=c('z1','z2'), all.y=FALSE) %>% 
     mutate(bias=med_qtile-true_qtile, pct.bias = 100*(bias/abs(true_qtile))) %>% 
     group_by(ndrow,z1,z2) %>% 
-    summarize(avg.pct.bias=mean(pct.bias))
+    summarize(avg.pct.bias=mean(pct.bias),
+              avg.bias=mean(bias),
+              mse=mean((bias^2)))
   
   return(mrg_df)
 }
 
+sim_qtile_summ(sim_c0_n25[['full']], q = 0.5, statnm='cond.med')
+sim_qtile_summ(sim_c0_n25[['full']], q = 0.2, statnm='cond.q20')
+sim_qtile_summ(sim_c0_n25[['full']], q = 0.8, statnm='cond.q80')
+
+sim_qtile_summ(sim_c0_n25[['cens']], q = 0.5, statnm='cond.med')
+sim_qtile_summ(sim_c0_n25[['cens']], q = 0.2, statnm='cond.q20')
+sim_qtile_summ(sim_c0_n25[['cens']], q = 0.8, statnm='cond.q80')
 
 # b<-sim_qtile_summ(sim_b0_n25[[1]], q = 0.5, statnm='cond.med')
 # bb<-sim_qtile_summ(sim_b0_n400[[1]], q = 0.2, statnm='cond.q20')
 # c<-sim_qtile_summ(sim_b0_n25[[2]], q = 0.5, statnm='cond.med')
 # cc<-sim_qtile_summ(sim_b0_n400[[2]], q = 0.2, statnm='cond.q20')
 
+## !!! Start HERE,
 
 # get summaries and convert data for all simulations
 nsamps <- c(25,50,100,200,400)
