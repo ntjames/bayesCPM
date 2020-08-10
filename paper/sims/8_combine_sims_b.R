@@ -8,25 +8,20 @@ psdir <- file.path(pdir,"sims","out")
 
 figdir <- file.path(pdir,"fig")
 
-#source(file.path(dir,"cpm_functions.r"))
-
 # load sim array
 simarray <- readRDS(file.path(pdir,"sims","bayes_cpm_simarray.rds"))
 
 # load sim data
 for (j in 1:25){
-  nam_b0 <- paste0("sim_b0_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
-  fp_b0 <- file.path(psdir,paste0(nam_b0,".rds"))
-  nam_b1 <- paste0("sim_b1_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
-  fp_b1 <- file.path(psdir,paste0(nam_b1,".rds"))
-  nam_b2 <- paste0("sim_b2_n", simarray[j,"nsamps"], "_",simarray[j,"rep"])
-  fp_b2 <- file.path(psdir,paste0(nam_b2,".rds"))
-  try(assign(nam_b0, readRDS(fp_b0)))
-  try(assign(nam_b1, readRDS(fp_b1)))
-  try(assign(nam_b2, readRDS(fp_b2)))
+  for (f in c("sim_b0_n","sim_b1_n","sim_b2_n")){
+    nam <- paste0(f, simarray[j,"nsamps"], "_",simarray[j,"rep"])
+    fp <- file.path(psdir,paste0(nam,".rds"))
+    try(assign(nam, readRDS(fp)))
+  }
+  
 }
 
-rm(nam_b0,nam_b1,nam_b2,fp_b0,fp_b1,fp_b2,j)
+rm(nam,fp,j,f)
 
 # for reference
 if (0){
@@ -155,9 +150,9 @@ sim1_coeff.fun <- function(sim=5, seed=1, n=50, p=0.5, alpha=0, beta=c(1,-0.5),
 
 }
 
-# sim_n - probit link, conc=1/ncats
-# sim_a1_n - probit link, conc=1/(0.8 + 0.35*max(ncats, 3))
-# sim_a2_n - probit link, conc=1/(2+(ncats/3))
+# sim_b0_n - probit link, conc=1/ncats
+# sim_b1_n - probit link, conc=1/(0.8 + 0.35*max(ncats, 3))
+# sim_b2_n - probit link, conc=1/(2+(ncats/3))
 
 # combine 5 reps of 200 sims for each setting
 for (n in c(25,50,100,200,400)){
@@ -166,20 +161,15 @@ for (n in c(25,50,100,200,400)){
     nm <- paste0(nm0, "_", 1:5)
     nmlist <- map(nm,get)
     
-    fl0 <- map(nmlist, function(x) x[[1]])
-    fl1 <- pmap(fl0,rbind)
-    fl2 <- lapply(fl1,bind_rows)
+    fl <- map(nmlist, function(x) x[[1]]) %>% pmap(rbind) %>% map(bind_rows)
+    cn <- map(nmlist, function(x) x[[2]]) %>% pmap(rbind) %>% map(bind_rows)
     
-    cn0 <- map(nmlist, function(x) x[[2]])
-    cn1 <- pmap(cn0,rbind)
-    cn2 <- lapply(cn1,bind_rows)
-    
-    assign(nm0,list(full=fl2,cens=cn2))
+    assign(nm0,list(full=fl,cens=cn))
     rm(list=nm)
   }
 }
 
-rm(cn0,cn1,cn2,fl0,fl1,fl2,nmlist,nm,nm0,n,pre)
+rm(cn,fl,nmlist,nm,nm0,n,pre)
 
 # true cdf values
 if(0){
@@ -227,7 +217,9 @@ sim_cdf_summ <- function(result, beta=c(1, -0.5),
   mrg_df <- merge(sims_sub, true_df, by='yin',all.y=FALSE) %>% 
     mutate(bias=med_cdf-true_cdf, pct.bias = 100*(bias/abs(true_cdf))) %>% 
     group_by(yin) %>% 
-    summarize(avg.pct.bias=mean(pct.bias))
+    summarize(avg.pct.bias=mean(pct.bias, na.rm=TRUE),
+              avg.bias=mean(bias, na.rm=TRUE),
+              mse=mean((bias^2), na.rm=TRUE))
   
   return(mrg_df)
 }
@@ -255,7 +247,9 @@ sim_mn_summ <- function(result, beta=c(1, -0.5),
   mrg_df <- merge(sims_sub, true_df, by=c('z1','z2'), all.y=FALSE) %>% 
     mutate(bias=med_mn-true_mn, pct.bias = 100*(bias/abs(true_mn))) %>% 
      group_by(ndrow,z1,z2) %>% 
-     summarize(avg.pct.bias=mean(pct.bias))
+     summarize(avg.pct.bias=mean(pct.bias, na.rm=TRUE),
+               avg.bias=mean(bias, na.rm=TRUE),
+               mse=mean((bias^2), na.rm=TRUE))
   
   return(mrg_df)
 }
@@ -287,16 +281,18 @@ sim_qtile_summ <- function(result, beta=c(1, -0.5),
   mrg_df <- merge(sims_sub, true_df, by=c('z1','z2'), all.y=FALSE) %>% 
     mutate(bias=med_qtile-true_qtile, pct.bias = 100*(bias/abs(true_qtile))) %>% 
     group_by(ndrow,z1,z2) %>% 
-    summarize(avg.pct.bias=mean(pct.bias))
+    summarize(avg.pct.bias=mean(pct.bias, na.rm=TRUE),
+              avg.bias=mean(bias, na.rm=TRUE),
+              mse=mean((bias^2), na.rm=TRUE))
   
   return(mrg_df)
 }
 
 
-# b<-sim_qtile_summ(sim_b0_n25[[1]], q = 0.5, statnm='cond.med')
-# bb<-sim_qtile_summ(sim_b0_n400[[1]], q = 0.2, statnm='cond.q20')
-# c<-sim_qtile_summ(sim_b0_n25[[2]], q = 0.5, statnm='cond.med')
-# cc<-sim_qtile_summ(sim_b0_n400[[2]], q = 0.2, statnm='cond.q20')
+# sim_qtile_summ(sim_b0_n25[[1]], q = 0.5, statnm='cond.med')
+# sim_qtile_summ(sim_b0_n400[[1]], q = 0.2, statnm='cond.q20')
+# sim_qtile_summ(sim_b0_n25[[2]], q = 0.5, statnm='cond.med')
+# sim_qtile_summ(sim_b0_n400[[2]], q = 0.2, statnm='cond.q20')
 
 
 # get summaries and convert data for all simulations
@@ -329,40 +325,18 @@ for (k in seq_along(outcome)){
   }
 }
 
-
-## full outcome datasets
-full_cdf_dat <- bind_rows( lapply(ls()[grep('full.cdf.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('full.cdf.sim',ls())])
-
-full_mn_dat <- bind_rows( lapply(ls()[grep('full.mn.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('full.mn.sim',ls())])
-
-full_med_dat <- bind_rows( lapply(ls()[grep('full.med.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('full.med.sim',ls())])
-
-full_q20_dat <- bind_rows( lapply(ls()[grep('full.q20.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('full.q20.sim',ls())])
-
-## censored outcome dataset
-cens_cdf_dat <- bind_rows( lapply(ls()[grep('cens.cdf.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('cens.cdf.sim',ls())])
-
-cens_mn_dat <- bind_rows( lapply(ls()[grep('cens.mn.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('cens.mn.sim',ls())])
-
-cens_med_dat <- bind_rows( lapply(ls()[grep('cens.med.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('cens.med.sim',ls())])
-
-cens_q20_dat <- bind_rows( lapply(ls()[grep('cens.q20.sim',ls())],get) ) %>%
-  mutate(n=factor(n,levels=c(400,200,100,50,25)))
-rm(list=ls()[grep('cens.q20.sim',ls())])
+# complete datasets for each param/statistic of interest
+for (mm in c("full.","cens.")){
+  for (nn in c("cdf.","mn.","med.","q20.")){
+    nam <- paste0(mm,nn,"sim")
+    dnam <- gsub("\\.","_",nam)
+    rmnm <- gsub("\\.","\\\\.",nam)
+    out<-lapply(ls()[grep(nam,ls())],get) %>% bind_rows() %>%
+      mutate(n=factor(n,levels=c(400,200,100,50,25)))
+    assign(paste0(dnam,"_dat"),out)
+    rm(list=ls()[grep(rmnm,ls())])
+  }
+}
 
 # labels and plot params
 # https://stackoverflow.com/questions/62662144/conditional-probability-is-not-displaying-properly-in-facet-label-in-ggplot2
@@ -372,28 +346,28 @@ pltw<-10; plth<-5; atxtsz<-9; fctsiz<-13
 ### CDF ###
 
 # full outcome plot
-full_cdf_dat %>% mutate(yin=factor(yin,labels=nlabs)) %>% 
+full_cdf_sim_dat %>% mutate(yin=factor(yin,labels=nlabs)) %>% 
   ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
   facet_grid(. ~ yin, labeller=labeller(yin=label_parsed))+
   xlab("average percent bias of posterior conditional CDF") + ylab("sample size")
 
-ggsave(file.path(figdir,"sim_cdf_full.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_b_cdf_full.png"),width=pltw,height=plth)
 
 # censored outcome plot
-cens_cdf_dat %>% mutate(yin=factor(yin,labels=nlabs[3:5])) %>% 
+cens_cdf_sim_dat %>% mutate(yin=factor(yin,labels=nlabs[3:5])) %>% 
   ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
   facet_grid(. ~ yin, labeller=labeller(yin=label_parsed))+
   xlab("average percent bias of posterior conditional CDF") + ylab("sample size")
 
-ggsave(file.path(figdir,"sim_cdf_cens.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_b_cdf_cens.png"),width=pltw,height=plth)
 
 
 ### Mean ###
 
 # full outcome plot
-full_mn_dat %>% 
+full_mn_sim_dat %>% 
   mutate(ndrow=if_else(ndrow==1,
                        "E(Y*'|'*~X[1]==1,X[2]==1)",
                        "E(Y*'|'*~X[1]==1,X[2]==0)")) %>% 
@@ -403,24 +377,23 @@ full_mn_dat %>%
   xlab("average percent bias of posterior conditional mean") + ylab("sample size")+
   coord_cartesian(xlim=c(-4,4))
 
-ggsave(file.path(figdir,"sim_mn_full.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_b_mn_full.png"),width=pltw,height=plth)
 
 # censored outcome plot
 # expected to be biased because of censored y vals, can't really get unbiased est.
-cens_mn_dat %>% 
+cens_mn_sim_dat %>% 
   ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
   facet_grid(. ~ ndrow)+
   xlab("average percent bias of posterior conditional mean") + ylab("sample size")
 
-#ggsave(file.path(figdir,"sim_mn_cens.png"),width=pltw,height=plth)
-
+ggsave(file.path(figdir,"sim_b_mn_cens.png"),width=pltw,height=plth)
 
 
 ### Median ###
 
 # full outcome plot
-full_med_dat %>% 
+full_med_sim_dat %>% 
   mutate(ndrow=if_else(ndrow==1,
                        "Q^{0.5}*'|'*list(X[1]==1,X[2]==1)",
                        "Q^{0.5}*'|'*list(X[1]==1,X[2]==0)")) %>% 
@@ -430,10 +403,10 @@ full_med_dat %>%
   xlab("average percent bias of posterior conditional median") + ylab("sample size") +
   coord_cartesian(xlim=c(-15,15))
 
-ggsave(file.path(figdir,"sim_med_full.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_b_med_full.png"),width=pltw,height=plth)
 
 # censored outcome plot
-cens_med_dat %>% 
+cens_med_sim_dat %>% 
   mutate(ndrow=if_else(ndrow==1,
                        "Q^{0.5}*'|'*list(X[1]==1,X[2]==1)",
                        "Q^{0.5}*'|'*list(X[1]==1,X[2]==0)")) %>% 
@@ -443,14 +416,13 @@ cens_med_dat %>%
   xlab("average percent bias of posterior conditional median") + ylab("sample size") +
   coord_cartesian(xlim=c(-15,15))
 
-ggsave(file.path(figdir,"sim_med_cens.png"),width=pltw,height=plth)
-
+ggsave(file.path(figdir,"sim_b_med_cens.png"),width=pltw,height=plth)
 
 
 ### 20% quantile ###
 
 # full outcome plot
-full_q20_dat %>% 
+full_q20_sim_dat %>% 
   mutate(ndrow=if_else(ndrow==1,
                        "Q^{0.2}*'|'*list(X[1]==1,X[2]==1)",
                        "Q^{0.2}*'|'*list(X[1]==1,X[2]==0)")) %>%
@@ -459,15 +431,15 @@ full_q20_dat %>%
   facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
   xlab("average percent bias of posterior conditional 20th percentile") + ylab("sample size")
 
-ggsave(file.path(figdir,"sim_q20_full.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_b_q20_full.png"),width=pltw,height=plth)
 
 # censored outcome plot
 # expected to be biased because of censored y vals, can't really get unbiased est.
-cens_q20_dat %>% 
+cens_q20_sim_dat %>% 
   ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
   facet_grid(. ~ ndrow)+
   xlab("average percent bias of posterior conditional 20th percentile") + ylab("sample size")
 
-#ggsave(file.path(figdir,"sim_q20_cens.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_b_q20_cens.png"),width=pltw,height=plth)
 
