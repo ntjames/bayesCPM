@@ -338,6 +338,22 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_q20_cens.png"))
 
 Make script to extract time from sim *.out files
 
+```{r simplt-samptime1, fig.cap="Per chain MCMC sampling time for scenario 1", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_a_MCMC_sample_times.png"))
+```
+
+```{r simplt-samptime2, fig.cap="Per chain MCMC sampling time for scenario 1 - 2nd run", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_b_MCMC_sample_times.png"))
+```
+
+```{r simplt-samptime3, fig.cap="Per chain MCMC sampling time for scenario 2", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_MCMC_sample_times.png"))
+```
+
+```{r simplt-samptime4, fig.cap="Per chain MCMC sampling time for scenario 3", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_MCMC_sample_times.png"))
+```
+
 Sims were run with R version 3.6.0 (2019-04-26) and rstan (Version 2.19.2, GitRev: 2e1f913d3ca3) on a high-performance computing cluster running under CentOS Linux 7 (Core)
 with Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz (might be diff for some nodes, extract info & summarize), amount RAM?
 
