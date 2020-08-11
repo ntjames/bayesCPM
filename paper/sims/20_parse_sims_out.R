@@ -165,11 +165,8 @@ ggplot2::autoplot(mb2)
 
 # load sim data
 # sims a, b
-# for (i in letters[1:2]){
-#     for (j in 0:2){
-#       for (k in 1:25){
-for (i in letters[2]){
-  for (j in 0:3){
+for (i in letters[1:2]){
+  for (j in 0:2){
     for (k in 1:25){
         nm <- paste0("sim_",i,j,"_",k)
         if (i=="a" & j=="0"){
@@ -188,7 +185,7 @@ for (i in letters[2]){
 }
 
 kk<-25
-for (i in letters[2]){
+for (i in letters[1:2]){
   for (j in 0:2){
      # paste0("sim_",i,j,"_",k) 
      sim_setting <- paste0("sim_",i,j) 
@@ -201,10 +198,24 @@ for (i in letters[2]){
   }
 }
 
-# sim_nm <- paste0("sim_b0_",1:3)
-# simnmlist <- map(sim_nm,get) 
-# b0<- bind_rows(simnmlist) 
+pltw<-10; plth<-5
 
+# summarize sim scenario a 
+sim_a<-bind_rows(sim_a0,sim_a1,sim_a2)
+
+sim_a %>% group_by(scenario,nsamps,mod) %>% 
+  summarize(mn_time=mean(secs,na.rm=TRUE),md_time=median(secs,na.rm=TRUE))
+
+sim_a %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>% 
+  filter(mod!='unk') %>% 
+  ggplot(aes(x=nsamps,y=secs)) +
+  geom_boxplot(aes(color=mod)) +
+  scale_y_log10() +
+  facet_wrap(~scenario)
+
+ggsave(file.path(figdir,"sim_a_MCMC_sample_times.png"),width=pltw,height=plth)
+
+# summarize sim scenario b - model is same as sim scenario a
 sim_b<-bind_rows(sim_b0,sim_b1,sim_b2)
 
 sim_b %>% group_by(scenario,nsamps,mod) %>% 
@@ -217,6 +228,7 @@ sim_b %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>%
     scale_y_log10() +
     facet_wrap(~scenario)
 
+ggsave(file.path(figdir,"sim_b_MCMC_sample_times.png"),width=pltw,height=plth)
 
 # sims c
 # sim_c0_n - logistic link, log transform, conc=1/ncats
@@ -257,6 +269,7 @@ for (i in letters[3]){
   }
 }
 
+# summarize sim scenario c
 sim_c<-bind_rows(sim_c0,sim_c1,sim_c2,sim_c3)
 
 sim_c %>% group_by(scenario,nsamps,mod) %>% 
@@ -269,8 +282,7 @@ sim_c %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>%
   scale_y_log10() +
   facet_grid(~scenario)
 
-
-
+ggsave(file.path(figdir,"sim_c_MCMC_sample_times.png"),width=pltw,height=plth)
 
 # sims d
 # sim_d0_n - loglog link, no transform, conc=1/ncats
@@ -315,6 +327,7 @@ for (i in letters[4]){
   }
 }
 
+# summarize sim scenario d
 sim_d<-bind_rows(sim_d0,sim_d1,sim_d2,sim_d3)
 
 sim_d %>% group_by(scenario,nsamps,mod) %>% 
@@ -326,6 +339,10 @@ sim_d %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>%
   geom_boxplot(aes(color=mod)) +
   scale_y_log10() +
   facet_grid(~scenario)
+
+ggsave(file.path(figdir,"sim_d_MCMC_sample_times.png"),width=pltw,height=plth)
+
+
 
 ### scratch 
 if (0){
@@ -382,4 +399,3 @@ dd<-bind_rows(clist) %>% group_by(iter) %>%
 #clist <- lapply(blist, function(x) separate(x,col="alist..x..", into=c("chn","time"),sep=":"))
 
 }
-
