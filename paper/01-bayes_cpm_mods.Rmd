@@ -71,7 +71,7 @@ DONE
 
 <!-- mini lit review for ordinal models and summarizing results of previous continuous CPM papers -->
 
-Cumulative models for ordinal outcomes -- traditionally denoted cumulative link models [@agresti_categorical_2002] -- have been discussed extensively in the literature using both classical (frequentist) and Bayesian implementations. Since these models are characterized by adding probabilities, not link functions, we prefer the nomenclature cumulative probability model (CPM). Under the frequentist paradigm, Walker and Duncan [@walker_estimation_1967] and McCullagh [@peter_mccullagh_regression_1980] described these models as an extension of dichotomous outcome regression models: logistic and probit regression are most well-known examples. A Bayesian CPM for ordinal regression was first detailed by Albert and Chib [@albert_bayesian_1993; @albert_bayesian_1997] and Johnson and Albert [@johnson_ordinal_1999]. Additional Bayesian CPM extensions including partial proportional odds [@peterson_partial_1990], mixture link models [@lang_bayesian_1999], location-scale ordinal regression [citation] and multivariate ordinal outcomes are described by Congdon [@congdon_bayesian_2005]. In all these settings, the number of ordered outcome categories is implicitly assumed to be smaller -- often much smaller -- than the sample size. However, continuous data are also ordinal and can therefore be fit using CPMs.
+Cumulative models for ordinal outcomes -- traditionally denoted cumulative link models [@agresti_categorical_2002] -- have been discussed extensively in the literature using both classical (frequentist) and Bayesian implementations. Since these models are characterized by adding probabilities, not link functions, we prefer the nomenclature cumulative probability model (CPM). Under the frequentist paradigm, Walker and Duncan [@walker_estimation_1967] and McCullagh [@peter_mccullagh_regression_1980] described these models as an extension of dichotomous outcome regression models: logistic and probit regression are most well-known examples. A Bayesian CPM for ordinal regression was first detailed by Albert and Chib [@albert_bayesian_1993; @albert_bayesian_1997] and Johnson and Albert [@johnson_ordinal_1999]. <!--Peng and Hall [cite] describe a Bayesian approach to generalized ordinal regression models for rating data --> Additional Bayesian CPM extensions including partial proportional odds [@peterson_partial_1990], mixture link models [@lang_bayesian_1999], location-scale ordinal regression [citation] and multivariate ordinal outcomes are described by Congdon [@congdon_bayesian_2005]. In all these settings, the number of ordered outcome categories is implicitly assumed to be smaller -- often much smaller -- than the sample size. However, continuous data are also ordinal and can therefore be fit using CPMs.
 
 In the continuous data setting, Liu et al. [@liu_modeling_2017] demonstrate the equivalence between CPMs and transformation models of the form:
 \begin{equation}
@@ -80,7 +80,22 @@ Y=H(\beta^{T}X+\varepsilon) \quad \text{where} \quad \varepsilon \sim F_{\vareps
 where $H(\cdot)$ is an increasing function, $\beta$ a vector of regression coefficients, $X$ a vector of covariates, and $\varepsilon$ are errors distributed according to $F_{\varepsilon}$. Following Zeng and Lin [], Harrell [@harrell_regression_2015] and Liu et al. [@liu_modeling_2017] describe approximate non-parametric maximum likelihood estimation (NPMLE)
 for the unspecified transformation $H(\cdot)$ and $\beta$ parameters. The models have several favorable characteristics including invariance of regression coefficient estimates to monotonic outcome transformations and ability to handle mixed continuous and discrete outcomes such as those that arise from a lower or upper limit of detection. In addition CPMs directly model the full conditional cumulative distribution function (CDF); this allows estimates of conditional means, quantiles, and exceedance probabilities to be calculated from a single model fit. Further, because only the $H(\cdot)$ part of the model is nonparametric, CPMs are semiparametric regression models which balance the robustness of fully nonparametric models and the efficiency of fully parametric models.
 
-There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, Song & Lu [@song_semiparametric_2012] develop a semiparametric transformation nonlinear mixed model which estimates the transformation, $H(\cdot)$, and also incorporates possible nonlinear relationships between $X$ and $\beta$ as well as random effects using Bayesian P-splines. Tang et al. [add cite] semiparametric Bayesian analysis of transformation linear mixed models... In the context of survival data, Mallick & Walker [@mallick_bayesian_2003] describe a linear transformation model where the transformation, $H(\cdot)$ and the error distribution, $F_{\varepsilon}$, are estimated nonparametrically using mixtures of incomplete beta functions and a Pólya tree distribution, respectively, [add Lin paper]; Hanson and colleagues [@damien_surviving_2013;@hanson_bayesian_2007] and the monograph by Ibrahim ,,  describe other Bayesian nonparametric survival models. [addt'l citations??]
+There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, 
+Brunner 1995 - Bayesian Linear Regression with Error Terms That have symmetric unimodal densities
+
+Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression [ADD DETAILS]
+
+Add Rossi book? [], Muller book? [], Hjort book? []
+
+. Song & Lu [@song_semiparametric_2012] develop a semiparametric transformation nonlinear mixed model which estimates the transformation, $H(\cdot)$, and also incorporates possible nonlinear relationships between $X$ and $\beta$ as well as random effects using Bayesian P-splines. Tang et al. [@tang_semiparametric_2018] describe semiparametric Bayesian analysis for transformation linear mixed models using a similar Bayesian P-spline approach to estimate the transformation with a focus on nonparametric estimation of random effects.
+
+
+In the context of survival data, Mallick & Walker [@mallick_bayesian_2003] describe a linear transformation model for mean survival time where the transformation, $H(\cdot)$ and the error distribution, $F_{\varepsilon}$, are estimated nonparametrically using mixtures of incomplete beta functions and a Pólya tree distribution, respectively.
+Lin et al. [@lin_semiparametric_2012] detail a semiparametric Bayesian transformation model for median survival. 
+
+Hanson and colleagues [@damien_surviving_2013;@hanson_bayesian_2007] and the monograph by Ibrahim [cite],  describe other Bayesian nonparametric survival models. [addt'l citations??]
+
+
 
 <!-- DESCRIBE PROBLEMS/GAPS in literature using previous methods here and how we solve them
 - contrasts and other functionals?
@@ -186,7 +201,8 @@ Model checking
 [section describing how models were actually fit, i.e. used HMC implemented in Stan, JAGS, etc?]
 -->
 
-The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [Add a few sentences about HMC??] number iterations, number of chains, burn-in, adapt delta & other settings
+The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [Add a few sentences about HMC - cite Turkman Computational Bayesian Statistics?] number iterations, number of chains, burn-in, adapt delta & other settings
+
 
 <!-- describe how to implement model with a more traditional Metropolis-Hastings algorithm?? -->
 
@@ -239,16 +255,15 @@ To estimate the $q^{th}$ quantile
 
 ## Simulations
 
-To evaluate the <!--long-run frequency--> properties of the Bayesian CPM we generate data from several simulation models. Both begin with continuous data from:
-\begin{eqnarray*}
-Y=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim N(0,1)//
-Y=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim Logistic(0,1/3)//
-Y=X_1\beta_1 + X_2 \beta_2 + \varepsilon \quad \varepsilon \sim Gumbel(0,1)
-\end{eqnarray*}
-
+To evaluate the <!--long-run frequency--> properties of the Bayesian CPM we generate data from several simulation models:
+\begin{align*}
+Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim N(0,1)\\
+Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim Logistic(0,1/3)\\
+Y&=X_1\beta_1 + X_2 \beta_2 + \varepsilon \quad \varepsilon \sim Gumbel(0,1)
+\end{align*}
 where $\beta_1=1$, $\beta_2=-0.5$, $X_1 \sim Bernoulli(0.5)$ and $X_2 \sim N(0,1)$
 
-For each setting a second set of simulations is used to evaluate a mixed discrete/continuous outcome such as a lower limit of detection. For the first two scenarios values of $Y<1$ to were set to 1 and for the third scenario values of $Y<0$ were set to 0. Under each of the six scenarios, $1000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$.
+For each setting a second set of simulations is used to evaluate a mixed discrete/continuous outcome such as a lower limit of detection. For the first two scenarios values of $Y<1$ to were set to 1 and for the third scenario values of $Y<0$ were set to 0. Under each of the six scenarios, $1,000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$.
 
 !! update this paragraph !!
 A Bayesian CPM using three $\boldsymbol{\alpha}$ concentration hyperparameters for $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha})$ with the properly specified probit link was fit to each simulated dataset across the two outcome models. We examine the average percent bias of the posterior median for parameters $\beta_1$ and $\beta_2$ and five posterior median $\gamma_j$ parameters corresponding to $y$ values $\boldsymbol{y}=\{y_1=e^{-1},y_2=e^{-0.33},y_3=e^{0.5},y_4=e^{1.33},y_5=e^2\}$. We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, the conditional median at $X_1=1$ and $X_2=1$, and the conditional mean and 20$^{th}$ percentile for the uncensored outcome simulations.
@@ -273,7 +288,7 @@ try more complex mix of continuous and categorical (e.g. categorical below thres
 Use HIV data from Dr. Koethe. Describe background, data and modeling approach
 -->
 
-The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in [citation]. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates: age, sex, race, smoking status, study location and CD4 cell count.
+The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in Koethe et al. [@koethe_serum_2012; @koethe_metabolic_2015]. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates: age, sex, race, smoking status, study location and CD4 cell count.
 
 The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1$\beta$). Both biomarkers are skewed with values censored below a lower limit of detection set to 0. To account for skewness and censoring we fit a Bayesian CPM model using a probit link function, noninformative $\beta$ priors and a concentration parameter of $\alpha=1/n$ for the Dirichlet distribution to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
 
