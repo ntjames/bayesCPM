@@ -1,6 +1,6 @@
 Package: bayesCPM
 Title: Bayesian Cumulative Probability Models For Continuous and Mixed Outcomes
-Version: 0.0.0.9001
+Version: 0.0.0.9002
 Authors@R: person("Nathan T.", "James", email = "nathan.t.james@vanderbilt.edu", role = c("aut", "cre"))
 Description: Bayesian cumulative probability models (CPMs) for continuous and
     mixed outcomes. This package includes functions to fit a Bayesian CPM using
