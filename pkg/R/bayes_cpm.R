@@ -5,9 +5,9 @@
 #' @param data 	a data frame containing the variables in the model
 #' @param link the link function to be used. must match one of c("logistic", "probit", "loglog", "cloglog", "cauchit")
 #' @param dir_prior_conc concentration parameter for Dirichlet distribution as a function of the number of categories, n. The default is 1/n
-#' @param prior NOT USED
+#' @param prior NOT CURRENTLY USED
 #' @param ... other parameters passed to rstan::sampling()
-#' @return a 'stanfit' object
+#' @return a list containing a 'stanfit' object and 'standata' used to fit model
 #' @examples
 #' fit <- bayes_cpm(y~x1+x2, data=dat1, link="logistic", dir_prior_conc=function(n) 1/n)
 
@@ -21,6 +21,6 @@ bayes_cpm <- function(formula, data, link, dir_prior_conc = function(n) 1/n,
                  "cloglog"=4, "cauchit"=5)
   standata <- mkStanDat(data, outcome=mf.nm[1], preds = mf.nm[-1], link=lnkn,
                         conc=dir_prior_conc)
-  out <- rstan::sampling(stanmodels$bayes_cpm_mod, data = standata, ...)
-  return(out)
+  fit <- rstan::sampling(stanmodels$bayes_cpm_mod, data = standata, ...)
+return(list(stanfit=fit,standata=standata))
 }
