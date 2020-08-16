@@ -4,12 +4,10 @@
 \alias{getCDF}
 \title{Get conditional CDF from fit Bayes CPM model}
 \usage{
-getCDF(fit, fitdata, newdata, summ = TRUE, ...)
+getCDF(fit, newdata, summ = TRUE, ...)
 }
 \arguments{
-\item{fit}{'stanfit' object}
-
-\item{fitdata}{list containing data used to fit model}
+\item{fit}{output list from bayes_cpm() containing 'stanfit' object and 'standata' data used to fit model}
 
 \item{newdata}{a data frame with columns for each predictor used in the model}
 
@@ -23,6 +21,6 @@ posterior conditional CDF summary (summ=TRUE) or values (summ=FALSE)
 Calculate the posterior conditional CDF from a Bayes CPM fit
 }
 \examples{
-fit <- bayes_cpm(dat1_stan)
-getCDF(fit, dat1_stan, data.frame(pred1=c(0,1),pred2=c(1,1)))
+fit <- bayes_cpm(y~x1+x2, data=dat)
+getCDF(fit, data.frame(x1=c(0,1),x2=c(1,1)))
 }

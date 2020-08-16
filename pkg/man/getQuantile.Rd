@@ -4,12 +4,10 @@
 \alias{getQuantile}
 \title{Get conditional quantile from fit Bayes CPM model}
 \usage{
-getQuantile(fit, fitdata, newdata, q = 0.5, summ = TRUE, ...)
+getQuantile(fit, newdata, q = 0.5, summ = TRUE, ...)
 }
 \arguments{
-\item{fit}{'stanfit' object}
-
-\item{fitdata}{list containing data used to fit model}
+\item{fit}{output list from bayes_cpm() containing 'stanfit' object and 'standata' data used to fit model}
 
 \item{newdata}{a data frame with columns for each predictor used in the model}
 
@@ -25,6 +23,6 @@ posterior conditional quantile summary (summ=TRUE) or values (summ=FALSE)
 Calculates the posterior conditional quantile
 }
 \examples{
-fit <- bayes_cpm(dat1_stan)
-getQuantile(fit, dat1_stan, data.frame(pred1=c(0,1),pred2=c(1,1)))
+fit <- bayes_cpm(y~x1+x2, data=dat)
+getQuantile(fit, data.frame(pred1=c(0,1),pred2=c(1,1)), q=0.5)
 }

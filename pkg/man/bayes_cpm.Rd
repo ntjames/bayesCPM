@@ -22,12 +22,12 @@ bayes_cpm(
 
 \item{dir_prior_conc}{concentration parameter for Dirichlet distribution as a function of the number of categories, n. The default is 1/n}
 
-\item{prior}{NOT USED}
+\item{prior}{NOT CURRENTLY USED}
 
 \item{...}{other parameters passed to rstan::sampling()}
 }
 \value{
-a 'stanfit' object
+a list containing a 'stanfit' object and 'standata' used to fit model
 }
 \description{
 get posterior samples from Bayes CPM model using Stan
