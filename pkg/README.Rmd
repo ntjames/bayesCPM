@@ -22,14 +22,6 @@ This package includes functions to fit a Bayesian Cumulative Probability Model (
 
 ## Installation
 
-<!--
-You can install the released version of bayesCPM from [CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("bayesCPM")
-```
--->
-
 You can install the development version from [GitHub](https://github.com/) with:
 
 ``` r
@@ -43,37 +35,44 @@ This is a basic example:
 
 ```{r example}
 library(bayesCPM)
-library(dplyr) # needed for bayesCPM::mkStanDat()
+library(dplyr)
 
 ## make example data
 set.seed(1567)
 n <- 100
 x1 <- rnorm(n)
 y <- 0.9*x1 + rnorm(n)
-dat <- data.frame(y=ordered(y),x1)
-
-## convert data to Stan format (link=2 is probit)
-dat_stan  <- mkStanDat(dat, outcome="y", preds = c("x1"), link=2)
+dat <- data.frame(y=ordered(y),x1) # outcome must be ordered factor
 
 ## sample from Bayes CPM model with probit link
-fit <- bayes_cpm(dat_stan)
+fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 ```
 
-Using the model fit we can get a summary of the posterior conditional mean
+Using the model fit we can get a summary of the posterior conditional mean,
 
 ```{r mean}
-## posterior conditional mean when x=1
-fit_mn <- getMean(fit, dat_stan, newdata=data.frame(x1=c(1)))
+## posterior conditional mean when x1=1
+fit_mn <- getMean(fit, newdata=data.frame(x1=c(1)))
 fit_mn
 ```
 
-or plot the median of the posterior conditional CDF
+a posterior conditional quantile,
 
-```{r cdf}
-## get posterior conditional CDF when x=1
-fit_cdf <- getCDF(fit, dat_stan, newdata=data.frame(x1=c(1))) 
+```{r quantile}
+## posterior conditional 80th quantile when x1=0.5
+fit_q80 <- getQuantile(fit, newdata=data.frame(x1=c(0.5)),q=0.8)
+fit_q80
+```
+
+or plot the median of the posterior conditional CDF. The true CDF is shown for reference.
+
+```{r cdf, fig.height=5, fig.width=5}
+## get posterior conditional CDF when x1=1
+fit_cdf <- getCDF(fit, newdata=data.frame(x1=c(1))) 
 
 plot(fit_cdf$yval, fit_cdf$med_cdf, type="s", xlab="y", ylab="Conditional CDF")
+curve(pnorm(x,mean=0.9*1),-3,3, add=TRUE, col="red")
+legend("topleft",legend=c("Bayes CPM estimate","True CDF"),lty=c(1,1),col=c(1,2))
 ```
 
 <!--
