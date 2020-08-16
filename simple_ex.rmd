@@ -47,21 +47,24 @@ dat3 <- data.frame(y=ordered(y),y_num=y,x1)
 
 ```{r ex4a.2, cache=TRUE}
 # mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=2) # probit link
-mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=1)
-
-bg <- bayes_cpm(mod_data, seed=6472, 
-                 iter=3250, warmup=2000, chains=4,
-                 control = list(adapt_delta = 0.8))
-
+# mod_data  <- mkStanDat(dat3, outcome="y", preds = c("x1"), link=1)
+# 
+# bg <- bayes_cpm(mod_data, seed=6472, 
+#                  iter=3250, warmup=2000, chains=4,
+#                  control = list(adapt_delta = 0.8))
 #bg <- sampling(ord_mod1, data=mod_data, seed=6472, 
 #                 iter=3250, warmup=2000, chains=4,
 #                 control = list(adapt_delta = 0.8))
+
+bg <- bayes_cpm(y~x1, data=dat3, link="logistic", seed=6472, 
+                 iter=3250, warmup=2000, chains=4,
+                 control = list(adapt_delta = 0.8))
 ```
 
 
 ```{r, eval=FALSE}
 #plots, etc for biostat seminar
-bg_df <- as.data.frame(bg)
+bg_df <- as.data.frame(bg$stanfit)
 
 #head(bg_df[,c("cutpoints[98]")])
 #head(bg_df[,c("b[1]")])
@@ -70,7 +73,7 @@ head(bg_df[,c("cutpoints[1]","cutpoints[2]","cutpoints[3]","cutpoints[98]","cutp
 ```
 
 ```{r}
-cdf_bg <- getCDF(bg, mod_data, newdata=data.frame(x1=c(-2,0,2))) 
+cdf_bg <- getCDF(bg, newdata=data.frame(x1=c(-2,0,2))) 
 
 cdf_bg %>% filter(ndrow %in% c(1,2,3)) %>% ggplot(aes(group=ndrow)) +
   geom_stepribbon(aes(x=yval, ymin=cdf_q5, ymax=cdf_q95, 
@@ -91,7 +94,7 @@ cdf_bg %>% filter(ndrow %in% c(1,2,3)) %>% ggplot(aes(group=ndrow)) +
 ggsave(file.path(figdir,"cond_cdf2.png"),width=6,height=3)
 
 
-mn_dat<-getMean(bg, mod_data, newdata=data.frame(x1=c(-2,0,2)),summ=FALSE)
+mn_dat<-getMean(bg, newdata=data.frame(x1=c(-2,0,2)),summ=FALSE)
 
 ggplot(mn_dat,aes(x=mn,fill=factor(x1)))+geom_density(alpha=0.6,color=NA)+ 
   scale_fill_discrete(name = "covariate value", 
@@ -102,7 +105,7 @@ ggsave(file.path(figdir,"cond_mn2.png"),width=6,height=3)
 
 mn_dat %>% filter(x1==2) %>% pull(mn) %>% quantile(probs=c(0.025,0.975))
 
-q50_dat <- getQuantile(bg, mod_data, newdata=data.frame(x1=c(-2,0,2)),q=0.50,summ=FALSE)
+q50_dat <- getQuantile(bg, newdata=data.frame(x1=c(-2,0,2)),q=0.50,summ=FALSE)
 
 ggplot(q50_dat,aes(x=qtile,fill=factor(x1)))+
   geom_density(alpha=0.6, color=NA, adjust=3)+ 
