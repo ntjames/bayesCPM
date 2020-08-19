@@ -3,6 +3,7 @@
 export(bayes_cpm)
 export(getCDF)
 export(getMean)
+export(getPostPred)
 export(getQuantile)
 export(mkStanDat)
 import(Rcpp)
