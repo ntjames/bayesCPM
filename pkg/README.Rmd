@@ -11,6 +11,11 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+
+library(bayesCPM)
+library(dplyr)
+library(ggplot2)
+library(pammtools)
 ```
 
 # bayesCPM
@@ -31,7 +36,7 @@ devtools::install_github("ntjames/bayes_cpm/pkg")
 
 ## Example
 
-This is a basic example:
+Here is a basic example:
 
 ```{r example}
 library(bayesCPM)
@@ -64,15 +69,25 @@ fit_q80 <- getQuantile(fit, newdata=data.frame(x1=c(0.5)),q=0.8)
 fit_q80
 ```
 
-or plot the median of the posterior conditional CDF. The true CDF is shown for reference.
+or plot the median and the 90% credible interval of the posterior conditional CDF. The true CDF is shown for reference.
 
-```{r cdf, fig.height=5, fig.width=5}
+```{r cdf, fig.height=8, fig.width=8}
+library(ggplot2)
+library(pammtools) # for geom_stepribbon
+
 ## get posterior conditional CDF when x1=1
 fit_cdf <- getCDF(fit, newdata=data.frame(x1=c(1))) 
 
-plot(fit_cdf$yval, fit_cdf$med_cdf, type="s", xlab="y", ylab="Conditional CDF")
-curve(pnorm(x,mean=0.9*1),-3,3, add=TRUE, col="red")
-legend("topleft",legend=c("Bayes CPM estimate","True CDF"),lty=c(1,1),col=c(1,2))
+fit_cdf %>% ggplot(aes(x=yval)) +
+  geom_stepribbon(aes(ymin=cdf_q5, ymax=cdf_q95, fill="cpm_CI"), alpha=0.5) +
+  geom_step(aes(x=yval, y=med_cdf, color="cpm_med")) +
+  stat_function(aes(color="truecdf"),fun=function(x) pnorm(x,1*0.9)) +
+  xlab("y") + ylab("Conditional CDF") +
+  scale_fill_manual(name = "",values=c("cpm_CI"="blue"),
+                      labels=c("CPM 90% \ncredible interval")) +
+  scale_color_manual(name = "", values=c("cpm_med"="blue","truecdf"="red"),
+                        labels=c("Bayes CPM \nmedian", "True CDF"))+
+  theme(legend.position="bottom")
 ```
 
 <!--

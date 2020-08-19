@@ -22,19 +22,11 @@ devtools::install_github("ntjames/bayes_cpm/pkg")
 
 ## Example
 
-This is a basic example:
+Here is a basic example:
 
 ``` r
 library(bayesCPM)
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 
 ## make example data
 set.seed(1567)
@@ -48,8 +40,8 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.00018 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.8 seconds.
+#> Chain 1: Gradient evaluation took 0.00012 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.2 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -58,15 +50,15 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 1.99746 seconds (Warm-up)
-#> Chain 1:                1.51528 seconds (Sampling)
-#> Chain 1:                3.51274 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.05698 seconds (Warm-up)
+#> Chain 1:                1.4973 seconds (Sampling)
+#> Chain 1:                3.55428 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 9.4e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.94 seconds.
+#> Chain 2: Gradient evaluation took 9e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.9 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -75,15 +67,15 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 2.03663 seconds (Warm-up)
-#> Chain 2:                1.7976 seconds (Sampling)
-#> Chain 2:                3.83422 seconds (Total)
+#> Chain 2:  Elapsed Time: 2.03692 seconds (Warm-up)
+#> Chain 2:                1.73532 seconds (Sampling)
+#> Chain 2:                3.77225 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 0.000187 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 1.87 seconds.
+#> Chain 3: Gradient evaluation took 9.8e-05 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.98 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -92,15 +84,15 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 2.09917 seconds (Warm-up)
-#> Chain 3:                1.56386 seconds (Sampling)
-#> Chain 3:                3.66303 seconds (Total)
+#> Chain 3:  Elapsed Time: 2.00971 seconds (Warm-up)
+#> Chain 3:                1.47936 seconds (Sampling)
+#> Chain 3:                3.48906 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 9.5e-05 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.95 seconds.
+#> Chain 4: Gradient evaluation took 0.000122 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 1.22 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -109,9 +101,9 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 2.13702 seconds (Warm-up)
-#> Chain 4:                1.64027 seconds (Sampling)
-#> Chain 4:                3.77729 seconds (Total)
+#> Chain 4:  Elapsed Time: 2.02259 seconds (Warm-up)
+#> Chain 4:                1.50762 seconds (Sampling)
+#> Chain 4:                3.53021 seconds (Total)
 #> Chain 4:
 ```
 
@@ -145,16 +137,26 @@ fit_q80
 #> #   qtile_q97.5 <dbl>, x1 <dbl>
 ```
 
-or plot the median of the posterior conditional CDF. The true CDF is
-shown for reference.
+or plot the median and the 90% credible interval of the posterior
+conditional CDF. The true CDF is shown for reference.
 
 ``` r
+library(ggplot2)
+library(pammtools) # for geom_stepribbon
+
 ## get posterior conditional CDF when x1=1
 fit_cdf <- getCDF(fit, newdata=data.frame(x1=c(1))) 
 
-plot(fit_cdf$yval, fit_cdf$med_cdf, type="s", xlab="y", ylab="Conditional CDF")
-curve(pnorm(x,mean=0.9*1),-3,3, add=TRUE, col="red")
-legend("topleft",legend=c("Bayes CPM estimate","True CDF"),lty=c(1,1),col=c(1,2))
+fit_cdf %>% ggplot(aes(x=yval)) +
+  geom_stepribbon(aes(ymin=cdf_q5, ymax=cdf_q95, fill="cpm_CI"), alpha=0.5) +
+  geom_step(aes(x=yval, y=med_cdf, color="cpm_med")) +
+  stat_function(aes(color="truecdf"),fun=function(x) pnorm(x,1*0.9)) +
+  xlab("y") + ylab("Conditional CDF") +
+  scale_fill_manual(name = "",values=c("cpm_CI"="blue"),
+                      labels=c("CPM 90% \ncredible interval")) +
+  scale_color_manual(name = "", values=c("cpm_med"="blue","truecdf"="red"),
+                        labels=c("Bayes CPM \nmedian", "True CDF"))+
+  theme(legend.position="bottom")
 ```
 
 <img src="man/figures/README-cdf-1.png" width="100%" />
