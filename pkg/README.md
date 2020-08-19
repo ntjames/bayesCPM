@@ -40,8 +40,8 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.00012 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.2 seconds.
+#> Chain 1: Gradient evaluation took 0.000127 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.27 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -50,15 +50,15 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 2.05698 seconds (Warm-up)
-#> Chain 1:                1.4973 seconds (Sampling)
-#> Chain 1:                3.55428 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.14373 seconds (Warm-up)
+#> Chain 1:                1.52084 seconds (Sampling)
+#> Chain 1:                3.66457 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 9e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.9 seconds.
+#> Chain 2: Gradient evaluation took 9.6e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.96 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -67,15 +67,15 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 2.03692 seconds (Warm-up)
-#> Chain 2:                1.73532 seconds (Sampling)
-#> Chain 2:                3.77225 seconds (Total)
+#> Chain 2:  Elapsed Time: 2.01714 seconds (Warm-up)
+#> Chain 2:                1.51737 seconds (Sampling)
+#> Chain 2:                3.53451 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 9.8e-05 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.98 seconds.
+#> Chain 3: Gradient evaluation took 0.000179 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 1.79 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -84,15 +84,15 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 2.00971 seconds (Warm-up)
-#> Chain 3:                1.47936 seconds (Sampling)
-#> Chain 3:                3.48906 seconds (Total)
+#> Chain 3:  Elapsed Time: 2.0391 seconds (Warm-up)
+#> Chain 3:                1.63838 seconds (Sampling)
+#> Chain 3:                3.67748 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'bayes_cpm_mod' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 0.000122 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 1.22 seconds.
+#> Chain 4: Gradient evaluation took 0.000143 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 1.43 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -101,9 +101,9 @@ fit <- bayes_cpm(y~x1, data=dat, link="probit", refresh=1000)
 #> Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 2.02259 seconds (Warm-up)
-#> Chain 4:                1.50762 seconds (Sampling)
-#> Chain 4:                3.53021 seconds (Total)
+#> Chain 4:  Elapsed Time: 2.16903 seconds (Warm-up)
+#> Chain 4:                1.48485 seconds (Sampling)
+#> Chain 4:                3.65388 seconds (Total)
 #> Chain 4:
 ```
 
