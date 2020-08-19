@@ -50,7 +50,7 @@ for (n in 1:N){
     # do nothing
   } else {
     for(d in 1:draws){
-      y_tilde_cat[n,d]<-sample.int(N,size=1,replace=TRUE,prob=theta[,d])
+      y_tilde_cat[n,d]<-sample.int(J,size=1,replace=TRUE,prob=theta[,d])
     }
   }
 }
