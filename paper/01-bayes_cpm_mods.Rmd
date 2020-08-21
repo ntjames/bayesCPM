@@ -80,10 +80,7 @@ Y=H(\beta^{T}X+\varepsilon) \quad \text{where} \quad \varepsilon \sim F_{\vareps
 where $H(\cdot)$ is an increasing function, $\beta$ a vector of regression coefficients, $X$ a vector of covariates, and $\varepsilon$ are errors distributed according to $F_{\varepsilon}$. Following Zeng and Lin [], Harrell [@harrell_regression_2015] and Liu et al. [@liu_modeling_2017] describe approximate non-parametric maximum likelihood estimation (NPMLE)
 for the unspecified transformation $H(\cdot)$ and $\beta$ parameters. The models have several favorable characteristics including invariance of regression coefficient estimates to monotonic outcome transformations and ability to handle mixed continuous and discrete outcomes such as those that arise from a lower or upper limit of detection. In addition CPMs directly model the full conditional cumulative distribution function (CDF); this allows estimates of conditional means, quantiles, and exceedance probabilities to be calculated from a single model fit. Further, because only the $H(\cdot)$ part of the model is nonparametric, CPMs are semiparametric regression models which balance the robustness of fully nonparametric models and the efficiency of fully parametric models.
 
-There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, 
-Brunner 1995 - Bayesian Linear Regression with Error Terms That have symmetric unimodal densities
-
-Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression [ADD DETAILS]
+There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, Brunner [@brunner_bayesian_1995] describes Bayesian linear regression models with symmetric unimodal error densities and Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression [ADD DETAILS]
 
 Add Rossi book? [], Muller book? [], Hjort book? []
 
@@ -188,21 +185,18 @@ While it is possible to define separate $\alpha_j$ parameters for each category,
 
 In multiparameter models, the choice of reference prior depends on the parameter or statistic of interest (e.g. $\beta$, conditional CDF, conditional mean) [@berger_overall_2015].  Without prior information, we seek a value of $\boldsymbol{\alpha}$ with minimal impact on inference for a variety of settings and quantities of interest while still producing posterior estimates that can be well sampled by the MCMC algorithm.
 
+We evaluate convergence of each model using Rhat (name? Gelman-Rubin??) [cite] and traceplots. Model comparison is performed using leave-one-out (loo) information criteria. Model fit is assessed using graphical checks the of posterior predictive and posterior predictive p-values [cite Gelman? Stern & Sinharay].
+
+<!--
 Model checking
 - evaluate model fit with posterior predictive checks, prob-scale residuals, latent var residuals, other??
 - comparison of posterior stats, e.g. DIC, loo-IC etc
 - plot of proportional odds/parallelism assumption?? could use something like smoother described in Congdon to do this
-- is there a test statistic and corresponding Bayesian p-value that makes sense in this setting? <!--check Bayes notes and BDA3 -->
-
-
-<!--
-[Describe posterior predictive checks, Bayesian p-value or some additional Bayesian model checking]
-
-[section describing how models were actually fit, i.e. used HMC implemented in Stan, JAGS, etc?]
+- is there a test statistic and corresponding Bayesian p-value that makes sense in this setting? check Bayes notes and BDA3 
 -->
 
+<!-- section describing how models were actually fit, i.e. used HMC implemented in Stan -->
 The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [Add a few sentences about HMC - cite Turkman Computational Bayesian Statistics?] number iterations, number of chains, burn-in, adapt delta & other settings
-
 
 <!-- describe how to implement model with a more traditional Metropolis-Hastings algorithm?? -->
 
@@ -284,9 +278,7 @@ try more complex mix of continuous and categorical (e.g. categorical below thres
 
 ## Case Study
 
-<!--
-Use HIV data from Dr. Koethe. Describe background, data and modeling approach
--->
+<!-- Use HIV data from Dr. Koethe. Describe background, data and modeling approach -->
 
 The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in Koethe et al. [@koethe_serum_2012; @koethe_metabolic_2015]. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates: age, sex, race, smoking status, study location and CD4 cell count.
 
@@ -373,6 +365,10 @@ Sims were run with R version 3.6.0 (2019-04-26) and rstan (Version 2.19.2, GitRe
 with Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz (might be diff for some nodes, extract info & summarize), amount RAM?
 
 ## Case Study
+
+For the IL-6 outcome ...,
+
+for IL-1-$\beta$ 
 
 Posterior covariate parameter estimates for each of the biomarker outcomes in the HIV case study data are shown in \@ref(fig:il6-post) and \@ref(fig:il-1-beta-post). BMI is positively associated with increased IL-6, but not associated with increased IL-1-$\beta$.
 
