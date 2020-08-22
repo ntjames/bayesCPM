@@ -80,19 +80,12 @@ Y=H(\beta^{T}X+\varepsilon) \quad \text{where} \quad \varepsilon \sim F_{\vareps
 where $H(\cdot)$ is an increasing function, $\beta$ a vector of regression coefficients, $X$ a vector of covariates, and $\varepsilon$ are errors distributed according to $F_{\varepsilon}$. Following Zeng and Lin [], Harrell [@harrell_regression_2015] and Liu et al. [@liu_modeling_2017] describe approximate non-parametric maximum likelihood estimation (NPMLE)
 for the unspecified transformation $H(\cdot)$ and $\beta$ parameters. The models have several favorable characteristics including invariance of regression coefficient estimates to monotonic outcome transformations and ability to handle mixed continuous and discrete outcomes such as those that arise from a lower or upper limit of detection. In addition CPMs directly model the full conditional cumulative distribution function (CDF); this allows estimates of conditional means, quantiles, and exceedance probabilities to be calculated from a single model fit. Further, because only the $H(\cdot)$ part of the model is nonparametric, CPMs are semiparametric regression models which balance the robustness of fully nonparametric models and the efficiency of fully parametric models.
 
-There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, Brunner [@brunner_bayesian_1995] describes Bayesian linear regression models with symmetric unimodal error densities and Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression [ADD DETAILS]
+There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, Brunner [@brunner_bayesian_1995] describes Bayesian linear regression models with symmetric unimodal error densities and Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression [ADD DETAILS]. 
+DeYoreo & Kottas [@deyoreo_bayesian_2020] explore Bayesian nonparametric density regression for ordinal responses by modeling the joint density between the outcome and covariates using latent continuous random variables.
 
-Add Rossi book? [], Muller book? [], Hjort book? []
+Song & Lu [@song_semiparametric_2012] develop a semiparametric transformation nonlinear mixed model which estimates the transformation, $H(\cdot)$, and also incorporates possible nonlinear relationships between $X$ and $\beta$ as well as random effects using Bayesian P-splines. Tang et al. [@tang_semiparametric_2018] describe semiparametric Bayesian analysis for transformation linear mixed models using a similar Bayesian P-spline approach to estimate the transformation with a focus on nonparametric estimation of random effects. Additional details on general Bayesian nonparametric models can be found in the texts by Müller et al. [@muller_bayesian_2015] and Hjort et al. [@hjort_bayesian_2010]
 
-. Song & Lu [@song_semiparametric_2012] develop a semiparametric transformation nonlinear mixed model which estimates the transformation, $H(\cdot)$, and also incorporates possible nonlinear relationships between $X$ and $\beta$ as well as random effects using Bayesian P-splines. Tang et al. [@tang_semiparametric_2018] describe semiparametric Bayesian analysis for transformation linear mixed models using a similar Bayesian P-spline approach to estimate the transformation with a focus on nonparametric estimation of random effects.
-
-
-In the context of survival data, Mallick & Walker [@mallick_bayesian_2003] describe a linear transformation model for mean survival time where the transformation, $H(\cdot)$ and the error distribution, $F_{\varepsilon}$, are estimated nonparametrically using mixtures of incomplete beta functions and a Pólya tree distribution, respectively.
-Lin et al. [@lin_semiparametric_2012] detail a semiparametric Bayesian transformation model for median survival. 
-
-Hanson and colleagues [@damien_surviving_2013;@hanson_bayesian_2007] and the monograph by Ibrahim [cite],  describe other Bayesian nonparametric survival models. [addt'l citations??]
-
-
+In the context of survival data, Mallick & Walker [@mallick_bayesian_2003] describe a linear transformation model for mean survival time where the transformation, $H(\cdot)$ and the error distribution, $F_{\varepsilon}$, are estimated nonparametrically using mixtures of incomplete beta functions and a Pólya tree distribution, respectively. Lin et al. [@lin_semiparametric_2012] detail a semiparametric Bayesian transformation model for median survival. Hanson and colleagues [@damien_surviving_2013;@hanson_bayesian_2007] and the monograph by Ibrahim [@ibrahim_bayesian_2010] describe other Bayesian nonparametric survival models. 
 
 <!-- DESCRIBE PROBLEMS/GAPS in literature using previous methods here and how we solve them
 - contrasts and other functionals?
@@ -282,7 +275,7 @@ try more complex mix of continuous and categorical (e.g. categorical below thres
 
 The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in Koethe et al. [@koethe_serum_2012; @koethe_metabolic_2015]. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates: age, sex, race, smoking status, study location and CD4 cell count.
 
-The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1$\beta$). Both biomarkers are skewed with values censored below a lower limit of detection set to 0. To account for skewness and censoring we fit a Bayesian CPM model using a probit link function, noninformative $\beta$ priors and a concentration parameter of $\alpha=1/n$ for the Dirichlet distribution to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
+The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1$\beta$). Both biomarkers are skewed with values censored below a lower limit of detection set to 0. To account for skewness and censoring we fit Bayesian CPM models using logit, probit, and loglog link functions, noninformative $\beta$ priors and a concentration parameter of $\alpha=1/n$ for the Dirichlet distribution to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
 
 # Results
 
@@ -370,15 +363,24 @@ For the IL-6 outcome ...,
 
 for IL-1-$\beta$ 
 
-Posterior covariate parameter estimates for each of the biomarker outcomes in the HIV case study data are shown in \@ref(fig:il6-post) and \@ref(fig:il-1-beta-post). BMI is positively associated with increased IL-6, but not associated with increased IL-1-$\beta$.
+Posterior covariate parameter estimates for each of the biomarker outcomes in the HIV case study data are shown in \@ref(fig:il6-par) and \@ref(fig:il-1-beta-par). BMI is positively associated with increased IL-6, but not associated with increased IL-1-$\beta$.
 
 ### IL-6 biomarker
 
-```{r il6-post, fig.cap='Posterior $\\beta$ estimates for IL-6 model', fig.align='center', out.width='75%'}
+MCMC checks - traceplots and Rhat (supp) 
+
+model comparison using loo (supp)
+
+
+```{r il6-postpred, fig.cap='Observed and posterior predictive distribution for IL-6 model', fig.align='center', out.width='75%'}
+knitr::include_graphics(file.path(wd,"fig","il_6_postpred.png"))
+```
+
+```{r il6-par, fig.cap='Posterior $\\beta$ estimates for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
 ```
 
-```{r il6-post-ct, fig.cap='Posterior $\\gamma$ estimates for IL-6 model', fig.align='center', out.width='75%'}
+```{r il6-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post_ct.png"))
 ```
 
@@ -396,10 +398,23 @@ knitr::include_graphics(file.path(wd,"fig","il_6_bmi.png"))
 
 ### IL-1-beta biomarker
 
+MCMC checks - traceplots and Rhat (supp) 
 
-```{r il-1-beta-post, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
+model comparison using loo (supp)
+
+```{r il-1-beta-postpred, fig.cap='Observed and posterior predictive distribution for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
+knitr::include_graphics(file.path(wd,"fig","il_1_beta_postpred.png"))
+```
+
+
+```{r il-1-beta-par, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
 ```
+
+```{r il-1-beta-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
+knitr::include_graphics(file.path(wd,"fig","il_1_beta_post_ct.png"))
+```
+
 
 ```{r il-1-beta-trans, fig.cap='Estimated transformation for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_trans.png"))
