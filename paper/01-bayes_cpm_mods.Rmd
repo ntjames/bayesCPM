@@ -80,12 +80,8 @@ Y=H(\beta^{T}X+\varepsilon) \quad \text{where} \quad \varepsilon \sim F_{\vareps
 where $H(\cdot)$ is an increasing function, $\beta$ a vector of regression coefficients, $X$ a vector of covariates, and $\varepsilon$ are errors distributed according to $F_{\varepsilon}$. Following Zeng and Lin [], Harrell [@harrell_regression_2015] and Liu et al. [@liu_modeling_2017] describe approximate non-parametric maximum likelihood estimation (NPMLE)
 for the unspecified transformation $H(\cdot)$ and $\beta$ parameters. The models have several favorable characteristics including invariance of regression coefficient estimates to monotonic outcome transformations and ability to handle mixed continuous and discrete outcomes such as those that arise from a lower or upper limit of detection. In addition CPMs directly model the full conditional cumulative distribution function (CDF); this allows estimates of conditional means, quantiles, and exceedance probabilities to be calculated from a single model fit. Further, because only the $H(\cdot)$ part of the model is nonparametric, CPMs are semiparametric regression models which balance the robustness of fully nonparametric models and the efficiency of fully parametric models.
 
-There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, Brunner [@brunner_bayesian_1995] describes Bayesian linear regression models with symmetric unimodal error densities and Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression [ADD DETAILS]. 
-DeYoreo & Kottas [@deyoreo_bayesian_2020] explore Bayesian nonparametric density regression for ordinal responses by modeling the joint density between the outcome and covariates using latent continuous random variables.
-
-Song & Lu [@song_semiparametric_2012] develop a semiparametric transformation nonlinear mixed model which estimates the transformation, $H(\cdot)$, and also incorporates possible nonlinear relationships between $X$ and $\beta$ as well as random effects using Bayesian P-splines. Tang et al. [@tang_semiparametric_2018] describe semiparametric Bayesian analysis for transformation linear mixed models using a similar Bayesian P-spline approach to estimate the transformation with a focus on nonparametric estimation of random effects. Additional details on general Bayesian nonparametric models can be found in the texts by Müller et al. [@muller_bayesian_2015] and Hjort et al. [@hjort_bayesian_2010]
-
-In the context of survival data, Mallick & Walker [@mallick_bayesian_2003] describe a linear transformation model for mean survival time where the transformation, $H(\cdot)$ and the error distribution, $F_{\varepsilon}$, are estimated nonparametrically using mixtures of incomplete beta functions and a Pólya tree distribution, respectively. Lin et al. [@lin_semiparametric_2012] detail a semiparametric Bayesian transformation model for median survival. Hanson and colleagues [@damien_surviving_2013;@hanson_bayesian_2007] and the monograph by Ibrahim [@ibrahim_bayesian_2010] describe other Bayesian nonparametric survival models. 
+There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, Brunner [@brunner_bayesian_1995] describes Bayesian linear regression models with symmetric unimodal error densities and Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression. 
+DeYoreo & Kottas [@deyoreo_bayesian_2020] explore Bayesian nonparametric density regression for ordinal responses by modeling the joint density between the outcome and covariates using latent continuous random variables. In the context of transformation models, Song & Lu [@song_semiparametric_2012] develop a semiparametric transformation nonlinear mixed model which estimates the transformation, $H(\cdot)$, and also incorporates possible nonlinear relationships between $X$ and $\beta$ as well as random effects using Bayesian P-splines. Tang et al. [@tang_semiparametric_2018] describe semiparametric Bayesian analysis for transformation linear mixed models using a similar Bayesian P-spline approach to estimate the transformation with a focus on nonparametric estimation of random effects. For survival outcomes, Mallick & Walker [@mallick_bayesian_2003] describe a linear transformation model for mean survival time where the transformation, $H(\cdot)$ and the error distribution, $F_{\varepsilon}$, are estimated nonparametrically using mixtures of incomplete beta functions and a Pólya tree distribution, respectively. Lin et al. [@lin_semiparametric_2012] detail a semiparametric Bayesian transformation model for median survival. Hanson and colleagues [@damien_surviving_2013;@hanson_bayesian_2007] and the text by Ibrahim et al. [@ibrahim_bayesian_2010] describe other Bayesian nonparametric survival models. Additional details on general Bayesian nonparametric models can be found in the texts by Müller et al. [@muller_bayesian_2015] and Hjort et al. [@hjort_bayesian_2010]
 
 <!-- DESCRIBE PROBLEMS/GAPS in literature using previous methods here and how we solve them
 - contrasts and other functionals?
@@ -93,7 +89,7 @@ In the context of survival data, Mallick & Walker [@mallick_bayesian_2003] descr
 - similar strengths to Bayesian Survival - check there for addt'l benefits
 -->
 
-In this paper, we develop Bayesian CPMs for continuous and mixed outcomes. [They are distinguished from other Bayesian semiparametric approaches by their relationship to traditional ordinal regression models? something else?]. Bayesian CPMs inherit many of the properties of CPMs estimated using NPMLE and have additional benefits: interpretation using posterior probabilities, the ability to incorporate available prior information, and inference <!--when the log-likelihood is not well-approximated by a quadratic function [!! need to show example where this is the case in simulations]-->
+In this paper, we develop Bayesian CPMs for continuous and mixed outcomes. <!--[They are distinguished from other Bayesian semiparametric approaches by their relationship to traditional ordinal regression models? something else?]-->. Bayesian CPMs inherit many of the properties of CPMs estimated using NPMLE and have additional benefits: interpretation using posterior probabilities, the ability to incorporate available prior information, and inference <!--when the log-likelihood is not well-approximated by a quadratic function [!! need to show example where this is the case in simulations]-->
 for quantities of interest without using asymptotic approximations.
 A primary challenge when implementing Bayesian CPMs for continuous outcomes is the specification of priors for the intercept parameters and we describe several proposed strategies. Through simulations, we explore characteristics of Bayesian CPMs using several model specifications and prior combinations<!--and make comparisons to CPM estimates using NPMLE and Bayesian nonparametric (BNP) regression, another popular approach for flexibly modeling outcomes-->. We present a case study involving HIV biomarker data for which the outcomes are skewed and censored at a lower limit of detection. We conclude with a discussion -- including advantages, current limitations, and extensions -- and recommendations for using Bayesian CPMs.
 
@@ -178,7 +174,7 @@ While it is possible to define separate $\alpha_j$ parameters for each category,
 
 In multiparameter models, the choice of reference prior depends on the parameter or statistic of interest (e.g. $\beta$, conditional CDF, conditional mean) [@berger_overall_2015].  Without prior information, we seek a value of $\boldsymbol{\alpha}$ with minimal impact on inference for a variety of settings and quantities of interest while still producing posterior estimates that can be well sampled by the MCMC algorithm.
 
-We evaluate convergence of each model using Rhat (name? Gelman-Rubin??) [cite] and traceplots. Model comparison is performed using leave-one-out (loo) information criteria. Model fit is assessed using graphical checks the of posterior predictive and posterior predictive p-values [cite Gelman? Stern & Sinharay].
+For the case study, we evaluate convergence of each model using traceplots of MCMC draws and $\hat{R}$ scale reduction factor [@gelman_bayesian_2014]. Model comparison is performed using the difference in expected log predictive density calculated using leave-one-out cross-validation [@vehtari_practical_2017]. Model fit is assessed using graphical checks the of posterior predictive and posterior predictive p-values [@stern_bayesian_2005; @gelman_bayesian_2014].
 
 <!--
 Model checking
@@ -189,7 +185,7 @@ Model checking
 -->
 
 <!-- section describing how models were actually fit, i.e. used HMC implemented in Stan -->
-The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [Add a few sentences about HMC - cite Turkman Computational Bayesian Statistics?] number iterations, number of chains, burn-in, adapt delta & other settings
+The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [Add a few sentences about HMC - cite Turkman Computational Bayesian Statistics?] [@turkman_computational_2019] number iterations, number of chains, burn-in, adapt delta & other settings
 
 <!-- describe how to implement model with a more traditional Metropolis-Hastings algorithm?? -->
 
@@ -244,16 +240,22 @@ To estimate the $q^{th}$ quantile
 
 To evaluate the <!--long-run frequency--> properties of the Bayesian CPM we generate data from several simulation models:
 \begin{align*}
-Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim N(0,1)\\
-Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim Logistic(0,1/3)\\
-Y&=X_1\beta_1 + X_2 \beta_2 + \varepsilon \quad \varepsilon \sim Gumbel(0,1)
+1.\; Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim N(0,1)\\
+2.\; Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim Logistic(0,1/3)\\
+3.\; Y&=X_1\beta_1 + X_2 \beta_2 + \varepsilon \quad \varepsilon \sim Gumbel(0,1)
 \end{align*}
 where $\beta_1=1$, $\beta_2=-0.5$, $X_1 \sim Bernoulli(0.5)$ and $X_2 \sim N(0,1)$
 
-For each setting a second set of simulations is used to evaluate a mixed discrete/continuous outcome such as a lower limit of detection. For the first two scenarios values of $Y<1$ to were set to 1 and for the third scenario values of $Y<0$ were set to 0. Under each of the six scenarios, $1,000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$.
+For each model a second set of simulations was used to evaluate a mixed discrete/continuous outcome such as a lower limit of detection. For the first two models values of $Y<1$ to were set to 1 and for the third model values of $Y<0$ were set to 0. The continuous and censored outcome data based on 1. and 3. were evaluated using a Bayesian CPM with the properly specified probit and loglog links, respectively. For the data based on 2. a logit link Bayesian CPM (which implies $\varepsilon \sim Logistic(0,1)$) was used. In each of the six outcome models, three $\boldsymbol{\alpha}$ concentration hyperparameters ($1/J$, $1/(2+(J/3))$, $1/(0.8+0.35J)$) were considered for $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha})$ for a total of 18 model and prior combinations. For each combination $1,000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$.
 
-!! update this paragraph !!
-A Bayesian CPM using three $\boldsymbol{\alpha}$ concentration hyperparameters for $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha})$ with the properly specified probit link was fit to each simulated dataset across the two outcome models. We examine the average percent bias of the posterior median for parameters $\beta_1$ and $\beta_2$ and five posterior median $\gamma_j$ parameters corresponding to $y$ values $\boldsymbol{y}=\{y_1=e^{-1},y_2=e^{-0.33},y_3=e^{0.5},y_4=e^{1.33},y_5=e^2\}$. We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, the conditional median at $X_1=1$ and $X_2=1$, and the conditional mean and 20$^{th}$ percentile for the uncensored outcome simulations.
+To summarize the simulations, we examine the average percent bias of the posterior median for parameters $\beta_1$ and $\beta_2$ and posterior median $\gamma_j$ parameters corresponding to $y$ values spaced across the range of the data. For the simulations based on 1. 
+$\boldsymbol{y}=\{y_1=e^{-1},y_2=e^{-0.33},y_3=e^{0.5},y_4=e^{1.33},y_5=e^2\}$, for those based on 2.
+$\boldsymbol{y}=\{y_1=e^{-0.5},y_2=e^{0},y_3=e^{0.5},y_4=e^{1},y_5=e^{1.5}\}$ and for 3.
+$\boldsymbol{y}=\{y_1=-0.3,y_2=0,y_3=0.5,y_4=1.5,y_5=2.5\}$. For the censored outcomes, estimates are only available for the uncensored values of $\boldsymbol{y}$.
+
+!!! Start here !!!
+
+We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, the conditional median at $X_1=1$ and $X_2=1$, and the conditional mean and 20$^{th}$ percentile for the uncensored outcome simulations.
 
 <!-- compare using Bias, RMSE, coverage?, other statistics? -->
 
