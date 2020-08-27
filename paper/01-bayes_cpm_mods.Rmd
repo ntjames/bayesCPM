@@ -248,18 +248,13 @@ where $\beta_1=1$, $\beta_2=-0.5$, $X_1 \sim Bernoulli(0.5)$ and $X_2 \sim N(0,1
 
 For each model a second set of simulations was used to evaluate a mixed discrete/continuous outcome such as a lower limit of detection. For the first two models values of $Y<1$ to were set to 1 and for the third model values of $Y<0$ were set to 0. The continuous and censored outcome data based on 1. and 3. were evaluated using a Bayesian CPM with the properly specified probit and loglog links, respectively. For the data based on 2. a logit link Bayesian CPM (which implies $\varepsilon \sim Logistic(0,1)$) was used. In each of the six outcome models, three $\boldsymbol{\alpha}$ concentration hyperparameters ($1/J$, $1/(2+(J/3))$, $1/(0.8+0.35J)$) were considered for $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha})$ for a total of 18 model and prior combinations. For each combination $1,000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$.
 
-To summarize the simulations, we examine the average percent bias of the posterior median for parameters $\beta_1$ and $\beta_2$ and posterior median $\gamma_j$ parameters corresponding to $y$ values spaced across the range of the data. For the simulations based on 1. 
-$\boldsymbol{y}=\{y_1=e^{-1},y_2=e^{-0.33},y_3=e^{0.5},y_4=e^{1.33},y_5=e^2\}$, for those based on 2.
-$\boldsymbol{y}=\{y_1=e^{-0.5},y_2=e^{0},y_3=e^{0.5},y_4=e^{1},y_5=e^{1.5}\}$ and for 3.
-$\boldsymbol{y}=\{y_1=-0.3,y_2=0,y_3=0.5,y_4=1.5,y_5=2.5\}$. For the censored outcomes, estimates are only available for the uncensored values of $\boldsymbol{y}$.
+For scenario (1), we examine the average percent bias of the posterior median for parameters $\beta_1$ and $\beta_2$ and five $\gamma_j$ parameters corresponding to $y$ values spaced across the range of the data, $\boldsymbol{y}=\{y_1=e^{-1},y_2=e^{-0.33},y_3=e^{0.5},y_4=e^{1.33},y_5=e^2\}$. For the censored outcomes, estimates are only available for the uncensored values of $\boldsymbol{y}$. We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, and the conditional median, mean and 20$^{th}$ percentile at $(X_1=1,X_2=1)$ and $(X_1=1,X_2=0)$.
 
-!!! Start here !!!
-
-We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, the conditional median at $(X_1=1,X_2=1)$ and $(X_1=1,X_2=0)$, and the conditional mean and 20$^{th}$ percentile for the uncensored outcome simulations.
-
-<!-- compare using Bias, RMSE, coverage?, other statistics? -->
+For scenarios (2) and (3), we examine the average bias for $\beta_1$ and $\beta_2$ and five $\gamma_j$ parameters at $\boldsymbol{y}=\{y_1=e^{-0.5},y_2=e^{0},y_3=e^{0.5},y_4=e^{1},y_5=e^{1.5}\}$ for (2) and $\boldsymbol{y}=\{y_1=-0.3,y_2=0,y_3=0.5,y_4=1.5,y_5=2.5\}$ for (3).  We also calculate the average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, and the conditional median, mean 20$^{th}$ percentile, and 80$^{th}$ percentile at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$.
 
 <!--
+compare using Bias, RMSE, coverage?, other statistics? 
+
 Additional sims
 
 case where likelihood not well approximated by quadratic function (ie NPMLE doesn't work well but Bayes CPM works)?
@@ -268,8 +263,6 @@ weird shapes (i.e. mixture distributions); mixture continuous/discrete (lower li
 
 try more complex mix of continuous and categorical (e.g. categorical below threshold and above threshold? may not work without modified multiple detection limit likelihood)
 -->
-
-
 
 ## Case Study
 
@@ -285,6 +278,8 @@ The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1
 ## Simulations
 
 In general, the Bayesian CPM had reasonable performance under the simulation settings explored; this is especially true for larger sample sizes. However, performance was poor for some quantities. The three $\boldsymbol{\alpha}$ values produced similar results for most scenarios
+
+### Probit link
 
 For scenario (1), the average percent bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars1) and \@ref(fig:simplt-pars2) for the uncensored and censored outcome data, respectively. Percent bias is always largest for the smallest sample sizes, but the direction and size of the bias depends on the outcome, concentration prior and parameter of interest. For the $\beta$ parameters, the priors $\alpha=1/(0.8+0.35J)$ and $\alpha=1/(2+(J/3))$ produce less biased estimates than $\alpha=1/J$ for both outcomes. The situation is more complex for the $\gamma$ parameters. With the uncensored outcome, the $\alpha=1/J$ prior estimate is less biased for $\gamma_{y_1}$ and $\gamma_{y_2}$, but more biased for $\gamma_{y_3}$, $\gamma_{y_4}$, and $\gamma_{y_5}$; with the censored outcome, the $\alpha=1/J$ prior estimate is less biased for $\gamma_{y_3}$, but more biased for $\gamma_{y_4}$ and $\gamma_{y_5}$. Across both outcomes, the estimates of $\beta_1$ and all $\gamma$s were larger using the $\alpha=1/J$ concentration prior compared to the $\alpha=1/(0.8+0.35J)$ or $\alpha=1/(2+(J/3))$ concentration priors while the $\beta_2$ estimates were smaller with $\alpha=1/J$.
 
@@ -338,14 +333,132 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_q20_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_b_q20_cens.png"))
 ```
 
+### Logit link
+move some to supp?
+
+```{r simplt-pars3, fig.cap="Bias in parameters for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_pars_full.png"))
+```
+
+```{r simplt-pars4, fig.cap="Bias in parameters for censored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_pars_cens.png"))
+```
+
+
+```{r simplt-cdf3, fig.cap="Bias in conditional CDF for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_cdf_full.png"))
+```
+
+```{r simplt-cdf4, fig.cap="Bias in conditional CDF for censored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_cdf_cens.png"))
+```
+
+```{r simplt-med3, fig.cap="Bias in conditional median for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_med_full.png"))
+```
+
+```{r simplt-med4, fig.cap="Bias in conditional median for censored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_med_cens.png"))
+```
+
+```{r simplt-mn3, fig.cap="Bias in conditional mean for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_mn_full.png"))
+```
+
+```{r simplt-mn4, fig.cap="Bias in conditional mean for censored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_mn_cens.png"))
+```
+
+
+```{r simplt-q20-3, fig.cap="Bias in conditional 20th percentile for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_q20_full.png"))
+```
+
+```{r simplt-q20-4, fig.cap="Bias in conditional 20th percentile for censored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_q20_cens.png"))
+```
+
+
+```{r simplt-q80-3, fig.cap="Bias in conditional 80th percentile for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_q80_full.png"))
+```
+
+```{r simplt-q80-4, fig.cap="Bias in conditional 80th percentile for censored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_q80_cens.png"))
+```
+
+
+
+### Loglog link
+move some to supp?
+
+```{r simplt-pars5, fig.cap="Bias in parameters for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_pars_full.png"))
+```
+
+```{r simplt-pars6, fig.cap="Bias in parameters for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_pars_cens.png"))
+```
+
+
+```{r simplt-cdf5, fig.cap="Bias in conditional CDF for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_full.png"))
+```
+
+```{r simplt-cdf6, fig.cap="Bias in conditional CDF for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_cens.png"))
+```
+
+
+```{r simplt-med5, fig.cap="Bias in conditional median for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_med_full.png"))
+```
+
+```{r simplt-med6, fig.cap="Bias in conditional median for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_med_cens.png"))
+```
+
+```{r simplt-mn5, fig.cap="Bias in conditional mean for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_mn_full.png"))
+```
+
+```{r simplt-mn6, fig.cap="Bias in conditional mean for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_mn_cens.png"))
+```
+
+
+```{r simplt-q20-5, fig.cap="Bias in conditional 20th percentile for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_q20_full.png"))
+```
+
+```{r simplt-q20-6, fig.cap="Bias in conditional 20th percentile for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_q20_cens.png"))
+```
+
+
+```{r simplt-q80-5, fig.cap="Bias in conditional 80th percentile for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_q80_full.png"))
+```
+
+```{r simplt-q80-6, fig.cap="Bias in conditional 80th percentile for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_q80_cens.png"))
+```
+
+
+
+
+
 ### Computation time
 
-Make script to extract time from sim *.out files
+Simulations were run with `R` version 3.6.0 (2019-04-26) and `rstan` (Version 2.19.2, GitRev: 2e1f913d3ca3) on a high-performance computing cluster running under CentOS Linux 7 (Core) with Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz (might be diff for some nodes, extract info & summarize), amount RAM?
+
+Computation time for the three scenarios is shown in figures \@ref(fig:simplt-samptime1), \@ref(fig:simplt-samptime3), and \@ref(fig:simplt-samptime4). Average per chain sampling time was similar across scenarios and priors. As expected, the censored outcomes had shorter sampling times since they had fewer categories and $\gamma$ parameters. 
 
 ```{r simplt-samptime1, fig.cap="Per chain MCMC sampling time for scenario 1", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_a_MCMC_sample_times.png"))
 ```
 
+Move 2nd 
 ```{r simplt-samptime2, fig.cap="Per chain MCMC sampling time for scenario 1 - 2nd run", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_MCMC_sample_times.png"))
 ```
@@ -357,9 +470,6 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_MCMC_sample_times.png"))
 ```{r simplt-samptime4, fig.cap="Per chain MCMC sampling time for scenario 3", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_MCMC_sample_times.png"))
 ```
-
-Sims were run with R version 3.6.0 (2019-04-26) and rstan (Version 2.19.2, GitRev: 2e1f913d3ca3) on a high-performance computing cluster running under CentOS Linux 7 (Core)
-with Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz (might be diff for some nodes, extract info & summarize), amount RAM?
 
 ## Case Study
 
