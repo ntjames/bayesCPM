@@ -255,7 +255,7 @@ $\boldsymbol{y}=\{y_1=-0.3,y_2=0,y_3=0.5,y_4=1.5,y_5=2.5\}$. For the censored ou
 
 !!! Start here !!!
 
-We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, the conditional median at $X_1=1$ and $X_2=1$, and the conditional mean and 20$^{th}$ percentile for the uncensored outcome simulations.
+We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, the conditional median at $(X_1=1,X_2=1)$ and $(X_1=1,X_2=0)$, and the conditional mean and 20$^{th}$ percentile for the uncensored outcome simulations.
 
 <!-- compare using Bias, RMSE, coverage?, other statistics? -->
 
@@ -286,7 +286,7 @@ The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1
 
 In general, the Bayesian CPM had reasonable performance under the simulation settings explored; this is especially true for larger sample sizes. However, performance was poor for some quantities. The three $\boldsymbol{\alpha}$ values produced similar results for most scenarios
 
-The average percent bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars1) and \@ref(fig:simplt-pars2) for the uncensored and censored outcome data, respectively.
+For scenario (1), the average percent bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars1) and \@ref(fig:simplt-pars2) for the uncensored and censored outcome data, respectively. Percent bias is always largest for the smallest sample sizes, but the direction and size of the bias depends on the outcome, concentration prior and parameter of interest. For the $\beta$ parameters, the priors $\alpha=1/(0.8+0.35J)$ and $\alpha=1/(2+(J/3))$ produce less biased estimates than $\alpha=1/J$ for both outcomes. The situation is more complex for the $\gamma$ parameters. With the uncensored outcome, the $\alpha=1/J$ prior estimate is less biased for $\gamma_{y_1}$ and $\gamma_{y_2}$, but more biased for $\gamma_{y_3}$, $\gamma_{y_4}$, and $\gamma_{y_5}$; with the censored outcome, the $\alpha=1/J$ prior estimate is less biased for $\gamma_{y_3}$, but more biased for $\gamma_{y_4}$ and $\gamma_{y_5}$. Across both outcomes, the estimates of $\beta_1$ and all $\gamma$s were larger using the $\alpha=1/J$ concentration prior compared to the $\alpha=1/(0.8+0.35J)$ or $\alpha=1/(2+(J/3))$ concentration priors while the $\beta_2$ estimates were smaller with $\alpha=1/J$.
 
 ```{r simplt-pars1, fig.cap="Bias in parameters for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_a_pars_full.png"))
@@ -296,7 +296,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_a_pars_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_a_pars_cens.png"))
 ```
 
-Figures \@ref(fig:simplt-cdf1) and \@ref(fig:simplt-cdf2) show the bias in the posterior conditional CDF.
+Figures \@ref(fig:simplt-cdf1) and \@ref(fig:simplt-cdf2) show the average percent bias in the posterior conditional CDF for scenario (1). For the uncensored outcome, the conditional CDF estimates of $F(y|X_1=1,X_2=1)$ have larger percent bias when $y<e^{0.5}$, especially for the smallest sample sizes, $n=25$ and $n=50$. For conditional CDF estimates at $y<e^{0.5}$, the concentration prior $\alpha=1/J$ produces estimates that are slightly more biased than the othe reciprocal priors. The direction of the bias does not show a consistent trend across sample size. Similar patterns are seen for the the censored outcome, less biased estimates for the CDF at higher $y$ values and larger sample sizes.
 
 ```{r simplt-cdf1, fig.cap="Bias in conditional CDF for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_full.png"))
@@ -306,7 +306,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_cens.png"))
 ```
 
-The results for the conditional posterior median are shown in figures \@ref(fig:simplt-med1) and \@ref(fig:simplt-med2).
+The results for the conditional posterior median are shown in figures \@ref(fig:simplt-med1) and \@ref(fig:simplt-med2). For both outcomes, the conditional median estimate had a positive bias for both $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$ with smaller bias for larger sample sizes. There were negligible differences in average percent bias of the median estimates for the three $\alpha$ concentration parameters
 
 ```{r simplt-med1, fig.cap="Bias in conditional median for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_med_full.png"))
@@ -316,7 +316,9 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_med_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_b_med_cens.png"))
 ```
 
-Figure \@ref(fig:simplt-mn1) presents the average bias in the posterior conditional mean for the uncensored simulation data and \@ref(fig:simplt-mn2) shows censored data.
+!!! Start here !!!
+
+Figure \@ref(fig:simplt-mn1) presents the average bias in the posterior conditional mean for the uncensored simulation data and \@ref(fig:simplt-mn2) shows censored data. NOTE: can't really estimate conditional mean for censored outcome
 
 ```{r simplt-mn1, fig.cap="Bias in conditional mean for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_mn_full.png"))
