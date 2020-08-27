@@ -541,8 +541,12 @@ sim_qtile_summ <- function(result, beta=c(1, -0.5),
 
 # get summaries and convert data for all simulations
 nsamps <- c(25,50,100,200,400)
-concs <- c('1/J','1/(0.8 + 0.35*J)','1/(2+(J/3))','1/2')
-pres <- c('sim_c0_n','sim_c1_n','sim_c2_n','sim_c3_n')
+
+# to include alpha=1/2 conc
+#concs <- c('1/J','1/(0.8 + 0.35*J)','1/(2+(J/3))','1/2')
+#pres <- c('sim_c0_n','sim_c1_n','sim_c2_n','sim_c3_n')
+concs <- c('1/J','1/(0.8 + 0.35*J)','1/(2+(J/3))')
+pres <- c('sim_c0_n','sim_c1_n','sim_c2_n')
 outcome <- c('full.','cens.')
 
 for (k in seq_along(outcome)){

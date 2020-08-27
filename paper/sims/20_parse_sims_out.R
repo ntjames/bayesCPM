@@ -206,7 +206,10 @@ sim_a<-bind_rows(sim_a0,sim_a1,sim_a2)
 sim_a %>% group_by(scenario,nsamps,mod) %>% 
   summarize(mn_time=mean(secs,na.rm=TRUE),md_time=median(secs,na.rm=TRUE))
 
-sim_a %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>% 
+sim_a %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400)),
+                 scenario=factor(scenario,labels=c("alpha=1/J",
+                                                   "alpha=1/(0.8+0.35*J)",
+                                                   "alpha=1/(2+(J/3))"))) %>% 
   filter(mod!='unk') %>% 
   ggplot(aes(x=nsamps,y=secs)) +
   geom_boxplot(aes(color=mod)) +
@@ -221,7 +224,10 @@ sim_b<-bind_rows(sim_b0,sim_b1,sim_b2)
 sim_b %>% group_by(scenario,nsamps,mod) %>% 
   summarize(mn_time=mean(secs,na.rm=TRUE),md_time=median(secs,na.rm=TRUE))
 
-sim_b %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>% 
+sim_b %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400)),
+                 scenario=factor(scenario,labels=c("alpha=1/J",
+                                                   "alpha=1/(0.8+0.35*J)",
+                                                   "alpha=1/(2+(J/3))"))) %>% 
   filter(mod!='unk') %>% 
   ggplot(aes(x=nsamps,y=secs)) +
     geom_boxplot(aes(color=mod)) +
@@ -275,7 +281,11 @@ sim_c<-bind_rows(sim_c0,sim_c1,sim_c2,sim_c3)
 sim_c %>% group_by(scenario,nsamps,mod) %>% 
   summarize(mn_time=mean(secs,na.rm=TRUE),md_time=median(secs,na.rm=TRUE))
 
-sim_c %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>% 
+sim_c %>% filter(scenario!='sim_c3') %>% 
+  mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400)),
+         scenario=factor(scenario,labels=c("alpha=1/J",
+                                           "alpha=1/(0.8+0.35*J)",
+                                           "alpha=1/(2+(J/3))"))) %>% 
   filter(mod!='unk') %>% 
   ggplot(aes(x=nsamps,y=secs)) +
   geom_boxplot(aes(color=mod)) +
@@ -333,7 +343,11 @@ sim_d<-bind_rows(sim_d0,sim_d1,sim_d2,sim_d3)
 sim_d %>% group_by(scenario,nsamps,mod) %>% 
   summarize(mn_time=mean(secs,na.rm=TRUE),md_time=median(secs,na.rm=TRUE))
 
-sim_d %>% mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400))) %>% 
+sim_d %>% filter(scenario!='sim_d3') %>%
+ mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400)),
+        scenario=factor(scenario,labels=c("alpha=1/J",
+                                          "alpha=1/(0.8+0.35*J)",
+                                          "alpha=1/(2+(J/3))"))) %>% 
   filter(mod!='unk') %>% 
   ggplot(aes(x=nsamps,y=secs)) +
   geom_boxplot(aes(color=mod)) +
