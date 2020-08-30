@@ -97,9 +97,9 @@ library(ggplot2)
 set.seed(2673)
 out_c1000 <- out_c100 <- out_c5 <- data.frame()
 for (n in 1:10){
-  c5<-draw_Polya(F0=qnorm,gg=5,mm=10,br=100)
-  c100<-draw_Polya(F0=qnorm,gg=100,mm=10,br=100)  
-  c1000<-draw_Polya(F0=qnorm,gg=1000,mm=10,br=100) 
+  c5<-draw_Polya(F0=qnorm,gg=5,mm=11,br=150)
+  c100<-draw_Polya(F0=qnorm,gg=100,mm=11,br=150)  
+  c1000<-draw_Polya(F0=qnorm,gg=1000,mm=11,br=150) 
   c1000$draw<-c100$draw<-c5$draw<-n
   out_c5<-rbind(out_c5,c5)
   out_c100<-rbind(out_c100,c100)
@@ -116,7 +116,7 @@ pdraws <-bind_rows(out_c5,out_c100,out_c1000) %>%
 
 pdrawsmn <- pdraws %>% group_by(param,mp) %>% summarize(pr=mean(pr)) %>% mutate(draw=-1)
 
-scale<-16
+scale<-23 # scale so matches dnorm
 pdraws %>% ggplot(aes(x=mp,y=pr*scale))+
   geom_line(aes(group=draw),alpha=0.2)+
   geom_line(data=pdrawsmn)+
