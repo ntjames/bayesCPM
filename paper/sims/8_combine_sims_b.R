@@ -382,9 +382,12 @@ ggsave(file.path(figdir,"sim_b_mn_full.png"),width=pltw,height=plth)
 # censored outcome plot
 # expected to be biased because of censored y vals, can't really get unbiased est.
 cens_mn_sim_dat %>% 
+  mutate(ndrow=if_else(ndrow==1,
+                       "E(Y*'|'*~X[1]==1,X[2]==1)",
+                       "E(Y*'|'*~X[1]==1,X[2]==0)")) %>% 
   ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow)+
+  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
   xlab("average percent bias of posterior conditional mean") + ylab("sample size")
 
 ggsave(file.path(figdir,"sim_b_mn_cens.png"),width=pltw,height=plth)
@@ -436,9 +439,12 @@ ggsave(file.path(figdir,"sim_b_q20_full.png"),width=pltw,height=plth)
 # censored outcome plot
 # expected to be biased because of censored y vals, can't really get unbiased est.
 cens_q20_sim_dat %>% 
+  mutate(ndrow=if_else(ndrow==1,
+                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==1)",
+                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==0)")) %>% 
   ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow)+
+  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
   xlab("average percent bias of posterior conditional 20th percentile") + ylab("sample size")
 
 ggsave(file.path(figdir,"sim_b_q20_cens.png"),width=pltw,height=plth)

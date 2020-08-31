@@ -311,9 +311,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_med_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_b_med_cens.png"))
 ```
 
-!!! Start here !!!
-
-Figure \@ref(fig:simplt-mn1) presents the average bias in the posterior conditional mean for the uncensored simulation data and \@ref(fig:simplt-mn2) shows censored data. NOTE: can't really estimate conditional mean for censored outcome
+Figure \@ref(fig:simplt-mn1) presents the average percent bias in the posterior conditional mean for the uncensored simulation outcome at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$. The average percent bias across all simulations was less than 5\% for all sample sizes and priors. In contrast, \@ref(fig:simplt-mn2) shows the conditional means for the censored data. For outcomes censored at $Y<1$, a value of $Y=1$ was used in the conditional mean calculation. Using the censoring threshold value for censored observations can result in average percent bias that is much higher than the uncensored case depending on where the threshold falls in relation to the true conditional distribution and the value chosen for censored observations.
 
 ```{r simplt-mn1, fig.cap="Bias in conditional mean for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_mn_full.png"))
@@ -323,7 +321,10 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_mn_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_b_mn_cens.png"))
 ```
 
-Figure \@ref(fig:simplt-q20-1) presents the results for conditional 20th percentile in the uncensored simulation data.
+Figure \@ref(fig:simplt-q20-1) presents the results for conditional 20th percentile in the uncensored simulation data. The estimates are quite biased for the smaller sample sizes. The magnitude of the bias also varies based on the values of the conditioning variables, $X_1$ and $X_2$ with larger bias when the the conditional distribution is further from $\beta_1 = \beta_2 = 0$.
+
+The estimates of the conditional 20th percentile for the censored outcome (fig. \@ref(fig:simplt-q20-2)) show a similar effect as the censored mean. When $(X_1=1,X_2=1)$ the true conditional $Q^{0.2}$ falls below the censoring threshold so the estimated $Q^{0.2}$ is the value assigned to the censored category. This value is biased even with large sample size.
+
 
 ```{r simplt-q20-1, fig.cap="Bias in conditional 20th percentile for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_q20_full.png"))
@@ -334,6 +335,9 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_q20_cens.png"))
 ```
 
 ### Logit link
+
+!!! Start here !!!
+
 move some to supp?
 
 ```{r simplt-pars3, fig.cap="Bias in parameters for uncensored simulations using logit link", fig.align='center', out.width='90%'}
