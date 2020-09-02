@@ -18,8 +18,6 @@ compare Bayes CPM to NPMLE? - repro and compare orm() vignette, but not in paper
 -> Case study with HIV data. Add model checking steps
 
 TO DO
-- add more semiparametric Bayesian model examples in intro
-
 - justify/explain differences and contribution of Bayesian CPM vs. other semiparametric Bayesian models
 
 - add more justification/recommendations for prior choice
@@ -35,7 +33,6 @@ lower priority
 
 TO DO
 
-- add formula interface
 - figure out Stan issue with non-symmetric link function
 - add vignette using examples from orm() documentation
 - note about centering predictors OR automatic centering of predictors (see brms and rstanarm which both do this)
@@ -61,6 +58,7 @@ https://discourse.pymc.io/t/ordered-probit-model-for-ordinal-data/1308
 
 
 DONE
+- add formula interface
 - verify priors are correct (Jacobian for induced dirichlet? See Betancourt ordinal regression blog post) -> solved, don't need Jacobian if using pw_log_lik function as in stan_polr, also see STAN User's guide 2.18.0 - 16.2 Reparameterizations and 16.3
 --use roxygen function notation similar to 'Copula modeling with R'
 
@@ -187,9 +185,8 @@ Model checking
 <!-- section describing how models were actually fit, i.e. used HMC implemented in Stan -->
 The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [Add a few sentences about HMC - cite Turkman Computational Bayesian Statistics?] [@turkman_computational_2019] number iterations, number of chains, burn-in, adapt delta & other settings
 
-<!-- describe how to implement model with a more traditional Metropolis-Hastings algorithm?? -->
-
-[Note: the Berger et al. manuscript provides an approach for determining an 'overall objective prior' more systematically, but may be difficult to implement if interested in posterior parameters and functions of parameters (mean, CDF, quantiles) simultaneously]
+<!--
+Note: the Berger et al. manuscript provides an approach for determining an 'overall objective prior' more systematically, but may be difficult to implement if interested in posterior parameters and functions of parameters (mean, CDF, quantiles) simultaneously
 
 marginal reference prior for $\gamma_1=G^{-1}(\pi_{.1}) \Rightarrow G(\gamma_1)=\pi_{.1}$. want $\gamma_1 \sim U(-\infty, \infty)$. marginal dist of $\pi_{.1} \sim Beta(a,b)$
 
@@ -211,15 +208,17 @@ hist(qlogis(rbeta(5000,1/6,1/6)+rbeta(5000,1/6,1/6)))
 ```
 
 reference prior for $\gamma_2=G^{-1}(\pi_{.1}+\pi_{.2})$
+-->
 
 ```{r probit-induced, fig.cap="Induced $\\boldsymbol{\\gamma}$ priors under $G^{-1}(\\cdot)=\\Phi^{-1}(\\cdot)$", fig.align='center', out.width='95%'}
 knitr::include_graphics(file.path(wd,"fig","probit_induced_mle.png"))
 ```
 
+
 ### Posterior Conditional Quantities
 
 <!--
-[description of how to use Bayesian CPM to get parameter ests. for shifts in distribution and other quantities of interest, e.g. conditional CDF Mean, Quantiles, using a single model]
+description of how to use Bayesian CPM to get parameter ests. for shifts in distribution and other quantities of interest, e.g. conditional CDF Mean, Quantiles, using a single model
 -->
 
 Using MCMC samples from the posterior distribution ($\tilde{\gamma}$, $\tilde{\beta}$) it is straightforward to calculate the posterior conditional CDF, mean, quantiles or other functions of the parameters
@@ -279,6 +278,10 @@ The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1
 
 In general, the Bayesian CPM had reasonable performance under the simulation settings explored; this is especially true for larger sample sizes. However, performance was poor for some quantities. The three $\boldsymbol{\alpha}$ values produced similar results for most scenarios
 
+!!! Start here  !!!
+
+--> summarize and consolidate simulation results below (move some figs to supp), then rerun HIV analysis based on results (if warranted)
+
 ### Probit link
 
 For scenario (1), the average percent bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars1) and \@ref(fig:simplt-pars2) for the uncensored and censored outcome data, respectively. Percent bias is always largest for the smallest sample sizes, but the direction and size of the bias depends on the outcome, concentration prior and parameter of interest. For the $\beta$ parameters, the priors $\alpha=1/(0.8+0.35J)$ and $\alpha=1/(2+(J/3))$ produce less biased estimates than $\alpha=1/J$ for both outcomes. The situation is more complex for the $\gamma$ parameters. With the uncensored outcome, the $\alpha=1/J$ prior estimate is less biased for $\gamma_{y_1}$ and $\gamma_{y_2}$, but more biased for $\gamma_{y_3}$, $\gamma_{y_4}$, and $\gamma_{y_5}$; with the censored outcome, the $\alpha=1/J$ prior estimate is less biased for $\gamma_{y_3}$, but more biased for $\gamma_{y_4}$ and $\gamma_{y_5}$. Across both outcomes, the estimates of $\beta_1$ and all $\gamma$s were larger using the $\alpha=1/J$ concentration prior compared to the $\alpha=1/(0.8+0.35J)$ or $\alpha=1/(2+(J/3))$ concentration priors while the $\beta_2$ estimates were smaller with $\alpha=1/J$.
@@ -335,8 +338,6 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_q20_cens.png"))
 
 ### Logit link
 
-!! combine with probit results and move some to supp?
-
 For scenario (2), the average bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars3) and \@ref(fig:simplt-pars4). Because the assumed scale of the logit link ($\varepsilon \sim Logistic(0,1)$) does not match the scale from the simulation model ($\varepsilon \sim Logistic(0,1/3)$), the parameter estimates are not on the same scale as the parameters from the generating model.  Assume $Y^*=\beta'X + a\varepsilon$ where $a>0$ is a constant scaling factor with $\varepsilon \sim F_{\varepsilon}$, and $Y=H(Y^*)$ with increasing function $H(t)$. Then $Y=H(\beta'X+a\varepsilon)=H'(\xi'X+\varepsilon)$ where $\xi=a^{-1}\beta$ and $H'(t)=H(at)$ so $Pr(Y \le y|X)=Pr(H'(\xi'X+\varepsilon)\le y|X)=F_{\varepsilon}(H'^{-1}(y)-\xi'X)$. Using a CPM with link function $F_{\varepsilon}^{-1}$ to analyze $Y$ results in estimates of $\xi=a^{-1}\beta$ for the coefficients and $H'^{-1}=a^{-1}H^{-1}$ for the intercept function. In this sense, the parameter estimates are biased. If the estimates are adjusted using the scale factor, $a$, the bias in the parameters is close to 0 for all parameters (make fig & show). However in practice, the value of the scale factor is unknown.
 
 Similar issue with link misspecification
@@ -371,7 +372,6 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_med_cens.png"))
 
 Figure \@ref(fig:simplt-mn3) presents the average percent bias in the posterior conditional mean for the uncensored simulation outcome at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$. The average percent bias across all simulations was less than 2.5\% for all sample sizes and priors. In contrast, \@ref(fig:simplt-mn4) shows the conditional means for the censored data. For outcomes censored at $Y<1$, a value of $Y=1$ was used in the conditional mean calculation. Using the censoring threshold value for censored observations can result in average percent bias that is higher than the uncensored case depending on where the threshold falls in relation to the true conditional distribution and the value chosen for censored observations. (Similar to probit, but percent bias is lower for uncensored outcome and much lower for censored outcome)
 
-
 ```{r simplt-mn3, fig.cap="Bias in conditional mean for uncensored simulations using logit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_c_mn_full.png"))
 ```
@@ -402,9 +402,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_q80_cens.png"))
 
 ### Loglog link
 
-!!! Start here !!!
-
-!! combine with earlier results and move some to supp?
+For scenario (3), the average bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars5) and \@ref(fig:simplt-pars6). Bias is small for all parameters with both uncensored and censored outcomes except for the $n=25$ sample size.  The estimates using prior $\alpha=1/J$ are slightly more biased than the other concentration priors.
 
 ```{r simplt-pars5, fig.cap="Bias in parameters for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_pars_full.png"))
@@ -414,6 +412,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_pars_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_pars_cens.png"))
 ```
 
+Figures \@ref(fig:simplt-cdf5) and \@ref(fig:simplt-cdf6) show the average percent bias in the posterior conditional CDF for scenario (3). For the uncensored outcome, the conditional CDF estimates of $F(y|X_1=1,X_2=1)$ have larger percent bias when $y\le 0.5$, especially for the smallest sample sizes. Similar patterns are seen for the the censored outcome with less biased estimates for the CDF at higher $y$ values and larger sample sizes.
 
 ```{r simplt-cdf5, fig.cap="Bias in conditional CDF for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_full.png"))
@@ -423,6 +422,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_cens.png"))
 ```
 
+The results for the conditional posterior median are shown in figures \@ref(fig:simplt-med5) and \@ref(fig:simplt-med6). For both outcomes, bias in the the conditional median estimate was smaller at $(X_1=1,X_2=0)$ than $(X_1=1,X_2=1)$. There were only small differences in average percent bias of the median estimates for the three $\alpha$ concentration parameters. [somwhat different than scenario (1) & (2) - combine!]
 
 ```{r simplt-med5, fig.cap="Bias in conditional median for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_med_full.png"))
@@ -432,6 +432,8 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_med_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_med_cens.png"))
 ```
 
+Figure \@ref(fig:simplt-mn5) presents the average percent bias in the posterior conditional mean for the uncensored simulation outcome at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$. The average percent bias across all simulations ranged from $<-1.0$\% to -12.5\% with larger bias for the $\alpha=1/J$ prior. Figure \@ref(fig:simplt-mn6) shows the conditional means for the censored data. For outcomes censored at $Y<0$, a value of $Y=0$ was used to calculate the conditional mean.
+
 ```{r simplt-mn5, fig.cap="Bias in conditional mean for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_mn_full.png"))
 ```
@@ -440,6 +442,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_mn_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_mn_cens.png"))
 ```
 
+Figure \@ref(fig:simplt-q20-5) presents the results for conditional 20th percentile in the uncensored simulation data. The estimates are close to unbiased for all the priors and sample sizes. The estimates of the conditional 20th percentile for the censored outcome (fig. \@ref(fig:simplt-q20-6)) show small bias at $(X_1=1,X_2=0)$ with larger bias at $(X_1=1,X_2=1)$. 
 
 ```{r simplt-q20-5, fig.cap="Bias in conditional 20th percentile for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_q20_full.png"))
@@ -449,6 +452,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_q20_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_q20_cens.png"))
 ```
 
+Figures \@ref(fig:simplt-q80-5) and \@ref(fig:simplt-q80-6)) present the estimates of the conditional 80th percentile for the uncensored and censored outcomes.
 
 ```{r simplt-q80-5, fig.cap="Bias in conditional 80th percentile for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_q80_full.png"))
@@ -458,22 +462,15 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_q80_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_q80_cens.png"))
 ```
 
-
-
-
-
 ### Computation time
 
-Simulations were run with `R` version 3.6.0 (2019-04-26) and `rstan` (Version 2.19.2, GitRev: 2e1f913d3ca3) on a high-performance computing cluster running under CentOS Linux 7 (Core) with Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz (might be diff for some nodes, extract info & summarize), amount RAM?
-
-Computation time for the three scenarios is shown in figures \@ref(fig:simplt-samptime1), \@ref(fig:simplt-samptime3), and \@ref(fig:simplt-samptime4). Average per chain sampling time was similar across scenarios and priors. As expected, the censored outcomes had shorter sampling times since they had fewer categories and $\gamma$ parameters. 
+Simulations were run with `R` version 3.6.0 (2019-04-26) and `rstan` (Version 2.19.2, GitRev: 2e1f913d3ca3) on a high-performance computing cluster running under CentOS Linux 7 (Core) with with 1.90GHz or 2.40GHz Intel Xeon CPUs. Computation time for the three scenarios is shown in figures \@ref(fig:simplt-samptime1), \@ref(fig:simplt-samptime3), and \@ref(fig:simplt-samptime4). Average per chain sampling time was similar across scenarios and priors. The censored outcomes -- with fewer categories and $\gamma$ parameters -- had shorter sampling times. 
 
 ```{r simplt-samptime1, fig.cap="Per chain MCMC sampling time for scenario 1", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_a_MCMC_sample_times.png"))
 ```
 
-Move 2nd 
-```{r simplt-samptime2, fig.cap="Per chain MCMC sampling time for scenario 1 - 2nd run", fig.align='center', out.width='90%'}
+```{r simplt-samptime2, eval=F, fig.cap="Per chain MCMC sampling time for scenario 1 - 2nd run", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_MCMC_sample_times.png"))
 ```
 
@@ -499,10 +496,14 @@ MCMC checks - traceplots and Rhat (supp)
 
 model comparison using loo (supp)
 
+ppc plot and posterior predictive p-values for variance, skewness, proportion censored for selected model
 
 ```{r il6-postpred, fig.cap='Observed and posterior predictive distribution for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_postpred.png"))
 ```
+
+
+Posterior covariate estimates, intercept estimates, and transformation
 
 ```{r il6-par, fig.cap='Posterior $\\beta$ estimates for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
@@ -520,7 +521,9 @@ knitr::include_graphics(file.path(wd,"fig","il_6_trans.png"))
 knitr::include_graphics(file.path(wd,"fig","il_6_trans_nocnt.png"))
 ```
 
-```{r il6-bmi, fig.align='center', out.width='75%'}
+BMI and IL-6 mean, median, 90th percentile (value of other covars?)
+
+```{r il6-bmi, fig.cap='BMI and IL-6 mean, median, 90th percentile', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_bmi.png"))
 ```
 
@@ -530,10 +533,13 @@ MCMC checks - traceplots and Rhat (supp)
 
 model comparison using loo (supp)
 
+ppc plot and posterior predictive p-values for variance, skewness, proportion censored for selected model
+
 ```{r il-1-beta-postpred, fig.cap='Observed and posterior predictive distribution for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_postpred.png"))
 ```
 
+Posterior covariate estimates, intercept estimates, and transformation
 
 ```{r il-1-beta-par, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
@@ -548,13 +554,12 @@ knitr::include_graphics(file.path(wd,"fig","il_1_beta_post_ct.png"))
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_trans.png"))
 ```
 
-```{r il-1-beta-bmi, fig.align='center', out.width='75%'}
+BMI and IL-1-$\beta$ mean, median, 90th percentile (value of other covars?)
+
+```{r il-1-beta-bmi, fig.cap='BMI and IL-1-$\\beta$ mean, median, 90th percentile', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_bmi.png"))
 ```
 
-<!--
-Add sensitivity analysis and other Bayesian modeling checks (convergence and model)
--->
 
 # Discussion
 
