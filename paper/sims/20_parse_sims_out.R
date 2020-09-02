@@ -18,6 +18,15 @@ figdir <- file.path(pdir,"fig")
 simarray1 <- readRDS(file.path(pdir,"sims","bayes_cpm_simarray.rds")) # for a,b,c
 simarray2 <- readRDS(file.path(pdir,"sims","bayes_cpm_simarray2.rds")) # for d
 
+# function to parse simulation .out files to get processor info
+parse_lines_pr <- function(lines_in){
+  mn<-grep("model.name", lines_in)
+  lisub <- lines_in[mn] #subset of lines_in
+
+return(lisub)
+}
+
+
 # function to parse simulation .out files to get sampling times
 parse_lines_tm <- function(lines_in, simarrnum, simarr=simarray1, nsims=200){
   iternum0 <- grep("\\[1\\] [1-9]", lines_in) # beginning of iter
@@ -163,12 +172,16 @@ ggplot2::autoplot(mb2)
 
 }
 
+#!paste0("sim_",i,j,"_",k)
+#!foo<-read_lines(file.path(ssdir,"sim_1.out"))
+
 # load sim data
 # sims a, b
 for (i in letters[1:2]){
   for (j in 0:2){
     for (k in 1:25){
         nm <- paste0("sim_",i,j,"_",k)
+        nm_prc <- paste0(nm,"_proc")
         if (i=="a" & j=="0"){
           dir <- ssdir
           fn <- paste0("sim_",k,".out")
@@ -180,6 +193,7 @@ for (i in letters[1:2]){
         fp<-file.path(dir,fn)
         print(fp); print(nm)
         try(assign(nm, parse_lines_tm(read_lines(fp),k)))
+        try(assign(nm_prc, parse_lines_pr(read_lines(fp))))
     }
   }
 }
@@ -188,15 +202,20 @@ kk<-25
 for (i in letters[1:2]){
   for (j in 0:2){
      # paste0("sim_",i,j,"_",k) 
-     sim_setting <- paste0("sim_",i,j) 
+     sim_setting <- paste0("sim_",i,j)
     #! print(sim_setting)
      sim_nm <- paste0(sim_setting,"_",1:kk)
     #! print(sim_nm)
-     simnmlist <- map(sim_nm,get) 
-     try(assign(sim_setting, bind_rows(simnmlist) %>% mutate(scenario=sim_setting) ))
-     rm(list=sim_nm)
+    simnmlist <- map(sim_nm,get) 
+    try(assign(sim_setting, bind_rows(simnmlist) %>% mutate(scenario=sim_setting) ))
+    rm(list=sim_nm)
   }
 }
+
+
+ls()[grep("_proc",ls())]
+
+
 
 pltw<-10; plth<-5
 
@@ -246,6 +265,7 @@ for (i in letters[3]){
   for (j in 0:3){
     for (k in 1:25){
       nm <- paste0("sim_",i,j,"_",k)
+      nm_prc <- paste0(nm,"_proc")
       if (i=="a" & j=="0"){
         dir <- ssdir
         fn <- paste0("sim_",k,".out")
@@ -257,6 +277,7 @@ for (i in letters[3]){
       fp<-file.path(dir,fn)
       print(fp); print(nm)
       try(assign(nm, parse_lines_tm(read_lines(fp),k)))
+      try(assign(nm_prc, parse_lines_pr(read_lines(fp))))
     }
   }
 }
@@ -309,6 +330,7 @@ for (i in letters[4]){
   for (j in 0:3){
     for (k in 1:kk){
       nm <- paste0("sim_",i,j,"_",k)
+      nm_prc <- paste0(nm,"_proc")
       if (i=="a" & j=="0"){
         dir <- ssdir
         fn <- paste0("sim_",k,".out")
@@ -320,6 +342,7 @@ for (i in letters[4]){
       fp<-file.path(dir,fn)
       print(fp); print(nm)
       try(assign(nm, parse_lines_tm(read_lines(fp),k,simarr=simarray2,nsims=100)))
+      try(assign(nm_prc, parse_lines_pr(read_lines(fp))))
     }
   }
 }
@@ -357,6 +380,11 @@ sim_d %>% filter(scenario!='sim_d3') %>%
 ggsave(file.path(figdir,"sim_d_MCMC_sample_times.png"),width=pltw,height=plth)
 
 
+
+processor_list<-map(ls()[grep("_proc",ls())],get)
+processor_info<-do.call(rbind,processor_list)
+
+table(processor_info)
 
 ### scratch 
 if (0){
