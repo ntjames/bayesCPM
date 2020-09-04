@@ -1,0 +1,30 @@
+\newpage
+
+# Supplemental Material {-}
+
+<!-- https://stackoverflow.com/questions/50223141/rmarkdown-bookdown-separate-figure-numbering-for-supplemental-section -->
+\beginsupplement
+
+```{r simplt-pars5, fig.cap="Bias in parameters for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_pars_full.png"))
+```
+
+```{r simplt-pars6, fig.cap="Bias in parameters for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_pars_cens.png"))
+```
+
+```{r simplt-cdf3, fig.cap="Bias in conditional CDF for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_cdf_full.png"))
+```
+
+```{r simplt-cdf4, fig.cap="Bias in conditional CDF for censored simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_cdf_cens.png"))
+```
+
+```{r simplt-cdf5, fig.cap="Bias in conditional CDF for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_full.png"))
+```
+
+```{r simplt-cdf6, fig.cap="Bias in conditional CDF for censored simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_cens.png"))
+```
