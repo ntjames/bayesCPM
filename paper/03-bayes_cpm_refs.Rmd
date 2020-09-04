@@ -1,3 +1,10 @@
+\newpage
+
 # References {-}
 
 <!-- https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html -->
+
+<!--https://bookdown.org/yihui/rmarkdown-cookbook/bibliography.html 
+to force refs before appendix/supplement -->
+
+<div id="refs"></div>
