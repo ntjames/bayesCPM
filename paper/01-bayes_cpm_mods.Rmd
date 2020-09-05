@@ -270,46 +270,6 @@ In general, the Bayesian CPM had reasonable performance under the simulation set
 
 For scenario (1) using a probit link CPM, the average percent bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ are shown in figures \@ref(fig:simplt-pars1) and \@ref(fig:simplt-pars2) for the uncensored and censored outcome data, respectively. Across both outcomes, the estimates of $\beta_1$ and all $\gamma$s were larger using the $\boldsymbol{\alpha}=1/J$ concentration prior compared to the $\boldsymbol{\alpha}=1/(0.8+0.35J)$ or $\boldsymbol{\alpha}=1/(2+(J/3))$ concentration priors while the $\beta_2$ estimates were smaller with $\boldsymbol{\alpha}=1/J$. Percent bias was largest for the smallest sample sizes, but the direction and size of the bias depends on the outcome, concentration prior and parameter. For the $\beta$ parameters, the priors $\boldsymbol{\alpha}=1/(0.8+0.35J)$ and $\boldsymbol{\alpha}=1/(2+(J/3))$ produce less biased estimates than $\boldsymbol{\alpha}=1/J$ for both outcomes. The situation is more complex for the $\gamma$ parameters. With the uncensored outcome, the $\boldsymbol{\alpha}=1/J$ prior estimate is less biased for $\gamma_{y_1}$ and $\gamma_{y_2}$, but more biased for $\gamma_{y_3}$, $\gamma_{y_4}$, and $\gamma_{y_5}$; with the censored outcome, the $\boldsymbol{\alpha}=1/J$ prior estimate is less biased for $\gamma_{y_3}$, but more biased for $\gamma_{y_4}$ and $\gamma_{y_5}$. 
 
-Figures \@ref(fig:simplt-pars3) and \@ref(fig:simplt-pars4) show the average bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ for scenario (2) using a logit link CPM. Unlike scenario (1), the assumed scale of the logit link ($\varepsilon \sim Logistic(0,1)$) does not match the scale from the simulation model ($\varepsilon \sim Logistic(0,1/3)$). In this case it can be shown that the CPM parameter estimates are proportional to the parameters from the generating model. Assume latent $Y^*=\beta'X + a\varepsilon$ where $a>0$ is a constant scaling factor with $\varepsilon \sim F_{\varepsilon}$ assumed known, and observed $Y=H(Y^*)$ with increasing function $H(t)$. Then $Y=H(\beta'X+a\varepsilon)=H'(\xi'X+\varepsilon)$ where $\xi=a^{-1}\beta$ and $H'(t)=H(at)$ so $Pr(Y \le y|X)=Pr(H'(\xi'X+\varepsilon)\le y|X)=F_{\varepsilon}(H'^{-1}(y)-\xi'X)$. Using a CPM with link function $F_{\varepsilon}^{-1}$ to analyze the observed outcome $Y$ results in estimates of $\xi=a^{-1}\beta$ for the linear predictor coefficients and $H'^{-1}=a^{-1}H^{-1}$ for the intercept function. In this sense, the parameter estimates are biased because they are on the incorrect scale. If the estimates are adjusted using the scale factor, $a$, the bias in the parameters follows a similar pattern as scenario (1) (make fig?). However in practice, the value of the scale factor is unknown.
-
-For scenario (3) using the correctly specified loglog link with an identity transformation, bias is small for all parameters for both uncensored and censored outcomes except with the $n=25$ sample size. The estimates using prior $\boldsymbol{\alpha}=1/J$ are slightly more biased than the other concentration priors. (See supplemental figures \@ref(fig:simplt-pars5) and \@ref(fig:simplt-pars6)). 
-
-### Conditional CDF, Mean, and Quantiles
-
-!!! Start here  !!!
---> summarize and consolidate simulation results below (move some figs to supp), then rerun HIV analysis based on results (if warranted)
-
-#### CDF
-!may not need sep header
-
-Figures \@ref(fig:simplt-cdf1) and \@ref(fig:simplt-cdf2) show the average percent bias in the posterior conditional CDF for scenario (1). For the uncensored outcome, the conditional CDF estimates of $F(y|X_1=1,X_2=1)$ have larger percent bias when $y<e^{0.5}$, especially for the smallest sample sizes, $n=25$ and $n=50$. For conditional CDF estimates at $y<e^{0.5}$, the concentration prior $\alpha=1/J$ produces estimates that are slightly more biased than the othe reciprocal priors. The direction of the bias does not show a consistent trend across sample size. Similar patterns are seen for the the censored outcome, less biased estimates for the CDF at higher $y$ values and larger sample sizes.
-
-The results are similar for scenario (2) and (3) under both outcomes: larger percent bias for the conditional estimates of $F(y|X_1=1,X_2=1)$ for lower values of $y$ and smaller sample sizes (supplemental figs. \@ref(fig:simplt-cdf3), \@ref(fig:simplt-cdf4), \@ref(fig:simplt-cdf5), and \@ref(fig:simplt-cdf6)).
-
-#### Mean
-!may not need sep header
-
-
-Figures \@ref(fig:simplt-mn1) and \@ref(fig:simplt-mn3) present the average percent bias in the posterior conditional mean for the uncensored simulation outcome at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$ in scenarios (1) and (2), respectively. The average percent bias across was less than 5\% for all sample sizes and priors for the posterior conditional mean in the first two scenarios. For scenario (3) the average percent bias across all simulations ranged from $<-1.0$\% to -12.5\% with larger bias for the $\boldsymbol{\alpha}=1/J$ prior (fig. \@ref(fig:simplt-mn5)).
-
-In contrast, figures \@ref(fig:simplt-mn2) and \@ref(fig:simplt-mn4) show the posterior conditional mean estimates for the censored data. For outcomes censored at $Y<1$, a value of $Y=1$ was used in the conditional mean calculation. Using the censoring threshold value for censored observations can result in inflated average percent bias compared to the uncensored case depending on where the threshold falls in relation to the true conditional distribution and the value chosen for censored observations. A similar trend was seen in scenario (3) where a value of $Y=0$ was used to calculate the conditional mean for outcomes censored at $Y<0$ (fig \@ref(fig:simplt-mn6)).
-
-
-#### Median & other quantiles
-!may not need sep header
-
-The results for the conditional posterior median are shown in figures \@ref(fig:simplt-med1) and \@ref(fig:simplt-med2). For both outcomes, the conditional median estimate had a positive bias for both $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$ with smaller bias for larger sample sizes. There were negligible differences in average percent bias of the median estimates for the three $\alpha$ concentration parameters. The pattern was nearly identical for scenario (2) (figs. \@ref(fig:simplt-med3) and \@ref(fig:simplt-med4)). For both outcomes under scenario (3), bias in the conditional median estimate was smaller at $(X_1=1,X_2=0)$ than $(X_1=1,X_2=1)$. There were only small differences in average percent bias of the median estimates for the three $\boldsymbol{\alpha}$ concentration parameters (\@ref(fig:simplt-med5) and \@ref(fig:simplt-med6)). 
-
-
-Figure \@ref(fig:simplt-q20-1) presents the results for the posterior conditional 20th percentile in the uncensored simulation data in scenario (1). The estimates are quite biased for the smaller sample sizes. The magnitude of the bias also varies based on the values of the conditioning variables, $X_1$ and $X_2$ with larger bias when the the conditional distribution is further from $\beta_1 = \beta_2 = 0$. The estimates of the conditional 20th percentile for the censored outcome in scenario (1) (fig. \@ref(fig:simplt-q20-2)) show a similar effect as the censored outcome. When $(X_1=1,X_2=1)$ the true conditional $Q^{0.2}$ falls below the censoring threshold so the estimated $Q^{0.2}$ is the value assigned to the censored category. This value is biased even with large sample size.
-
-Figure \@ref(fig:simplt-q20-3) presents the results for conditional 20th percentile in the uncensored simulation data. The estimates are positively biased for the smaller sample sizes with more bias for the $\alpha=1/J$ concentration prior. The estimates of the conditional 20th percentile for the censored outcome (fig. \@ref(fig:simplt-q20-4)) show a similar trend as the censored outcome. 
-
-Figure \@ref(fig:simplt-q20-5) presents the results for conditional 20th percentile in the uncensored simulation data. The estimates are close to unbiased for all the priors and sample sizes. The estimates of the conditional 20th percentile for the censored outcome (fig. \@ref(fig:simplt-q20-6)) show small bias at $(X_1=1,X_2=0)$ with larger bias at $(X_1=1,X_2=1)$. 
-
-
-Figures \@ref(fig:simplt-q80-3) and \@ref(fig:simplt-q80-4)) present the estimates of the conditional 80th percentile for the uncensored and censored outcomes. Similar to the 20th percentile estimates, the estimates are positively biased for smaller sample sizes. But in contrast, the estimates using the $\alpha=1/J$ concentration prior are *less* biased compared to the other priors. Figures \@ref(fig:simplt-q80-5) and \@ref(fig:simplt-q80-6)) present the estimates of the conditional 80th percentile for the uncensored and censored outcomes.
-
 ```{r simplt-pars1, fig.cap="Bias in parameters for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_a_pars_full.png"))
 ```
@@ -317,6 +277,11 @@ knitr::include_graphics(file.path(wd,"fig","sim_a_pars_full.png"))
 ```{r simplt-pars2, fig.cap="Bias in parameters for censored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_a_pars_cens.png"))
 ```
+
+
+Figures \@ref(fig:simplt-pars3) and \@ref(fig:simplt-pars4) show the average bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ for scenario (2) using a logit link CPM. Unlike scenario (1), the assumed scale of the logit link ($\varepsilon \sim Logistic(0,1)$) does not match the scale from the simulation model ($\varepsilon \sim Logistic(0,1/3)$). In this case it can be shown that the CPM parameter estimates are proportional to the parameters from the generating model. Assume latent $Y^*=\beta'X + a\varepsilon$ where $a>0$ is a constant scaling factor with $\varepsilon \sim F_{\varepsilon}$ assumed known, and observed $Y=H(Y^*)$ with increasing function $H(t)$. Then $Y=H(\beta'X+a\varepsilon)=H'(\xi'X+\varepsilon)$ where $\xi=a^{-1}\beta$ and $H'(t)=H(at)$ so $Pr(Y \le y|X)=Pr(H'(\xi'X+\varepsilon)\le y|X)=F_{\varepsilon}(H'^{-1}(y)-\xi'X)$. Using a CPM with link function $F_{\varepsilon}^{-1}$ to analyze the observed outcome $Y$ results in estimates of $\xi=a^{-1}\beta$ for the linear predictor coefficients and $H'^{-1}=a^{-1}H^{-1}$ for the intercept function. In this sense, the parameter estimates are biased because they are on the incorrect scale. If the estimates are adjusted using the scale factor, $a$, the bias in the parameters follows a similar pattern as scenario (1) (make fig?). However in practice, the value of the scale factor is unknown.
+
+For scenario (3) using the correctly specified loglog link with an identity transformation, bias is small for all parameters for both uncensored and censored outcomes except with the $n=25$ sample size. The estimates using prior $\boldsymbol{\alpha}=1/J$ are slightly more biased than the other concentration priors. (See supplemental figures \@ref(fig:simplt-pars5) and \@ref(fig:simplt-pars6)). 
 
 ```{r simplt-pars3, fig.cap="Bias in parameters for uncensored simulations using logit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_c_pars_full.png"))
@@ -327,6 +292,9 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_pars_cens.png"))
 ```
 
 
+### Conditional CDF
+
+Figures \@ref(fig:simplt-cdf1) and \@ref(fig:simplt-cdf2) show the average percent bias in the posterior conditional CDF for scenario (1). For the uncensored outcome, the conditional CDF estimates of $F(y|X_1=1,X_2=1)$ have larger percent bias when $y<e^{0.5}$, especially for the smallest sample sizes, $n=25$ and $n=50$. For conditional CDF estimates at $y<e^{0.5}$, the concentration prior $\alpha=1/J$ produces estimates that are slightly more biased than the othe reciprocal priors. The direction of the bias does not show a consistent trend across sample size. Similar patterns are seen for the the censored outcome, less biased estimates for the CDF at higher $y$ values and larger sample sizes. The results are similar for scenario (2) and (3) under both outcomes: larger percent bias for the conditional estimates of $F(y|X_1=1,X_2=1)$ for lower values of $y$ and smaller sample sizes (supplemental figs. \@ref(fig:simplt-cdf3), \@ref(fig:simplt-cdf4), \@ref(fig:simplt-cdf5), and \@ref(fig:simplt-cdf6)).
 
 ```{r simplt-cdf1, fig.cap="Bias in conditional CDF for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_full.png"))
@@ -336,7 +304,9 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_cens.png"))
 ```
 
+### Conditional Mean
 
+Figures \@ref(fig:simplt-mn1) and \@ref(fig:simplt-mn3) present the average percent bias in the posterior conditional mean for the uncensored simulation outcome at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$ in scenarios (1) and (2), respectively. The average percent bias across was less than 5\% for all sample sizes and priors for the posterior conditional mean in the first two scenarios. For scenario (3) the average percent bias across all simulations ranged from $<-1.0$\% to -12.5\% with larger bias for the $\boldsymbol{\alpha}=1/J$ prior (fig. \@ref(fig:simplt-mn5)). In contrast, figures \@ref(fig:simplt-mn2) and \@ref(fig:simplt-mn4) show the posterior conditional mean estimates for the censored data. For outcomes censored at $Y<1$, a value of $Y=1$ was used in the conditional mean calculation. Using the censoring threshold value for censored observations can result in inflated average percent bias compared to the uncensored case depending on where the threshold falls in relation to the true conditional distribution and the value chosen for censored observations. A similar trend was seen in scenario (3) where a value of $Y=0$ was used to calculate the conditional mean for outcomes censored at $Y<0$ (fig \@ref(fig:simplt-mn6)).
 
 ```{r simplt-mn1, fig.cap="Bias in conditional mean for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_mn_full.png"))
@@ -358,7 +328,13 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_mn_cens.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_mn_full.png"))
 ```
 
+### Conditional Median and Quantiles
 
+The results for the conditional posterior median are shown in figures \@ref(fig:simplt-med1) and \@ref(fig:simplt-med2). For both outcomes, the conditional median estimate had a positive bias for both $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$ with smaller bias for larger sample sizes. There were negligible differences in average percent bias of the median estimates for the three $\alpha$ concentration parameters. The pattern was nearly identical for scenario (2) (figs. \@ref(fig:simplt-med3) and \@ref(fig:simplt-med4)). For both outcomes under scenario (3), bias in the conditional median estimate was smaller at $(X_1=1,X_2=0)$ than $(X_1=1,X_2=1)$. There were only small differences in average percent bias of the median estimates for the three $\boldsymbol{\alpha}$ concentration parameters (\@ref(fig:simplt-med5) and \@ref(fig:simplt-med6)). 
+
+Figure \@ref(fig:simplt-q20-1) presents the results for the posterior conditional 20th percentile in the uncensored simulation data in scenario (1). The estimates are quite biased for the smaller sample sizes. The magnitude of the bias also varies based on the values of the conditioning variables, $X_1$ and $X_2$ with larger bias when the the conditional distribution is further from $\beta_1 = \beta_2 = 0$. The estimates of the conditional 20th percentile for the censored outcome in scenario (1) (fig. \@ref(fig:simplt-q20-2)) show a similar effect as the censored outcome. When $(X_1=1,X_2=1)$ the true conditional $Q^{0.2}$ falls below the censoring threshold so the estimated $Q^{0.2}$ is the value assigned to the censored category. This value is biased even with large sample size. For scenario (2) the estimates of the posterior conditional 20th percentile with the uncensored outcome are positively biased for the smaller sample sizes with more bias for the $\alpha=1/J$ concentration prior (figure \@ref(fig:simplt-q20-3)). The estimates of the conditional 20th percentile for the censored outcome (fig. \@ref(fig:simplt-q20-4)) show a similar trend as the censored outcome. Under scenario (3) the uncensored outcome estimates of the conditional 20th percentile are close to unbiased for all the priors and sample sizes (fig. \@ref(fig:simplt-q20-5)) and the censored outcome estimates (fig. \@ref(fig:simplt-q20-6)) show smaller bias at $(X_1=1,X_2=0)$ than $(X_1=1,X_2=1)$.
+
+Figures \@ref(fig:simplt-q80-3) and \@ref(fig:simplt-q80-4) present the estimates of the conditional 80th percentile for the uncensored and censored outcomes. Similar to the 20th percentile estimates, the estimates are positively biased for smaller sample sizes. But in contrast, the estimates using the $\alpha=1/J$ concentration prior are *less* biased compared to the other priors. Figures \@ref(fig:simplt-q80-5) and \@ref(fig:simplt-q80-6)) present the estimates of the conditional 80th percentile for the uncensored and censored outcomes.
 
 ```{r simplt-med1, fig.cap="Bias in conditional median for uncensored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_med_full.png"))
@@ -367,7 +343,6 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_med_full.png"))
 ```{r simplt-med2, fig.cap="Bias in conditional median for censored simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_med_cens.png"))
 ```
-
 
 ```{r simplt-med5, fig.cap="Bias in conditional median for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_med_full.png"))
@@ -393,7 +368,6 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_q20_full.png"))
 ```{r simplt-q20-4, fig.cap="Bias in conditional 20th percentile for censored simulations using logit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_c_q20_cens.png"))
 ```
-
 
 ```{r simplt-q20-5, fig.cap="Bias in conditional 20th percentile for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_q20_full.png"))
@@ -424,6 +398,9 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_MCMC_sample_times.png"))
 ```
 
 ## Case Study
+
+!!! Start here  !!!
+--> rerun HIV analysis based on sim results (if warranted)
 
 For the IL-6 outcome ...,
 
