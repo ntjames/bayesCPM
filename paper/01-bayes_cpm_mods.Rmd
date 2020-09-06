@@ -172,7 +172,7 @@ While it is possible to define separate $\alpha_j$ parameters for each category,
 
 In multiparameter models, the choice of reference prior depends on the parameter or statistic of interest (e.g. $\beta$, conditional CDF, conditional mean) [@berger_overall_2015].  Without prior information, we seek a value of $\boldsymbol{\alpha}$ with minimal impact on inference for a variety of settings and quantities of interest while still producing posterior estimates that can be well sampled by the MCMC algorithm.
 
-For the case study, we evaluate convergence of each model using traceplots of MCMC draws and $\hat{R}$ scale reduction factor [@gelman_bayesian_2014]. Model comparison is performed using the difference in expected log predictive density calculated using leave-one-out cross-validation [@vehtari_practical_2017]. Model fit is assessed using graphical checks the of posterior predictive and posterior predictive p-values [@stern_bayesian_2005; @gelman_bayesian_2014].
+For the case study, we evaluate convergence of each model using $\hat{R}$ scale reduction factor [@gelman_bayesian_2014] and traceplots of MCMC draws. Model comparison is performed using the difference in expected log predictive density (elpd) calculated using leave-one-out (loo) cross-validation [@vehtari_practical_2017]. Model fit is assessed using graphical checks the of posterior predictive and posterior predictive p-values [@stern_bayesian_2005; @gelman_bayesian_2014].
 
 <!--
 Model checking
@@ -399,10 +399,40 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_MCMC_sample_times.png"))
 
 ## Case Study
 
-!!! Start here  !!!
---> rerun HIV analysis based on sim results (if warranted)
+For each of the biomarker outcomes four model specifications were fit: probit link with $\boldsymbol{\alpha}=1/J$, probit link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$,
+logit link with $\boldsymbol{\alpha}=1/J$, and logit link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$. Each model sampled from 2 chains with 2000 warmup iterations and 4000 total iterations to produce 4000 posterior draws for each parameter. [add adapt_delta set to 0.95?]. For all the biomarker outcome models considered, all $\hat{R}$ values were $<1.01$ and traceplots (not shown, add to supp??) indicated no problems with mixing or stationarity. Tables \ref{tab:elpdtab1} and \ref{tab:elpdtab2} show the difference in ELPD for the four models for biomarker IL-6 and IL-1-$\beta$, respectively. Based on the difference in ELPD, the model using logit link and $\boldsymbol{\alpha}=1/J$ was used for the IL-6 outcome and the model using probit link and $\boldsymbol{\alpha}=1/(0.8+0.35J)$ was used for the IL-1-$\beta$ outcome.
 
-For the IL-6 outcome ...,
+```{r elpd, include=FALSE}
+rnd<-2
+elpdtab_il6 <- data.frame(model=c("logit link, $\\boldsymbol{\\alpha}=1/J$",
+                                  "probit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
+                                  "logit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$", 
+                                  "probit link, $\\boldsymbol{\\alpha}=1/J$"),
+                      elpd_diff=round(c(0.0000, -0.0529, -3.0265, -5.4628),rnd),
+                      se_diff=round(c(0.0000, 5.4691, 4.8201, 5.3165),rnd))
+
+elpdtab_il1beta <- data.frame(model=c("probit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
+                                      "logit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
+                                      "probit link, $\\boldsymbol{\\alpha}=1/J$",
+                                      "logit link, $\\boldsymbol{\\alpha}=1/J$"),
+                      elpd_diff=round(c(0.000000, -3.633089, -4.438738, -8.881518),rnd),
+                      se_diff=round(c(0.000000, 4.778736, 3.601179, 4.227415),rnd))
+
+colnames(elpdtab_il6) <- colnames(elpdtab_il1beta) <- c("Model", "ELPD diff.", "SE diff.")
+```
+
+```{r elpdtab1, results = 'asis'}
+# see https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_pdf.pdf
+kable(elpdtab_il6, caption="Difference in expected log pointwise predictive density for IL-6 models", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
+```
+
+```{r elpdtab2, results = 'asis'}
+kable(elpdtab_il1beta, caption="Difference in expected log pointwise predictive density for IL-1-$\\beta$ models", escape=FALSE, booktabs =T)
+```
+
+!!! Start here  !!!
+
+for IL-1-6
 
 for IL-1-$\beta$ 
 
@@ -431,13 +461,15 @@ knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
 knitr::include_graphics(file.path(wd,"fig","il_6_post_ct.png"))
 ```
 
-```{r il-6-trans-1, fig.cap='Estimated transformation for IL-6 model using centered covariates', fig.align='center', out.width='75%'}
+```{r il-6-trans-1, fig.cap='Estimated transformation for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_trans.png"))
 ```
 
+<!--
 ```{r il-6-trans-2, fig.cap='Estimated transformation for IL-6 model using uncentered covariates', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_trans_nocnt.png"))
 ```
+-->
 
 BMI and IL-6 mean, median, 90th percentile (value of other covars?)
 
