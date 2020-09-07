@@ -401,7 +401,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_MCMC_sample_times.png"))
 ## Case Study
 
 For each of the biomarker outcomes four model specifications were fit: probit link with $\boldsymbol{\alpha}=1/J$, probit link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$,
-logit link with $\boldsymbol{\alpha}=1/J$, and logit link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$. Each model sampled from 2 chains with 2000 warmup iterations and 4000 total iterations to produce 4000 posterior draws for each parameter. [add adapt_delta set to 0.95?]. For all the biomarker outcome models considered, all $\hat{R}$ values were $<1.01$ and traceplots (not shown, add to supp??) indicated no problems with mixing or stationarity. Tables \ref{tab:elpdtab1} and \ref{tab:elpdtab2} show the difference in ELPD for the four models for biomarker IL-6 and IL-1-$\beta$, respectively. Based on the difference in ELPD, the model using logit link and $\boldsymbol{\alpha}=1/J$ was used for the IL-6 outcome and the model using probit link and $\boldsymbol{\alpha}=1/(0.8+0.35J)$ was used for the IL-1-$\beta$ outcome.
+logit link with $\boldsymbol{\alpha}=1/J$, and logit link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$. Each model sampled from 2 chains with 2000 warmup iterations and 4000 total iterations to produce 4000 posterior draws for each parameter. [add adapt_delta set to 0.95?]. For all the biomarker outcome models considered, all $\hat{R}$ values were $<1.01$ and traceplots (not shown, add to supp??) indicated no problems with mixing or stationarity. Table \ref{tab:elpdtab} shows the difference in ELPD for the models for biomarker IL-6 and IL-1-$\beta$, respectively. Based on the difference in ELPD, the model with  logit link and $\boldsymbol{\alpha}=1/J$ was used for the IL-6 outcome and the model with probit link and $\boldsymbol{\alpha}=1/(0.8+0.35J)$ was used for the IL-1-$\beta$ outcome.
 
 ```{r elpd, include=FALSE}
 rnd<-2
@@ -420,14 +420,24 @@ elpdtab_il1beta <- data.frame(model=c("probit link, $\\boldsymbol{\\alpha}=1/(0.
                       se_diff=round(c(0.000000, 4.778736, 3.601179, 4.227415),rnd))
 
 colnames(elpdtab_il6) <- colnames(elpdtab_il1beta) <- c("Model", "ELPD diff.", "SE diff.")
+
+elpdtab<-rbind(elpdtab_il6,elpdtab_il1beta)
+colnames(elpdtab)<- c("Model", "ELPD diff.", "SE diff.")
+
 ```
 
-```{r elpdtab1, results = 'asis'}
+```{r elpdtab, results = 'asis'}
+kable(elpdtab, caption="Difference in expected log pointwise predictive density for IL-6 models and IL-1-$\\beta$ models", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position")) %>% 
+  pack_rows("IL-6",1,4) %>% 
+  pack_rows("IL-1-$\\\\beta$",5,8,escape=FALSE) 
+```
+
+```{r elpdtab1, results = 'asis', eval=FALSE}
 # see https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_pdf.pdf
 kable(elpdtab_il6, caption="Difference in expected log pointwise predictive density for IL-6 models", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
 ```
 
-```{r elpdtab2, results = 'asis'}
+```{r elpdtab2, results = 'asis', eval=FALSE}
 kable(elpdtab_il1beta, caption="Difference in expected log pointwise predictive density for IL-1-$\\beta$ models", escape=FALSE, booktabs =T)
 ```
 
@@ -438,7 +448,7 @@ MCMC checks - traceplots and Rhat (supp)
 model comparison using loo (supp)
 -->
 
-A graphical check of 10 draws from the posterior predictive distribution compared to the observed IL-6 distribution (fig. \@ref(fig:il6-postpred)) does not reveal any serious model misfit. In addition, there are no major discrepancies between the model and data based on the posterior predictive p-values for test quantities variance, skewness, and proportion of observations censored below the lower limit of detection (table \ref{tab:ppptab1}). 
+A graphical check of 10 draws from the posterior predictive distribution compared to the observed IL-6 distribution (fig. \@ref(fig:il6-postpred)) does not reveal any serious model misfit. In addition, there are no major discrepancies between the model and data based on the posterior predictive p-values for the test quantities variance, skewness, and proportion of observations censored below the lower limit of detection (table \ref{tab:ppptab1}). 
 
 ```{r il6-postpred, fig.cap='Observed and posterior predictive distribution for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_postpred.png"))
@@ -455,25 +465,11 @@ colnames(ppp_il6) <- c("Test quantity","Posterior predictive p-value")
 kable(ppp_il6, caption="Posterior predictive p-values for IL-6 model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
 ```
 
-The posterior covariate parameter estimates (what are intervals shown??) for IL-6 are shown in \@ref(fig:il6-par). Age, BMI, and smoking are positively associated with increased IL-6, while CD4 count, male gender, and study cohort are negatively associated with IL-6. Figure \@ref(fig:il6-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-6 values gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are shown for reference.
+The median posterior estimates of the covariate parameters along with 50\% and 90\% credible intervals for the IL-6 model are shown in figure \@ref(fig:il6-par). Age, BMI, and smoking are positively associated with increased IL-6, while CD4 count, male gender, and study cohort are negatively associated with IL-6. Figure \@ref(fig:il6-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-6 values (fig. \@ref(fig:il-6-trans-1)) gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are shown for reference.
 
 ```{r il6-par, fig.cap='Posterior $\\beta$ estimates for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
 ```
-
-```{r il6-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-6 model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_6_post_ct.png"))
-```
-
-```{r il-6-trans-1, fig.cap='Estimated transformation for IL-6 model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_6_trans.png"))
-```
-
-<!--
-```{r il-6-trans-2, fig.cap='Estimated transformation for IL-6 model using uncentered covariates', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_6_trans_nocnt.png"))
-```
--->
 
 The estimated relationship between BMI and the posterior mean, median, and 90th percentile of IL-6 is shown in figure \@ref(fig:il6-bmi). Higher BMI is associated with higher IL-6.
 
@@ -495,39 +491,47 @@ knitr::include_graphics(file.path(wd,"fig","il_6_bmi.png"))
 
 ### IL-1-$\beta$ biomarker
 
-!!! Start here  !!!
-
-for IL-1-$\beta$ 
-
 <!--
 MCMC checks - traceplots and Rhat (supp) 
 model comparison using loo (supp)
 -->
 
-ppc plot and posterior predictive p-values for variance, skewness, proportion censored for selected model
+As with the IL-6 biomarker, a plot comparing the observed IL-1-$\beta$ distribution to draws from the posterior predictive distribution (fig. \@ref(fig:il-1-beta-postpred)) does not reveal any serious model misfit. The posterior predictive p-values for variance, skewness, and proportion of observations below the lower limit of detection are shown in table \ref{tab:ppptab2}. There is no indication of serious discrepancy between the model and data for variance and proportion of censored observations. The posterior predicive p-value for skewness is more extreme than the other test quantities indicating a moderate level of model misfit for this statistic. Given the high level of right-skewness for IL-1-$\beta$, this degree of misfit seems reasonable.
 
 ```{r il-1-beta-postpred, fig.cap='Observed and posterior predictive distribution for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_postpred.png"))
 ```
 
-Posterior covariate estimates, intercept estimates, and transformation
-and \@ref(fig:il-1-beta-par)
+```{r ppp-il-1-beta, include=FALSE}
+rnd<-2
+ppp_il1beta <- data.frame(stat=c("variance","skewness","proportion censored"),
+                      ppp=round(c(0.4240000, 0.1213333, 0.4893333),rnd))
+colnames(ppp_il1beta) <- c("Test quantity","Posterior predictive p-value")
+```
 
+```{r ppptab2, results = 'asis'}
+kable(ppp_il1beta, caption="Posterior predictive p-values for IL-1-$\\beta$ model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
+```
+
+The median posterior estimates of the covariate parameters along with 50\% and 90\% credible intervals for the IL-1-$\beta$ model are shown in \@ref(fig:il-1-beta-par). In contrast to IL-6, there is little association between any of the covariates and IL-1-$\beta$ level. Figure \@ref(fig:il-1-beta-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-1-$\beta$ values gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are shown for reference.
 
 ```{r il-1-beta-par, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
 ```
 
-```{r il-1-beta-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_1_beta_post_ct.png"))
-```
+The estimated relationship between BMI and the posterior mean, median, and 90th percentile of IL-1-$\beta$ is shown in figure \@ref(fig:il-1-beta-bmi). The plot confirms that there is essentially no association between BMI and IL-1-$\beta$.
 
-
-```{r il-1-beta-trans, fig.cap='Estimated transformation for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_1_beta_trans.png"))
-```
-
-BMI and IL-1-$\beta$ mean, median, 90th percentile (value of other covars?)
+<!-- 
+val of other covars for fig 
+     age_c=rep(0,seq_ln),
+     male=rep(1,seq_ln),
+     nonwhite=rep(0,seq_ln),
+     study.linc=rep(1,seq_ln),
+     cd4_100_c=rep(0,seq_ln),
+     smoker=rep(0,seq_ln)
+     
+val of censored IL-6 used to calculate mean
+-->
 
 ```{r il-1-beta-bmi, fig.cap='BMI and IL-1-$\\beta$ mean, median, 90th percentile', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_bmi.png"))
@@ -535,6 +539,8 @@ knitr::include_graphics(file.path(wd,"fig","il_1_beta_bmi.png"))
 
 
 # Discussion
+
+!!! Start here  !!!
 
 Bayesian CPMs are a versatile modeling approach with many advantages:
 
