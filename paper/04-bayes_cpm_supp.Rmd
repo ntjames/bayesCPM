@@ -58,3 +58,4 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_q80_full.png"))
 ```{r simplt-q80-6, fig.cap="Bias in conditional 80th percentile for censored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_q80_cens.png"))
 ```
+

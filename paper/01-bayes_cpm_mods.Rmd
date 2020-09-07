@@ -75,7 +75,7 @@ In the continuous data setting, Liu et al. [@liu_modeling_2017] demonstrate the 
 \begin{equation}
 Y=H(\beta^{T}X+\varepsilon) \quad \text{where} \quad \varepsilon \sim F_{\varepsilon}
 \end{equation}
-where $H(\cdot)$ is an increasing function, $\beta$ a vector of regression coefficients, $X$ a vector of covariates, and $\varepsilon$ are errors distributed according to $F_{\varepsilon}$. Following Zeng and Lin [], Harrell [@harrell_regression_2015] and Liu et al. [@liu_modeling_2017] describe approximate non-parametric maximum likelihood estimation (NPMLE)
+where $H(\cdot)$ is an increasing function, $\beta$ a vector of regression coefficients, $X$ a vector of covariates, and $\varepsilon$ are errors distributed according to $F_{\varepsilon}$. Following Zeng and Lin [@zeng_maximum_2007], Harrell [@harrell_regression_2015] and Liu et al. [@liu_modeling_2017] describe approximate non-parametric maximum likelihood estimation (NPMLE)
 for the unspecified transformation $H(\cdot)$ and $\beta$ parameters. The models have several favorable characteristics including invariance of regression coefficient estimates to monotonic outcome transformations and ability to handle mixed continuous and discrete outcomes such as those that arise from a lower or upper limit of detection. In addition CPMs directly model the full conditional cumulative distribution function (CDF); this allows estimates of conditional means, quantiles, and exceedance probabilities to be calculated from a single model fit. Further, because only the $H(\cdot)$ part of the model is nonparametric, CPMs are semiparametric regression models which balance the robustness of fully nonparametric models and the efficiency of fully parametric models.
 
 There is an extensive literature on Bayesian semiparametric regression models. The aim -- stated by Gelfand [@gelfand_approaches_1999] in his discussion of general approaches for these models -- is, ``to enrich the class of standard parameteric hierarchical models by wandering nonparametrically near (in some sense) the standard class but retaining the linear structure.'' For example, Brunner [@brunner_bayesian_1995] describes Bayesian linear regression models with symmetric unimodal error densities and Kottas and Gelfand [@kottas_bayesian_2001] describe Bayesian semiparametric median regression. 
@@ -116,7 +116,7 @@ p(\boldsymbol{y}|\boldsymbol{x},\boldsymbol{\gamma},\boldsymbol{\beta})=
 \prod_{i=1}^{n}[G(\gamma_{r(y_i)}-\boldsymbol{x_i'\beta})-G(\gamma_{r(y_i)-1}-\boldsymbol{x_i'\beta})]
 \end{gather}
 
-To complete the model specification we define priors for the parameters $p(\boldsymbol{\beta},\boldsymbol{\gamma})$. We assume *a priori* independence between $\boldsymbol{\beta}$ and $\boldsymbol{\gamma}$ so $p(\boldsymbol{\beta},\boldsymbol{\gamma})=p(\boldsymbol{\beta})p(\boldsymbol{\gamma})$. To simplify the model formulation we also assume noninformative priors for the regression coefficients, $p(\boldsymbol{\beta}) \propto \boldsymbol{1}$ however weakly informative or informative priors can also be used. <!--conditional means approach for defining joint prior fro Johnson & ALbert sec 4.2.2 pp 132 -->
+To complete the model specification we define priors for the parameters $p(\boldsymbol{\beta},\boldsymbol{\gamma})$. We assume *a priori* independence between $\boldsymbol{\beta}$ and $\boldsymbol{\gamma}$ so $p(\boldsymbol{\beta},\boldsymbol{\gamma})=p(\boldsymbol{\beta})p(\boldsymbol{\gamma})$. To simplify the model formulation we also assume noninformative priors for the regression coefficients, $p(\boldsymbol{\beta}) \propto \boldsymbol{1}$ however weakly informative or informative priors can also be used. <!--conditional means approach for defining joint prior from Johnson & ALbert sec 4.2.2 pp 132 -->
 
 Specifying priors for $\boldsymbol{\gamma}$ is more challenging because of the ordering restriction. Several approaches have been suggested in the traditional CPM setting where $J \ll n$. McKinley et al. [@mckinley_bayesian_2015] and Congdon [@congdon_bayesian_2005] describe a sequentially truncated prior distribution: $p(\boldsymbol{\gamma})=p(\gamma_1)\prod_{j=2}^{J-1}p(\gamma_i|\gamma_{j-1})$ where the support of $p(\gamma_1)$ is $\mathbb{R}$ and the support of $p(\gamma_j)$ for $j=2,\ldots, J-1$ is $(\gamma_{j-1},\infty)$. For example using normal and truncated normal priors, $p(\gamma_1)\sim N(0, \sigma_\gamma^2)$ and $p(\gamma_j|\gamma_{j-1}) \sim N(0, \sigma_\gamma^2)I(\gamma_{j-1},\infty)$. A second approach described by Albert and Chib [@albert_bayesian_1997] defines the prior on a transformation of the intercepts to an unconstrained space; normalizing $\gamma_0$ to 0 so $0 \equiv \gamma_0 < \gamma_1 < \cdots < \gamma_{J-1} <\gamma_J \equiv \infty$ and letting $\delta_1=\log(\gamma_1)$ and $\delta_j=\log(\gamma_j - \gamma_{j-1}),\, 2 \le j \le J-1$ a multivariate prior can be assigned, e.g. $\boldsymbol{\delta} \sim N_{J-1}(\boldsymbol{\mu_0},\boldsymbol{\Sigma_0})$.
 Both approaches provide priors that satisfy the ordering restriction, but may be cumbersome when the number of distinct continuous data values is high. The first requires specification of the distribution and its hyperparameters, then sampling from the sequential series of $J-2$ truncated distributions; the second requires specification of the $J-1$ dimensional $\boldsymbol{\mu_0}$ vector and the $J-1 \times J-1$ covariance matrix $\boldsymbol{\Sigma_0}$.
@@ -257,6 +257,7 @@ For scenarios (2) and (3), we examine the average bias for $\beta_1$ and $\beta_
 
 The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in Koethe et al. [@koethe_serum_2012; @koethe_metabolic_2015]. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates: age, sex, race, smoking status, study location and CD4 cell count.
 
+!! edit this paragraph !!
 The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1$\beta$). Both biomarkers are skewed with values censored below a lower limit of detection set to 0. To account for skewness and censoring we fit Bayesian CPM models using logit, probit, and loglog link functions, noninformative $\beta$ priors and a concentration parameter of $\alpha=1/n$ for the Dirichlet distribution to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
 
 # Results
@@ -430,28 +431,31 @@ kable(elpdtab_il6, caption="Difference in expected log pointwise predictive dens
 kable(elpdtab_il1beta, caption="Difference in expected log pointwise predictive density for IL-1-$\\beta$ models", escape=FALSE, booktabs =T)
 ```
 
-!!! Start here  !!!
-
-for IL-1-6
-
-for IL-1-$\beta$ 
-
-Posterior covariate parameter estimates for each of the biomarker outcomes in the HIV case study data are shown in \@ref(fig:il6-par) and \@ref(fig:il-1-beta-par). BMI is positively associated with increased IL-6, but not associated with increased IL-1-$\beta$.
-
 ### IL-6 biomarker
 
+<!--
 MCMC checks - traceplots and Rhat (supp) 
-
 model comparison using loo (supp)
+-->
 
-ppc plot and posterior predictive p-values for variance, skewness, proportion censored for selected model
+A graphical check of 10 draws from the posterior predictive distribution compared to the observed IL-6 distribution (fig. \@ref(fig:il6-postpred)) does not reveal any serious model misfit. In addition, there are no major discrepancies between the model and data based on the posterior predictive p-values for test quantities variance, skewness, and proportion of observations censored below the lower limit of detection (table \ref{tab:ppptab1}). 
 
 ```{r il6-postpred, fig.cap='Observed and posterior predictive distribution for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_postpred.png"))
 ```
 
+```{r ppp-il6, include=FALSE}
+rnd<-2
+ppp_il6 <- data.frame(stat=c("variance","skewness","proportion censored"),
+                      ppp=round(c(0.4053333, 0.3866667, 0.3946667),rnd))
+colnames(ppp_il6) <- c("Test quantity","Posterior predictive p-value")
+```
 
-Posterior covariate estimates, intercept estimates, and transformation
+```{r ppptab1, results = 'asis'}
+kable(ppp_il6, caption="Posterior predictive p-values for IL-6 model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
+```
+
+The posterior covariate parameter estimates (what are intervals shown??) for IL-6 are shown in \@ref(fig:il6-par). Age, BMI, and smoking are positively associated with increased IL-6, while CD4 count, male gender, and study cohort are negatively associated with IL-6. Figure \@ref(fig:il6-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-6 values gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are shown for reference.
 
 ```{r il6-par, fig.cap='Posterior $\\beta$ estimates for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
@@ -471,17 +475,34 @@ knitr::include_graphics(file.path(wd,"fig","il_6_trans_nocnt.png"))
 ```
 -->
 
-BMI and IL-6 mean, median, 90th percentile (value of other covars?)
+The estimated relationship between BMI and the posterior mean, median, and 90th percentile of IL-6 is shown in figure \@ref(fig:il6-bmi). Higher BMI is associated with higher IL-6.
+
+<!-- 
+val of other covars for fig 
+     age_c=rep(0,seq_ln),
+     male=rep(1,seq_ln),
+     nonwhite=rep(0,seq_ln),
+     study.linc=rep(1,seq_ln),
+     cd4_100_c=rep(0,seq_ln),
+     smoker=rep(0,seq_ln)
+     
+val of censored IL-6 used to calculate mean
+-->
 
 ```{r il6-bmi, fig.cap='BMI and IL-6 mean, median, 90th percentile', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_bmi.png"))
 ```
 
-### IL-1-beta biomarker
+### IL-1-$\beta$ biomarker
 
+!!! Start here  !!!
+
+for IL-1-$\beta$ 
+
+<!--
 MCMC checks - traceplots and Rhat (supp) 
-
 model comparison using loo (supp)
+-->
 
 ppc plot and posterior predictive p-values for variance, skewness, proportion censored for selected model
 
@@ -490,6 +511,8 @@ knitr::include_graphics(file.path(wd,"fig","il_1_beta_postpred.png"))
 ```
 
 Posterior covariate estimates, intercept estimates, and transformation
+and \@ref(fig:il-1-beta-par)
+
 
 ```{r il-1-beta-par, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
