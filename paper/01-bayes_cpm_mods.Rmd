@@ -276,29 +276,12 @@ For scenario (1) using a properly specified probit link CPM, the average percent
 knitr::include_graphics(file.path(wd,"fig","sim_a_pars.png"))
 ```
 
-```{r simplt-pars1, fig.cap="Bias in parameters for uncensored simulations using probit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_a_pars_full.png"))
-```
-
-```{r simplt-pars2, fig.cap="Bias in parameters for censored simulations using probit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_a_pars_cens.png"))
-```
-
-
 Figure \@ref(fig:simplt-pars-2) shows the average bias in the posterior median for $\beta_1$, $\beta_2$, and $\gamma_{y_k}$ for scenario (2) using a logit link CPM. Unlike scenario (1), the assumed scale of the logit link ($\varepsilon \sim Logistic(0,1)$) does not match the scale from the simulation model ($\varepsilon \sim Logistic(0,1/3)$). In this case it can be shown that the CPM parameter estimates are proportional to the parameters from the generating model. Assume latent $Y^*=\beta'X + a\varepsilon$ where $a>0$ is a constant scaling factor with $\varepsilon \sim F_{\varepsilon}$ assumed known, and observed $Y=H(Y^*)$ with increasing function $H(t)$. Then $Y=H(\beta'X+a\varepsilon)=H'(\xi'X+\varepsilon)$ where $\xi=a^{-1}\beta$ and $H'(t)=H(at)$ so $Pr(Y \le y|X)=Pr(H'(\xi'X+\varepsilon)\le y|X)=F_{\varepsilon}(H'^{-1}(y)-\xi'X)$. Using a CPM with link function $F_{\varepsilon}^{-1}$ to analyze the observed outcome $Y$ results in estimates of $\xi=a^{-1}\beta$ for the linear predictor coefficients and $H'^{-1}=a^{-1}H^{-1}$ for the intercept function. In this sense, the parameter estimates are biased because they are on the incorrect scale. If the estimates are adjusted using the scale factor, $a$, the bias in the parameters follows a similar pattern as scenario (1) (make fig?). However in practice, the value of the scale factor is unknown.
 
 For scenario (3) using the correctly specified loglog link with an identity transformation, bias is small for all parameters for both uncensored and censored outcomes except with the $n=25$ sample size. The estimates using prior $\boldsymbol{\alpha}=1/J$ are slightly more biased than the other concentration priors. (See supplemental figures \@ref(fig:simplt-pars5) and \@ref(fig:simplt-pars6)). 
 
 ```{r simplt-pars-2, fig.cap="Bias in parameters for simulations using logit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_c_pars.png"))
-```
-
-```{r simplt-pars3, fig.cap="Bias in parameters for uncensored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_c_pars_full.png"))
-```
-
-```{r simplt-pars4, fig.cap="Bias in parameters for censored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_c_pars_cens.png"))
 ```
 
 
@@ -310,17 +293,7 @@ Figure \@ref(fig:simplt-cdf-1) shows the average percent bias in the posterior c
 knitr::include_graphics(file.path(wd,"fig","sim_b_cdf.png"))
 ```
 
-```{r simplt-cdf1, fig.cap="Bias in conditional CDF for uncensored simulations using probit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_full.png"))
-```
-
-```{r simplt-cdf2, fig.cap="Bias in conditional CDF for censored simulations using probit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_cdf_cens.png"))
-```
-
 ### Conditional Mean
-
-!! update fig refs
 
 The top row of figures \@ref(fig:simplt-mn-1) and \@ref(fig:simplt-mn-2) present the average percent bias in the posterior conditional mean for the uncensored simulation outcome at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$ in scenarios (1) and (2), respectively. The average percent bias across was less than 5\% for all sample sizes and priors for the posterior conditional mean in the first two scenarios. For scenario (3) the average percent bias across all simulations ranged from $<-1.0$\% to -12.5\% with larger bias for the $\boldsymbol{\alpha}=1/J$ prior (fig. \@ref(fig:simplt-mn5)). In contrast, the bottom row of figures \@ref(fig:simplt-mn-1) and \@ref(fig:simplt-mn-2) show the posterior conditional mean estimates for the censored data. For outcomes censored at $Y<1$, a value of $Y=1$ was used in the conditional mean calculation. Using the censoring threshold value for censored observations can result in inflated average percent bias compared to the uncensored case depending on where the threshold falls in relation to the true conditional distribution and the value chosen for censored observations. A similar trend was seen in scenario (3) where a value of $Y=0$ was used to calculate the conditional mean for outcomes censored at $Y<0$ (fig \@ref(fig:simplt-mn6)).
 
@@ -328,24 +301,8 @@ The top row of figures \@ref(fig:simplt-mn-1) and \@ref(fig:simplt-mn-2) present
 knitr::include_graphics(file.path(wd,"fig","sim_b_mn.png"))
 ```
 
-```{r simplt-mn1, fig.cap="Bias in conditional mean for uncensored simulations using probit link", fig.align='center', out.width='90%',eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_mn_full.png"))
-```
-
-```{r simplt-mn2, fig.cap="Bias in conditional mean for censored simulations using probit link", fig.align='center', out.width='90%',eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_mn_cens.png"))
-```
-
 ```{r simplt-mn-2, fig.cap="Bias in conditional mean for simulations using logit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_c_mn.png"))
-```
-
-```{r simplt-mn3, fig.cap="Bias in conditional mean for uncensored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_c_mn_full.png"))
-```
-
-```{r simplt-mn4, fig.cap="Bias in conditional mean for censored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_c_mn_cens.png"))
 ```
 
 ```{r simplt-mn5, fig.cap="Bias in conditional mean for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
@@ -364,14 +321,6 @@ Figure \@ref(fig:simplt-q80-b) presents the estimates of the conditional 80th pe
 knitr::include_graphics(file.path(wd,"fig","sim_b_med.png"))
 ```
 
-```{r simplt-med1, fig.cap="Bias in conditional median for uncensored simulations using probit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_med_full.png"))
-```
-
-```{r simplt-med2, fig.cap="Bias in conditional median for censored simulations using probit link", fig.align='center', out.width='90%',eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_med_cens.png"))
-```
-
 ```{r simplt-med5, fig.cap="Bias in conditional median for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_med_full.png"))
 ```
@@ -384,26 +333,8 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_med_cens.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_b_q20.png"))
 ```
 
-
-```{r simplt-q20-1, fig.cap="Bias in conditional 20th percentile for uncensored simulations using probit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_q20_full.png"))
-```
-
-```{r simplt-q20-2, fig.cap="Bias in conditional 20th percentile for censored simulations using probit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_q20_cens.png"))
-```
-
 ```{r simplt-q20-b, fig.cap="Bias in conditional 20th percentile for simulations using logit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_c_q20.png"))
-```
-
-
-```{r simplt-q20-3, fig.cap="Bias in conditional 20th percentile for uncensored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_c_q20_full.png"))
-```
-
-```{r simplt-q20-4, fig.cap="Bias in conditional 20th percentile for censored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_c_q20_cens.png"))
 ```
 
 ```{r simplt-q20-5, fig.cap="Bias in conditional 20th percentile for uncensored simulations using loglog link", fig.align='center', out.width='90%'}
@@ -466,15 +397,6 @@ colnames(elpdtab)<- c("Model", "ELPD diff.", "SE diff.")
 kable(elpdtab, caption="Difference in expected log pointwise predictive density for IL-6 models and IL-1-$\\beta$ models", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position")) %>% 
   pack_rows("IL-6",1,4) %>% 
   pack_rows("IL-1-$\\\\beta$",5,8,escape=FALSE) 
-```
-
-```{r elpdtab1, results = 'asis', eval=FALSE}
-# see https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_pdf.pdf
-kable(elpdtab_il6, caption="Difference in expected log pointwise predictive density for IL-6 models", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
-```
-
-```{r elpdtab2, results = 'asis', eval=FALSE}
-kable(elpdtab_il1beta, caption="Difference in expected log pointwise predictive density for IL-1-$\\beta$ models", escape=FALSE, booktabs =T)
 ```
 
 ### IL-6 biomarker
