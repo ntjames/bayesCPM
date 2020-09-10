@@ -13,11 +13,16 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_pars_full.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_pars_cens.png"))
 ```
 
-```{r simplt-cdf3, fig.cap="Bias in conditional CDF for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+```{r simplt-cdf-2, fig.cap="Bias in conditional CDF for simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_cdf.png"))
+```
+
+
+```{r simplt-cdf3, fig.cap="Bias in conditional CDF for uncensored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","sim_c_cdf_full.png"))
 ```
 
-```{r simplt-cdf4, fig.cap="Bias in conditional CDF for censored simulations using logit link", fig.align='center', out.width='90%'}
+```{r simplt-cdf4, fig.cap="Bias in conditional CDF for censored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","sim_c_cdf_cens.png"))
 ```
 
@@ -34,20 +39,28 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_cdf_cens.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_mn_cens.png"))
 ```
 
+```{r simplt-med-2, fig.cap="Bias in conditional median for simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_med.png"))
+```
 
-```{r simplt-med3, fig.cap="Bias in conditional median for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+
+```{r simplt-med3, fig.cap="Bias in conditional median for uncensored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","sim_c_med_full.png"))
 ```
 
-```{r simplt-med4, fig.cap="Bias in conditional median for censored simulations using logit link", fig.align='center', out.width='90%'}
+```{r simplt-med4, fig.cap="Bias in conditional median for censored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","sim_c_med_cens.png"))
 ```
 
-```{r simplt-q80-3, fig.cap="Bias in conditional 80th percentile for uncensored simulations using logit link", fig.align='center', out.width='90%'}
+```{r simplt-q80-b, fig.cap="Bias in conditional 80th percentile for simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_q80.png"))
+```
+
+```{r simplt-q80-3, fig.cap="Bias in conditional 80th percentile for uncensored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","sim_c_q80_full.png"))
 ```
 
-```{r simplt-q80-4, fig.cap="Bias in conditional 80th percentile for censored simulations using logit link", fig.align='center', out.width='90%'}
+```{r simplt-q80-4, fig.cap="Bias in conditional 80th percentile for censored simulations using logit link", fig.align='center', out.width='90%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","sim_c_q80_cens.png"))
 ```
 
