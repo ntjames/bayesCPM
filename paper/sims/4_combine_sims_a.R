@@ -244,7 +244,8 @@ full_dat <- bind_rows( lapply(ls()[grep('full.sim',ls())],get) ) %>%
 full_plt_dat <- full_dat %>% 
   pivot_longer(cols=c("beta[1]","beta[2]",
                "gamma[y[1]]","gamma[y[2]]",
-               "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
+               "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))  %>% 
+  mutate(outcome="uncensored")
 
 ## censored outcome dataset
 cens_dat <- bind_rows( lapply(ls()[grep('cens.sim',ls())],get) ) %>%
@@ -254,7 +255,8 @@ cens_dat <- bind_rows( lapply(ls()[grep('cens.sim',ls())],get) ) %>%
 # for plotting
 cens_plt_dat <- cens_dat %>%  
   pivot_longer(cols=c("beta[1]","beta[2]",
-                      "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]"))
+                      "gamma[y[3]]","gamma[y[4]]","gamma[y[5]]")) %>% 
+  mutate(outcome="censored")
 
 
 # labels and plot params
@@ -290,3 +292,25 @@ cens_plt_dat %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_a_pars_cens.png"),width=pltw,height=plth)
+
+
+#combined plot
+pltw<-10; plth<-7; atxtsz<-9; fctsiz<-13
+
+rbind(full_plt_dat,cens_plt_dat) %>% 
+  mutate(outcome=factor(outcome,levels=c("uncensored","censored"),
+                        labels=c("uncensored Y","censored Y"))) %>% 
+  ggplot(aes(x=value,y=n,col=conc,shape=conc)) +
+  geom_point(size=3,alpha=0.75)  +
+  facet_grid(outcome ~ name,labeller = labeller(name=label_parsed),
+             switch="y")+
+  xlab("average percent bias of posterior median")+ylab("sample size")+
+  scale_shape_discrete(name=bquote(alpha)) +
+  scale_color_discrete(name=bquote(alpha)) +
+  theme(axis.title.x = element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_a_pars.png"),width=pltw,height=plth)

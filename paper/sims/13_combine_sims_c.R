@@ -641,6 +641,42 @@ bind_rows(cens_beta_sim_dat,cens_gamma_sim_dat) %>%
 
 ggsave(file.path(figdir,"sim_c_pars_cens.png"),width=pltw,height=plth)
 
+#combined plot
+full_par<-bind_rows(full_beta_sim_dat,full_gamma_sim_dat) %>% 
+  mutate(outcome="uncensored")
+cens_par<-bind_rows(cens_beta_sim_dat,cens_gamma_sim_dat)   %>% 
+  mutate(outcome="censored")
+
+pltw<-10; plth<-7; atxtsz<-9; fctsiz<-13
+
+rbind(full_par,cens_par) %>% 
+  mutate(outcome=factor(outcome,levels=c("uncensored","censored"),
+                        labels=c("uncensored Y","censored Y")),
+         par=case_when(
+           par == 'b[1]' ~ "beta[1]",
+           par == 'b[2]' ~ "beta[2]",
+           par == 'gamma[y1]' ~ "gamma[y[1]]",
+           par == 'gamma[y2]' ~ "gamma[y[2]]",
+           par == 'gamma[y3]' ~ "gamma[y[3]]",
+           par == 'gamma[y4]' ~ "gamma[y[4]]",
+           par == 'gamma[y5]' ~ "gamma[y[5]]"
+         )) %>% 
+  filter(!is.na(avg.bias)) %>% 
+  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
+  geom_point(size=3,alpha=0.75) +
+  facet_grid(outcome ~ par,drop=TRUE,labeller = labeller(par=label_parsed),
+             switch="y") +
+  xlab("average bias of posterior parameters") + ylab("sample size") +
+  scale_shape_discrete(name=bquote(alpha)) +
+  scale_color_discrete(name=bquote(alpha)) +
+  theme(axis.title.x = element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_c_pars.png"),width=pltw,height=plth)
+
 ### CDF ###
 
 # full outcome plot
@@ -661,6 +697,31 @@ cens_cdf_sim_dat %>% mutate(yin=factor(yin,labels=nlabs[3:5])) %>%
 
 ggsave(file.path(figdir,"sim_c_cdf_cens.png"),width=pltw,height=plth)
 
+#combined plot
+pltw<-10; plth<-7; atxtsz<-10; fctsiz<-9
+
+full_cdf_sim_dat %<>% mutate(outcome="uncensored")
+cens_cdf_sim_dat %<>% mutate(outcome="censored")
+
+rbind(full_cdf_sim_dat,cens_cdf_sim_dat) %>% 
+  mutate(yin=factor(yin,labels=nlabs),
+         outcome=factor(outcome,levels=c("uncensored","censored"),
+                        labels=c("uncensored Y","censored Y"))) %>% 
+  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
+  geom_point(size=3,alpha=0.75)  +
+  facet_grid(outcome ~ yin, labeller=labeller(yin=label_parsed),
+             switch="y")+
+  xlab("average percent bias of posterior conditional CDF") + 
+  ylab("sample size") +
+  scale_shape_discrete(name=bquote(alpha)) +
+  scale_color_discrete(name=bquote(alpha)) +
+  theme(axis.title.x = element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_c_cdf.png"),width=pltw,height=plth)
 
 ### Mean ###
 
@@ -691,6 +752,33 @@ cens_mn_sim_dat %>%
 
 ggsave(file.path(figdir,"sim_c_mn_cens.png"),width=pltw,height=plth)
 
+#combined plot
+pltw<-10; plth<-7; atxtsz<-9; fctsiz<-13
+full_mn_sim_dat %<>% mutate(outcome="uncensored")
+cens_mn_sim_dat %<>% mutate(outcome="censored")
+
+rbind(full_mn_sim_dat, cens_mn_sim_dat) %>% 
+  mutate(ndrow=if_else(ndrow==1,
+                       "E(Y*'|'*~X[1]==1,X[2]==1)",
+                       "E(Y*'|'*~X[1]==1,X[2]==0)"),
+         outcome=factor(outcome,levels=c("uncensored","censored"),
+                        labels=c("uncensored Y","censored Y"))) %>% 
+  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
+  geom_point(size=3,alpha=0.75)  +
+  facet_grid(outcome ~ ndrow, labeller=labeller(ndrow=label_parsed),
+             switch="y")+
+  xlab("average percent bias of posterior conditional mean") + 
+  ylab("sample size")+
+  scale_shape_discrete(name=bquote(alpha)) +
+  scale_color_discrete(name=bquote(alpha)) +
+  theme(axis.title.x = element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_c_mn.png"),width=pltw,height=plth)
+
 
 ### Median ###
 
@@ -720,6 +808,31 @@ cens_med_sim_dat %>%
 
 ggsave(file.path(figdir,"sim_c_med_cens.png"),width=pltw,height=plth)
 
+# combined plot
+full_med_sim_dat %<>% mutate(outcome="uncensored")
+cens_med_sim_dat %<>% mutate(outcome="censored")
+
+rbind(full_med_sim_dat,cens_med_sim_dat) %>% 
+  mutate(ndrow=if_else(ndrow==1,
+                       "Q^{0.5}*'|'*list(X[1]==1,X[2]==1)",
+                       "Q^{0.5}*'|'*list(X[1]==1,X[2]==0)"),
+         outcome=factor(outcome,levels=c("uncensored","censored"),
+                        labels=c("uncensored Y","censored Y"))) %>% 
+  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
+  geom_point(size=3,alpha=0.75)  +
+  facet_grid(outcome ~ ndrow, labeller=labeller(ndrow=label_parsed),
+             switch="y")+
+  xlab("average percent bias of posterior conditional median") + 
+  ylab("sample size") +
+  scale_shape_discrete(name=bquote(alpha)) +
+  scale_color_discrete(name=bquote(alpha)) +
+  theme(axis.title.x = element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_c_med.png"),width=pltw,height=plth)
 
 ### 20% quantile ###
 
@@ -749,6 +862,32 @@ cens_q20_sim_dat %>%
 ggsave(file.path(figdir,"sim_c_q20_cens.png"),width=pltw,height=plth)
 
 
+#combined plot
+full_q20_sim_dat %<>% mutate(outcome="uncensored")
+cens_q20_sim_dat %<>% mutate(outcome="censored")
+
+rbind(full_q20_sim_dat,cens_q20_sim_dat) %>% 
+  mutate(ndrow=if_else(ndrow==1,
+                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==1)",
+                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==0)"),
+         outcome=factor(outcome,levels=c("uncensored","censored"),
+                        labels=c("uncensored Y","censored Y"))) %>%
+  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
+  geom_point(size=3,alpha=0.75)  +
+  facet_grid(outcome ~ ndrow, labeller=labeller(ndrow=label_parsed),
+             switch="y")+
+  xlab("average percent bias of posterior conditional 20th percentile") + 
+  ylab("sample size") +
+  scale_shape_discrete(name=bquote(alpha)) +
+  scale_color_discrete(name=bquote(alpha)) +
+  theme(axis.title.x = element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_c_q20.png"),width=pltw,height=plth)
+
 ### 80% quantile ###
 
 # full outcome plot
@@ -776,3 +915,28 @@ cens_q80_sim_dat %>%
 
 ggsave(file.path(figdir,"sim_c_q80_cens.png"),width=pltw,height=plth)
 
+# combined plot
+full_q80_sim_dat %<>% mutate(outcome="uncensored")
+cens_q80_sim_dat %<>% mutate(outcome="censored")
+
+rbind(full_q80_sim_dat,cens_q80_sim_dat) %>% 
+  mutate(ndrow=if_else(ndrow==1,
+                       "Q^{0.8}*'|'*list(X[1]==1,X[2]==1)",
+                       "Q^{0.8}*'|'*list(X[1]==1,X[2]==0)"),
+         outcome=factor(outcome,levels=c("uncensored","censored"),
+                        labels=c("uncensored Y","censored Y"))) %>%
+  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
+  geom_point(size=3,alpha=0.75)  +
+  facet_grid(outcome ~ ndrow, labeller=labeller(ndrow=label_parsed),
+             switch="y")+
+  xlab("average percent bias of posterior conditional 80th percentile") + 
+  ylab("sample size") + 
+  scale_shape_discrete(name=bquote(alpha)) +
+  scale_color_discrete(name=bquote(alpha)) +
+  theme(axis.title.x = element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        strip.text.y = element_text(angle=0))
+
+ggsave(file.path(figdir,"sim_c_q80.png"),width=pltw,height=plth)
