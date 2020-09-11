@@ -213,8 +213,7 @@ for (i in letters[1:2]){
 }
 
 
-ls()[grep("_proc",ls())]
-
+#ls()[grep("_proc",ls())]
 
 
 pltw<-10; plth<-5
@@ -381,6 +380,33 @@ ggsave(file.path(figdir,"sim_d_MCMC_sample_times.png"),width=pltw,height=plth)
 
 
 
+## combined plot
+pltw<-10; plth<-8
+
+sim_a_mod <- sim_a %>% mutate(scn='scenario 1', prior=substr(scenario,6,7))
+# drop alpha=1/2 priors for logit and loglog
+sim_c_mod <- sim_c %>% filter(scenario!='sim_c3') %>% mutate(scn='scenario 2', prior=substr(scenario,6,7))
+sim_d_mod <- sim_d %>% filter(scenario!='sim_d3') %>% mutate(scn='scenario 3', prior=substr(scenario,6,7))
+
+rbind(sim_a_mod,sim_c_mod,sim_d_mod) %>%
+  mutate(nsamps=factor(nsamps,levels=c(25,50,100,200,400)),
+         prior=factor(prior,labels=c("alpha==1/J",
+                                           "alpha==1/(0.8+0.35*J)",
+                                           "alpha==1/(2+(J/3))"))) %>% 
+  filter(mod!='unk') %>% 
+  mutate(mod=factor(mod,labels=c("censored Y","uncensored Y"))) %>% 
+  ggplot(aes(x=nsamps,y=secs)) +
+  geom_boxplot(aes(color=mod)) +
+  scale_y_log10() + xlab("sample size") + ylab("seconds") +
+  scale_color_discrete(name="outcome") +
+  facet_grid(scn~prior, labeller = labeller(prior=label_parsed), switch="y")
+
+
+ggsave(file.path(figdir,"sim_MCMC_sample_times.png"),width=pltw,height=plth)
+
+
+
+## summarize processors used 
 processor_list<-map(ls()[grep("_proc",ls())],get)
 processor_info<-do.call(rbind,processor_list)
 
