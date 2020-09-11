@@ -193,27 +193,6 @@ Model checking
 
 <!--
 Note: the Berger et al. manuscript provides an approach for determining an 'overall objective prior' more systematically, but may be difficult to implement if interested in posterior parameters and functions of parameters (mean, CDF, quantiles) simultaneously
-
-marginal reference prior for $\gamma_1=G^{-1}(\pi_{.1}) \Rightarrow G(\gamma_1)=\pi_{.1}$. want $\gamma_1 \sim U(-\infty, \infty)$. marginal dist of $\pi_{.1} \sim Beta(a,b)$
-
-```{r, eval=F}
-hist(qlogis(rbeta(500,1,1)))
-hist(qlogis(rbeta(500,1/2,1/2)))
-hist(qlogis(rbeta(500,0.01,0.01)))
-# limit as Beta params a->0 and b -> 0 gives noninformative prior for gamma
-```
-
-reference prior for $\gamma_2=G^{-1}(\pi_{.1}+\pi_{.2})$. need constraint that $\pi_{.1}+\pi_{.2}\le 1$
-```{r, eval=F}
-hist(runif(500)+runif(500)) # triangular dist.
-hist(rbeta(500,1/2,1/2)+rbeta(500,1/2,1/2))
-hist(rbeta(5000,1/4,1/4)+rbeta(5000,1/4,1/4))
-hist(rbeta(5000,1/6,1/6)+rbeta(5000,1/6,1/6))
-
-hist(qlogis(rbeta(5000,1/6,1/6)+rbeta(5000,1/6,1/6)))
-```
-
-reference prior for $\gamma_2=G^{-1}(\pi_{.1}+\pi_{.2})$
 -->
 
 ```{r probit-induced, fig.cap="Induced $\\boldsymbol{\\gamma}$ priors under $G^{-1}(\\cdot)=\\Phi^{-1}(\\cdot)$", fig.align='center', out.width='95%'}
@@ -319,14 +298,6 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_mn.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_mn.png"))
 ```
 
-```{r simplt-mn5, fig.cap="Bias in conditional mean for uncensored simulations using loglog link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_d_mn_full.png"))
-```
-
-```{r simplt-mn6, fig.cap="Bias in conditional mean for censored simulations using loglog link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_d_mn_cens.png"))
-```
-
 ### Conditional Median and Quantiles
 
 The results for the conditional posterior median in scenario (1) are shown in figure \@ref(fig:simplt-med-1). For both outcomes, the conditional median estimate had a positive bias for both $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$ with smaller bias for larger sample sizes. There were negligible differences in average percent bias of the median estimates for the three $\alpha$ concentration parameters. The pattern was nearly identical for scenario (2) (fig. \@ref(fig:simplt-med-2)). For both outcomes under scenario (3), bias in the conditional median estimate was smaller at $(X_1=1,X_2=0)$ than $(X_1=1,X_2=1)$. There were only small differences in average percent bias of the median estimates for the three $\boldsymbol{\alpha}$ concentration parameters (fig. \@ref(fig:simplt-med-3)). 
@@ -343,13 +314,6 @@ knitr::include_graphics(file.path(wd,"fig","sim_b_med.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_med.png"))
 ```
 
-```{r simplt-med5, fig.cap="Bias in conditional median for uncensored simulations using loglog link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_d_med_full.png"))
-```
-
-```{r simplt-med6, fig.cap="Bias in conditional median for censored simulations using loglog link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_d_med_cens.png"))
-```
 
 ```{r simplt-q20-a, fig.cap="Bias in conditional 20th percentile for simulations using probit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_b_q20.png"))
@@ -363,37 +327,12 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_q20.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_d_q20.png"))
 ```
 
-
-```{r simplt-q20-5, fig.cap="Bias in conditional 20th percentile for uncensored simulations using loglog link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_d_q20_full.png"))
-```
-
-```{r simplt-q20-6, fig.cap="Bias in conditional 20th percentile for censored simulations using loglog link", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_d_q20_cens.png"))
-```
-
 ### Computation time
 
 Simulations were run with `R` version 3.6.0 (2019-04-26) and `rstan` (Version 2.19.2, GitRev: 2e1f913d3ca3) on a high-performance computing cluster running under CentOS Linux 7 (Core) with with 1.90GHz or 2.40GHz Intel Xeon CPUs. MCMC sampling time for the three scenarios is shown in figure \@ref(fig:simplt-samptime). Average per chain sampling time was similar across scenarios and priors. The censored outcomes -- with fewer categories and $\gamma$ parameters -- had shorter sampling times. 
 
 ```{r simplt-samptime, fig.cap="Per chain MCMC sampling time for simulations", fig.align='center', out.width='95%'}
 knitr::include_graphics(file.path(wd,"fig","sim_MCMC_sample_times.png"))
-```
-
-```{r simplt-samptime1, fig.cap="Per chain MCMC sampling time for scenario 1", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_a_MCMC_sample_times.png"))
-```
-
-```{r simplt-samptime2, fig.cap="Per chain MCMC sampling time for scenario 1 - 2nd run", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_b_MCMC_sample_times.png"))
-```
-
-```{r simplt-samptime3, fig.cap="Per chain MCMC sampling time for scenario 2", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_c_MCMC_sample_times.png"))
-```
-
-```{r simplt-samptime4, fig.cap="Per chain MCMC sampling time for scenario 3", fig.align='center', out.width='90%', eval=FALSE}
-knitr::include_graphics(file.path(wd,"fig","sim_d_MCMC_sample_times.png"))
 ```
 
 ## Case Study
