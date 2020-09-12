@@ -470,23 +470,49 @@ knitr::include_graphics(file.path(wd,"fig","il_1_beta_bmi.png"))
 
 !!! Start here  !!!
 
+<!--
+Good discussion 
+1. Particular & specific - limitations of this study not general area; implications
+2. Focus on strengths, not the weaknesses
+
+Template
+1. Recap - review ideas from intro and summarize what was found
+2. Connect - link ideas to important ongoing problems; alternative to other transformation approaches (e.g. Box-Cox), more straightforward implementation than other BNP models?
+3. Resolve - face up awkward findings or unexpected results
+4. Limitations - briefly note limitations, but emphasize strengths
+5. Future Directions/Extensions (optional) 
+6. Implications for Practice - how to put findings into action
+7. Conclusion (optional) - brief paragraph summarizing central ideas and findings
+-->
+
+For continuous data, a transformation is often necessary to meet modeling assumptions but how to choose the transformation can be unclear and different transformations can lead to different conclusions.
+Further, with mixed continuous/discrete outcomes such as those arising from a lower or upper limit of quantification for a biomarker, ... 
+
+
 Bayesian CPMs are a versatile modeling approach with many advantages:
 
 - Avoid specification of outcome transformation
 - handle continuous and discrete ordered outcomes
 - estimate full conditional CDF, quantiles and mean using a single model fit
 - provide inference without asymptotic assumptions
+- can be implemented within framework of traditional ordinal regression with minimal modifications
 
 ## Limitations
 
-- assumes parallelism (constant difference between transformed conditional CDFs, i.e. proportional odds assumption if using logit link or proportional hazards assumption for cloglog), however less
+
+
+
 - The number of distinct outcome values must be known *a priori*, that is we condition on $J$ categories. In practice, the number of distinct continuous outcome values is unlikely to be known before data collection, so this formulation violates the principle that the prior should be specified without reference to the observed data. For this same reason, the model cannot accomodate new observations so is not useful for Bayesian updating or adaptive designs. In other words, once the initial prior is set the posterior from an initial model cannot serve as the prior for a model with additional data points because there is no way to add categories. <!-- Some discussion of extensions using  e.g. Dirichlet process mixture or Polya trees (ref semiparameteric surv. analysis papers?) -->
 - The choice of link function, and the implied error distribution on the scale of the untransformed data is also assumed to be known. As was seen in the simulations, misspecification of the link function can lead to large bias.
 
-- For both the Bias for small $n$
-- Computation time
+- assumes parallelism (constant difference between transformed conditional CDFs, i.e. proportional odds assumption if using logit link or proportional hazards assumption for cloglog), however less of an assumption than e.g. linear regression which assumes parallelism and linearity - maybe move this to methods section as an assumption and only briefly mention here
+
+- Bias for small $n$, for quantiles further from median, conditional values further from $X=0$ and this bias can be exacerbated by censoring.
+- Computation time?
 
 ## Extensions
+
+possibly omit, combine with limitations (i.e. here is limitation, but could potentially be solved with this extension), or make very short
 
 - nonparametric priors, e.g. Dirichlet process mixture or Polya trees
 - partial proportional odds
