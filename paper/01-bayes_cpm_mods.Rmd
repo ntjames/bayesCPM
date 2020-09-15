@@ -69,7 +69,7 @@ DONE
 
 <!-- mini lit review for ordinal models and summarizing results of previous continuous CPM papers -->
 
-Cumulative models for ordinal outcomes -- traditionally denoted cumulative link models [@agresti_categorical_2002] -- have been discussed extensively in the literature using both classical (frequentist) and Bayesian implementations. Since these models are characterized by adding probabilities, not link functions, we prefer the nomenclature cumulative probability model (CPM). Under the frequentist paradigm, Walker and Duncan [@walker_estimation_1967] and McCullagh [@peter_mccullagh_regression_1980] described these models as an extension of dichotomous outcome regression models: logistic and probit regression are most well-known examples. A Bayesian CPM for ordinal regression was first detailed by Albert and Chib [@albert_bayesian_1993; @albert_bayesian_1997] and Johnson and Albert [@johnson_ordinal_1999]. <!--Peng and Hall [cite] describe a Bayesian approach to generalized ordinal regression models for rating data --> Additional Bayesian CPM extensions including partial proportional odds [@peterson_partial_1990], mixture link models [@lang_bayesian_1999], location-scale ordinal regression [citation] and multivariate ordinal outcomes are described by Congdon [@congdon_bayesian_2005]. In all these settings, the number of ordered outcome categories is implicitly assumed to be smaller -- often much smaller -- than the sample size. However, continuous data are also ordinal and can therefore be fit using CPMs.
+Cumulative models for ordinal outcomes -- traditionally denoted cumulative link models [@agresti_categorical_2002] -- have been discussed extensively in the literature using both classical (frequentist) and Bayesian implementations. Since these models are characterized by adding probabilities, not link functions, we prefer the nomenclature cumulative probability model (CPM). Under the frequentist paradigm, Walker and Duncan [@walker_estimation_1967] and McCullagh [@peter_mccullagh_regression_1980] described these models as an extension of dichotomous outcome regression models: logistic and probit regression are most well-known examples. A Bayesian CPM for ordinal regression was first detailed by Albert and Chib [@albert_bayesian_1993; @albert_bayesian_1997] and Johnson and Albert [@johnson_ordinal_1999]. Additional Bayesian CPM extensions including partial proportional odds [@peterson_partial_1990], mixture link models [@lang_bayesian_1999], location-scale ordinal regression [citation] and multivariate ordinal outcomes are described by Congdon [@congdon_bayesian_2005]. In all these settings, the number of ordered outcome categories is implicitly assumed to be smaller -- often much smaller -- than the sample size. However, continuous data are also ordinal and can therefore be fit using CPMs.
 
 In the continuous data setting, Liu et al. [@liu_modeling_2017] demonstrate the equivalence between CPMs and transformation models of the form:
 \begin{equation}
@@ -87,8 +87,8 @@ DeYoreo & Kottas [@deyoreo_bayesian_2020] explore Bayesian nonparametric density
 - similar strengths to Bayesian Survival - check there for addt'l benefits
 -->
 
-In this paper, we develop Bayesian CPMs for continuous and mixed outcomes. <!--[They are distinguished from other Bayesian semiparametric approaches by their relationship to traditional ordinal regression models? something else?]-->. Bayesian CPMs inherit many of the properties of CPMs estimated using NPMLE and have additional benefits: interpretation using posterior probabilities, the ability to incorporate available prior information, and inference <!--when the log-likelihood is not well-approximated by a quadratic function [!! need to show example where this is the case in simulations]-->
-for quantities of interest without using asymptotic approximations.
+In this paper, we develop Bayesian CPMs for continuous and mixed outcomes. <!--[They are distinguished from other Bayesian semiparametric approaches by their relationship to traditional ordinal regression models? something else?]-->. Bayesian CPMs inherit many of the properties of CPMs estimated using NPMLE and have additional benefits: interpretation using posterior probabilities, inference <!--when the log-likelihood is not well-approximated by a quadratic function [!! need to show example where this is the case in simulations]-->
+for quantities of interest without using asymptotic approximations, and the ability to incorporate available prior information.
 A primary challenge when implementing Bayesian CPMs for continuous outcomes is the specification of priors for the intercept parameters and we describe several proposed strategies. Through simulations, we explore characteristics of Bayesian CPMs using several model specifications and prior combinations<!--and make comparisons to CPM estimates using NPMLE and Bayesian nonparametric (BNP) regression, another popular approach for flexibly modeling outcomes-->. We present a case study involving HIV biomarker data for which the outcomes are skewed and censored at a lower limit of detection. We conclude with a discussion -- including advantages, current limitations, and extensions -- and recommendations for using Bayesian CPMs.
 
 # Methods
@@ -174,9 +174,9 @@ In multiparameter models, the choice of reference prior depends on the parameter
 
 ## Estimation
 
-The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [Add a few sentences about HMC - cite Turkman Computational Bayesian Statistics?] [@turkman_computational_2019] number iterations, number of chains, burn-in, adapt delta & other settings
+The model in (\ref{eq:post}) is implemented using the `R` interface to Stan [@stan_development_team_rstan:_2018] which performs MCMC sampling using Hamiltonian Monte Carlo. [!Add a few sentences about HMC - cite Turkman Computational Bayesian Statistics?] [@turkman_computational_2019] number iterations, number of chains, burn-in, adapt delta & other settings
 
-developmental R package `bayesCPM` to implement the Bayesian CPM model is available from [link] to github
+The R package `bayesCPM` to implement the Bayesian CPM model is available on github at [https://github.com/ntjames/bayesCPM/tree/master/pkg](https://github.com/ntjames/bayesCPM/tree/master/pkg).
 
 For the case study, we evaluate convergence of each model using $\hat{R}$ scale reduction factor [@gelman_bayesian_2014] and traceplots of MCMC draws. Model comparison is performed using the difference in expected log predictive density (elpd) calculated using leave-one-out (loo) cross-validation [@vehtari_practical_2017]. Model fit is assessed using graphical checks the of posterior predictive and posterior predictive p-values [@stern_bayesian_2005; @gelman_bayesian_2014].
 
@@ -187,9 +187,6 @@ Model checking
 - plot of proportional odds/parallelism assumption?? could use something like smoother described in Congdon to do this
 - is there a test statistic and corresponding Bayesian p-value that makes sense in this setting? check Bayes notes and BDA3 
 -->
-
-<!-- section describing how models were actually fit, i.e. used HMC implemented in Stan -->
-
 
 <!--
 Note: the Berger et al. manuscript provides an approach for determining an 'overall objective prior' more systematically, but may be difficult to implement if interested in posterior parameters and functions of parameters (mean, CDF, quantiles) simultaneously
@@ -206,14 +203,12 @@ knitr::include_graphics(file.path(wd,"fig","probit_induced_mle.png"))
 description of how to use Bayesian CPM to get parameter ests. for shifts in distribution and other quantities of interest, e.g. conditional CDF Mean, Quantiles, using a single model
 -->
 
-Using MCMC samples from the posterior distribution ($\tilde{\gamma}$, $\tilde{\beta}$) it is straightforward to calculate the posterior conditional CDF, mean, quantiles or other functions of the parameters
+Using MCMC samples from the posterior distribution ($\tilde{\gamma}$, $\tilde{\beta}$) it is straightforward to calculate the posterior conditional CDF, mean, quantiles or other functions of the parameters.
 
 - Posterior conditional CDF:  $\tilde{F}(y_i|\boldsymbol{x}_i)=G(\tilde{\gamma}_{r(y_i)}-\boldsymbol{x}_i^{T}\tilde{\boldsymbol{\beta}})$
 
 - Posterior conditional mean:
-$\tilde{E}[Y|\boldsymbol{x}_i]=\sum_{i=1}^{n}y_i\tilde{f}(y_i|\boldsymbol{x}_i)$ where $\tilde{f}(y_i|\boldsymbol{x}_i)=\tilde{F}(y_i|\boldsymbol{x}_i)-\tilde{F}(y_{i-1}|\boldsymbol{x}_i)$
-
-mean only makes sense with continuous data, data below or above a detection limit do not have a known value of $y_i$ that can be used in this calculation without making additional assumptions about the distribution
+$\tilde{E}[Y|\boldsymbol{x}_i]=\sum_{i=1}^{n}y_i\tilde{f}(y_i|\boldsymbol{x}_i)$ where $\tilde{f}(y_i|\boldsymbol{x}_i)=\tilde{F}(y_i|\boldsymbol{x}_i)-\tilde{F}(y_{i-1}|\boldsymbol{x}_i)$. Note that for mixed continuous/discrete outcomes, such as those arising from a detection limit, data below or above the limit do not have a known $y_i$ value.  <!--that can be used in this calculation without making additional assumptions about the distribution-->
 
 - Posterior conditional quantile:
 To estimate the $q^{th}$ quantile
@@ -222,7 +217,7 @@ To estimate the $q^{th}$ quantile
 
 ## Simulations
 
-To evaluate the <!--long-run frequency--> properties of the Bayesian CPM we generate data from several simulation models:
+To evaluate the <!--long-run frequency--> properties of the Bayesian CPM we generate data from several simulation scenarios:
 \begin{align*}
 1.\; Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim N(0,1)\\
 2.\; Y&=\exp(X_1\beta_1 + X_2 \beta_2 + \varepsilon) \quad \varepsilon \sim Logistic(0,1/3)\\
@@ -230,20 +225,19 @@ To evaluate the <!--long-run frequency--> properties of the Bayesian CPM we gene
 \end{align*}
 where $\beta_1=1$, $\beta_2=-0.5$, $X_1 \sim Bernoulli(0.5)$ and $X_2 \sim N(0,1)$
 
-For each model a second set of simulations was used to evaluate a mixed discrete/continuous outcome such as a lower limit of detection. For the first two models values of $Y<1$ to were set to 1 and for the third model values of $Y<0$ were set to 0. The continuous and censored outcome data based on 1. and 3. were evaluated using a Bayesian CPM with the properly specified probit and loglog links, respectively. For the data based on 2. a logit link Bayesian CPM (which implies $\varepsilon \sim Logistic(0,1)$) was used. In each of the six outcome models, three $\boldsymbol{\alpha}$ concentration hyperparameters ($1/J$, $1/(2+(J/3))$, $1/(0.8+0.35J)$) were considered for $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha})$ for a total of 18 model and prior combinations. For each combination $1,000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$.
+For each scenario a second set of simulations was used to evaluate a mixed discrete/continuous outcome such as a lower limit of detection. For scenario (1) and (2) values of $Y<1$ to were set to 1, for scenario (3) values of $Y<0$ were set to 0. The continuous and mixed outcome data based on (1) and (3) were evaluated using a Bayesian CPM with the properly specified probit and loglog links, respectively. For scenario (2) a logit link Bayesian CPM (which implies $\varepsilon \sim Logistic(0,1)$) was used. In each of the six outcome models, three $\boldsymbol{\alpha}$ concentration hyperparameters ($1/J$, $1/(2+(J/3))$, $1/(0.8+0.35J)$) were considered for $p(\boldsymbol{\pi_{.}}|\boldsymbol{\alpha})$ for a total of 18 model and prior combinations. For each combination $1,000$ datasets were generated for sample sizes $n=25,50,100,200$ and $400$.
 
 For scenario (1), we examine the average percent bias of the posterior median for parameters $\beta_1$ and $\beta_2$ and five $\gamma_j$ parameters corresponding to $y$ values spaced across the range of the data, $\boldsymbol{y}=\{y_1=e^{-1},y_2=e^{-0.33},y_3=e^{0.5},y_4=e^{1.33},y_5=e^2\}$. For the censored outcomes, estimates are only available for the uncensored values of $\boldsymbol{y}$. We also calculate average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, and the conditional median, mean and 20$^{th}$ percentile at $(X_1=1,X_2=1)$ and $(X_1=1,X_2=0)$.
 
-For scenarios (2) and (3), we examine the average bias [change to average percent bias and remove y_2] for $\beta_1$ and $\beta_2$ and five $\gamma_j$ parameters at $\boldsymbol{y}=\{y_1=e^{-0.5},y_2=e^{0},y_3=e^{0.5},y_4=e^{1},y_5=e^{1.5}\}$ for (2) and $\boldsymbol{y}=\{y_1=-0.3,y_2=0,y_3=0.5,y_4=1.5,y_5=2.5\}$ for (3).  We also calculate the average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, and the conditional median, mean 20$^{th}$ percentile, and 80$^{th}$ percentile at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$.
+For scenarios (2) and (3), we examine the average bias [!change to average percent bias and remove y_2] for $\beta_1$ and $\beta_2$ and five $\gamma_j$ parameters at $\boldsymbol{y}=\{y_1=e^{-0.5},y_2=e^{0},y_3=e^{0.5},y_4=e^{1},y_5=e^{1.5}\}$ for (2) and $\boldsymbol{y}=\{y_1=-0.3,y_2=0,y_3=0.5,y_4=1.5,y_5=2.5\}$ for (3).  We also calculate the average percent bias of the conditional CDF for $\boldsymbol{y}$ when $X_1=1$ and $X_2=1$, and the conditional median, mean 20$^{th}$ percentile, and 80$^{th}$ percentile at $(X_1=1,X_2=0)$ and $(X_1=1,X_2=1)$.
 
 ## Case Study
 
 <!-- Use HIV data from Dr. Koethe. Describe background, data and modeling approach -->
 
-The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in Koethe et al. [@koethe_serum_2012; @koethe_metabolic_2015]. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis is to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates: age, sex, race, smoking status, study location and CD4 cell count.
+The data for the case study were collected from 216 HIV-positive adults on antiretroviral therapy in two cohort studies. Further details on the study design and cohorts are provided in Koethe et al. [@koethe_serum_2012; @koethe_metabolic_2015]. Because people living with HIV have increased risk of diabetes and cardiovascular disease, the aim of the analysis was to estimate the association between body mass index (BMI) and several inflammation biomarkers in this population, adjusting for additional covariates: age, sex, race, smoking status, study location and CD4 cell count.
 
-!! edit this paragraph !!
-The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1$\beta$). Both biomarkers are skewed with values censored below a lower limit of detection set to 0. To account for skewness and censoring we fit Bayesian CPM models using logit, probit, and loglog link functions, noninformative $\beta$ priors and a concentration parameter of $\alpha=1/n$ for the Dirichlet distribution to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
+The biomarkers of interest are Interleukin 6 (IL-6) and Interleukin 1 beta (IL-1$\beta$). Both biomarkers are skewed with values censored below the lower limit of detection set to 0. To account for skewness and censoring we fit Bayesian CPM models using logit, probit, and loglog link functions, noninformative $\beta$ priors and a concentration parameter of either $\boldsymbol{\alpha}=1/J$ or $\boldsymbol{\alpha}=1/(0.8+0.35J)$ for the Dirichlet distribution to estimate the association between BMI and the conditional mean, median, and 90th quantile of each biomarker.
 
 # Results
 
@@ -337,24 +331,28 @@ knitr::include_graphics(file.path(wd,"fig","sim_MCMC_sample_times.png"))
 
 ## Case Study
 
-For each of the biomarker outcomes four model specifications were fit: probit link with $\boldsymbol{\alpha}=1/J$, probit link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$,
-logit link with $\boldsymbol{\alpha}=1/J$, and logit link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$. Each model sampled from 2 chains with 2000 warmup iterations and 4000 total iterations to produce 4000 posterior draws for each parameter. [add adapt_delta set to 0.95?]. For all the biomarker outcome models considered, all $\hat{R}$ values were $<1.01$ and traceplots (not shown, add to supp??) indicated no problems with mixing or stationarity. Table \ref{tab:elpdtab} shows the difference in ELPD for the models for biomarker IL-6 and IL-1-$\beta$, respectively. Based on the difference in ELPD, the model with  logit link and $\boldsymbol{\alpha}=1/J$ was used for the IL-6 outcome and the model with probit link and $\boldsymbol{\alpha}=1/(0.8+0.35J)$ was used for the IL-1-$\beta$ outcome.
+For each of the biomarker outcomes six model specifications were fit: probit, logit, or loglog link with $\boldsymbol{\alpha}=1/(0.8+0.35J)$ or $\boldsymbol{\alpha}=1/(0.8+0.35J)$. Each model sampled from 2 chains with 2000 warmup iterations and 4000 total iterations to produce 4000 posterior draws for each parameter. [!add adapt_delta set to 0.95?]. For all the biomarker outcome models considered, all $\hat{R}$ values were $<1.01$ and traceplots indicated no issues with mixing or stationarity. Table \ref{tab:elpdtab} shows the difference in ELPD for the models for biomarker IL-6 and IL-1-$\beta$, respectively. Based on the difference in ELPD, the model with loglog link and $\boldsymbol{\alpha}=1/(0.8+0.35J)$ was used for the both the IL-6 and IL-1-$\beta$ outcome, however the top several models all had similar elpd. 
 
 ```{r elpd, include=FALSE}
 rnd<-2
-elpdtab_il6 <- data.frame(model=c("logit link, $\\boldsymbol{\\alpha}=1/J$",
+elpdtab_il6 <- data.frame(model=c("loglog link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
+                                  "logit link, $\\boldsymbol{\\alpha}=1/J$",
                                   "probit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
-                                  "logit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$", 
+                                  "logit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
+                                  "loglog link, $\\boldsymbol{\\alpha}=1/J$",
                                   "probit link, $\\boldsymbol{\\alpha}=1/J$"),
-                      elpd_diff=round(c(0.0000, -0.0529, -3.0265, -5.4628),rnd),
-                      se_diff=round(c(0.0000, 5.4691, 4.8201, 5.3165),rnd))
+                      elpd_diff=round(c(0.000000, -1.936403, -1.989351, -4.962990, -7.157252, -7.399235 ),rnd),
+                      se_diff=round(c(0.000000, 6.654598, 6.635228, 6.683155, 5.376806, 6.867758),rnd))
 
-elpdtab_il1beta <- data.frame(model=c("probit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
+
+elpdtab_il1beta <- data.frame(model=c("loglog link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
+                                      "probit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
                                       "logit link, $\\boldsymbol{\\alpha}=1/(0.8+0.35J)$",
                                       "probit link, $\\boldsymbol{\\alpha}=1/J$",
+                                      "loglog link, $\\boldsymbol{\\alpha}=1/J$",
                                       "logit link, $\\boldsymbol{\\alpha}=1/J$"),
-                      elpd_diff=round(c(0.000000, -3.633089, -4.438738, -8.881518),rnd),
-                      se_diff=round(c(0.000000, 4.778736, 3.601179, 4.227415),rnd))
+                      elpd_diff=round(c(0.000000,  -2.815246,  -6.448335,  -7.253985, -10.812461, -11.696764),rnd),
+                      se_diff=round(c(0.000000, 4.802467, 5.255710, 4.849894, 4.028212, 4.613564),rnd))
 
 colnames(elpdtab_il6) <- colnames(elpdtab_il1beta) <- c("Model", "ELPD diff.", "SE diff.")
 
@@ -365,18 +363,15 @@ colnames(elpdtab)<- c("Model", "ELPD diff.", "SE diff.")
 
 ```{r elpdtab, results = 'asis'}
 kable(elpdtab, caption="Difference in expected log pointwise predictive density for IL-6 models and IL-1-$\\beta$ models", escape=FALSE, booktabs =T) %>% #kable_styling(latex_options =c("hold_position")) %>% 
-  pack_rows("IL-6",1,4) %>% 
-  pack_rows("IL-1-$\\\\beta$",5,8,escape=FALSE) 
+  pack_rows("IL-6",1,6) %>% 
+  pack_rows("IL-1-$\\\\beta$",7,12,escape=FALSE) 
 ```
 
 ### IL-6 biomarker
 
-<!--
-MCMC checks - traceplots and Rhat (supp) 
-model comparison using loo (supp)
--->
+<!-- MCMC checks - traceplots and Rhat (supp) ? -->
 
-A graphical check of 10 draws from the posterior predictive distribution compared to the observed IL-6 distribution (fig. \@ref(fig:il6-postpred)) does not reveal any serious model misfit. In addition, there are no major discrepancies between the model and data based on the posterior predictive p-values for the test quantities variance, skewness, and proportion of observations censored below the lower limit of detection (table \ref{tab:ppptab1}). 
+A graphical check of 10 draws from the posterior predictive distribution compared to the observed IL-6 distribution (fig. \@ref(fig:il6-postpred)) does not indicate any serious model misfit. In addition, there are no major discrepancies between the model and data based on the posterior predictive p-values for the test quantities variance, skewness, and proportion of observations censored below the lower limit of detection (table \ref{tab:ppptab1}). 
 
 ```{r il6-postpred, fig.cap='Observed and posterior predictive distribution for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_postpred.png"))
@@ -385,7 +380,7 @@ knitr::include_graphics(file.path(wd,"fig","il_6_postpred.png"))
 ```{r ppp-il6, include=FALSE}
 rnd<-2
 ppp_il6 <- data.frame(stat=c("variance","skewness","proportion censored"),
-                      ppp=round(c(0.4053333, 0.3866667, 0.3946667),rnd))
+                      ppp=round(c(0.4266667, 0.3373333, 0.5280000),rnd))
 colnames(ppp_il6) <- c("Test quantity","Posterior predictive p-value")
 ```
 
@@ -393,7 +388,7 @@ colnames(ppp_il6) <- c("Test quantity","Posterior predictive p-value")
 kable(ppp_il6, caption="Posterior predictive p-values for IL-6 model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
 ```
 
-The median posterior estimates of the covariate parameters along with 50\% and 90\% credible intervals for the IL-6 model are shown in figure \@ref(fig:il6-par). Age, BMI, and smoking are positively associated with increased IL-6, while CD4 count, male gender, and study cohort are negatively associated with IL-6. Figure \@ref(fig:il6-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-6 values (fig. \@ref(fig:il-6-trans-1)) gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are shown for reference.
+The median posterior estimates of the covariate parameters along with 50\% and 90\% credible intervals for the IL-6 model are shown in figure \@ref(fig:il6-par). Age, BMI, and smoking are positively associated with increased IL-6, while CD4 count, male gender, and study cohort are negatively associated with IL-6. Figure \@ref(fig:il6-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-6 values (fig. \@ref(fig:il-6-trans-1)) gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are also shown for reference. 
 
 ```{r il6-par, fig.cap='Posterior $\\beta$ estimates for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
@@ -419,12 +414,9 @@ knitr::include_graphics(file.path(wd,"fig","il_6_bmi.png"))
 
 ### IL-1-$\beta$ biomarker
 
-<!--
-MCMC checks - traceplots and Rhat (supp) 
-model comparison using loo (supp)
--->
+<!-- MCMC checks - traceplots and Rhat (supp) ? -->
 
-As with the IL-6 biomarker, a plot comparing the observed IL-1-$\beta$ distribution to draws from the posterior predictive distribution (fig. \@ref(fig:il-1-beta-postpred)) does not reveal any serious model misfit. The posterior predictive p-values for variance, skewness, and proportion of observations below the lower limit of detection are shown in table \ref{tab:ppptab2}. There is no indication of serious discrepancy between the model and data for variance and proportion of censored observations. The posterior predicive p-value for skewness is more extreme than the other test quantities indicating a moderate level of model misfit for this statistic. Given the high level of right-skewness for IL-1-$\beta$, this degree of misfit seems reasonable.
+As with the IL-6 biomarker, a plot comparing the observed IL-1-$\beta$ distribution to draws from the posterior predictive distribution (fig. \@ref(fig:il-1-beta-postpred)) does not reveal any serious model misfit. The posterior predictive p-values for variance, skewness, and proportion of observations below the lower limit of detection are shown in table \ref{tab:ppptab2}. There is no indication of serious discrepancy between the model and data for variance and proportion of censored observations. The posterior predicive p-value for skewness is more extreme than the other test quantities indicating a moderate degree of misfit for this statistic. This seems reasonable given the high level of right-skewness for IL-1-$\beta$, .
 
 ```{r il-1-beta-postpred, fig.cap='Observed and posterior predictive distribution for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_postpred.png"))
@@ -433,7 +425,7 @@ knitr::include_graphics(file.path(wd,"fig","il_1_beta_postpred.png"))
 ```{r ppp-il-1-beta, include=FALSE}
 rnd<-2
 ppp_il1beta <- data.frame(stat=c("variance","skewness","proportion censored"),
-                      ppp=round(c(0.4240000, 0.1213333, 0.4893333),rnd))
+                      ppp=round(c(0.3813333, 0.1453333, 0.6293333),rnd))
 colnames(ppp_il1beta) <- c("Test quantity","Posterior predictive p-value")
 ```
 
@@ -441,7 +433,7 @@ colnames(ppp_il1beta) <- c("Test quantity","Posterior predictive p-value")
 kable(ppp_il1beta, caption="Posterior predictive p-values for IL-1-$\\beta$ model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
 ```
 
-The median posterior estimates of the covariate parameters along with 50\% and 90\% credible intervals for the IL-1-$\beta$ model are shown in \@ref(fig:il-1-beta-par). In contrast to IL-6, there is little association between any of the covariates and IL-1-$\beta$ level. Figure \@ref(fig:il-1-beta-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-1-$\beta$ values gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are shown for reference.
+The median posterior estimates of the covariate parameters along with 50\% and 90\% credible intervals for the IL-1-$\beta$ model are shown in \@ref(fig:il-1-beta-par). In contrast to IL-6, there is little association between any of the covariates (except study cohort) and IL-1-$\beta$ level. Figure \@ref(fig:il-1-beta-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-1-$\beta$ values gives the estimated transformation, $H$. The $\log$ and square-root transformation, which are often used for right-skewed data, are shown for reference.
 
 ```{r il-1-beta-par, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
@@ -498,9 +490,6 @@ Bayesian CPMs are a versatile modeling approach with many advantages:
 - can be implemented within framework of traditional ordinal regression with minimal modifications
 
 ## Limitations
-
-
-
 
 - The number of distinct outcome values must be known *a priori*, that is we condition on $J$ categories. In practice, the number of distinct continuous outcome values is unlikely to be known before data collection, so this formulation violates the principle that the prior should be specified without reference to the observed data. For this same reason, the model cannot accomodate new observations so is not useful for Bayesian updating or adaptive designs. In other words, once the initial prior is set the posterior from an initial model cannot serve as the prior for a model with additional data points because there is no way to add categories. <!-- Some discussion of extensions using  e.g. Dirichlet process mixture or Polya trees (ref semiparameteric surv. analysis papers?) -->
 - The choice of link function, and the implied error distribution on the scale of the untransformed data is also assumed to be known. As was seen in the simulations, misspecification of the link function can lead to large bias.
