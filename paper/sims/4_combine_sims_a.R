@@ -263,37 +263,6 @@ cens_plt_dat <- cens_dat %>%
 #! nlabs <- c("average bias of \nposterior median (%)","average bias of \nposterior se (%)")
 #! names(nlabs)<-c("bias.est","bias.se")
 
-pltw<-10; plth<-5; atxtsz<-9; fctsiz<-13
-
-# full outcome plot
-full_plt_dat %>% 
-  ggplot(aes(x=value,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ name,labeller = labeller(name=label_parsed))+
-  xlab("average percent bias of posterior median")+ylab("sample size")+
-    theme(axis.title.x = element_text(size=fctsiz),
-          axis.title.y = element_text(size=fctsiz),
-          axis.text =  element_text(size=atxtsz),
-          strip.text = element_text(size=fctsiz),
-          strip.text.y = element_text(angle=0))
-
-ggsave(file.path(figdir,"sim_a_pars_full.png"),width=pltw,height=plth)
-
-# censored outcome plot
-cens_plt_dat %>% 
-  ggplot(aes(x=value,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ name,labeller = labeller(name=label_parsed))+
-  xlab("average percent bias of posterior median")+ylab("sample size")+
-  theme(axis.title.x = element_text(size=fctsiz),
-        axis.title.y = element_text(size=fctsiz),
-        axis.text =  element_text(size=atxtsz),
-        strip.text = element_text(size=fctsiz),
-        strip.text.y = element_text(angle=0))
-
-ggsave(file.path(figdir,"sim_a_pars_cens.png"),width=pltw,height=plth)
-
-
 #combined plot
 pltw<-10; plth<-7; atxtsz<-9; fctsiz<-13
 

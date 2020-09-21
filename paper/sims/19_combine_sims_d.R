@@ -333,7 +333,7 @@ return(mrg_df)
 
 ## function to summarize gammas
 
-# pct bias doesn't make sense when denom is 0, show bias
+#! pct bias doesn't make sense when denom is 0, show bias or remove
 
 sim_gamma_summ <- function(result){
   
@@ -585,48 +585,11 @@ pltw<-10; plth<-5; atxtsz<-9; fctsiz<-13
 
 ### Betas & Gammas ###
 
-# full outcome plot
-bind_rows(full_beta_sim_dat,full_gamma_sim_dat) %>% 
-  mutate(par=case_when(
-    par == 'b[1]' ~ "beta[1]",
-    par == 'b[2]' ~ "beta[2]",
-    par == 'gamma[y1]' ~ "gamma[y[1]]",
-    par == 'gamma[y2]' ~ "gamma[y[2]]",
-    par == 'gamma[y3]' ~ "gamma[y[3]]",
-    par == 'gamma[y4]' ~ "gamma[y[4]]",
-    par == 'gamma[y5]' ~ "gamma[y[5]]"
-  )) %>% ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75) +
-  facet_grid(. ~ par,labeller = labeller(par=label_parsed)) +
-  xlab("average bias of posterior parameters") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_pars_full.png"),width=pltw,height=plth)
-
-# censored outcome plot
-bind_rows(cens_beta_sim_dat,cens_gamma_sim_dat) %>% 
-  mutate(par=case_when(
-    par == 'b[1]' ~ "beta[1]",
-    par == 'b[2]' ~ "beta[2]",
-    par == 'gamma[y1]' ~ "gamma[y[1]]",
-    par == 'gamma[y2]' ~ "gamma[y[2]]",
-    par == 'gamma[y3]' ~ "gamma[y[3]]",
-    par == 'gamma[y4]' ~ "gamma[y[4]]",
-    par == 'gamma[y5]' ~ "gamma[y[5]]"
-  )) %>% 
-  filter(!is.na(avg.bias)) %>% 
-  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75) +
-  facet_grid(. ~ par,drop=TRUE,labeller = labeller(par=label_parsed)) +
-  xlab("average bias of posterior parameters") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_pars_cens.png"),width=pltw,height=plth)
-
 #combined plot
 full_par<-bind_rows(full_beta_sim_dat,full_gamma_sim_dat) %>% 
   mutate(outcome="uncensored")
 cens_par<-bind_rows(cens_beta_sim_dat,cens_gamma_sim_dat) %>% 
   mutate(outcome="censored")
-
 
 pltw<-10; plth<-7; atxtsz<-9; fctsiz<-13
 
@@ -642,12 +605,14 @@ rbind(full_par,cens_par) %>%
            par == 'gamma[y4]' ~ "gamma[y[4]]",
            par == 'gamma[y5]' ~ "gamma[y[5]]"
          )) %>% 
-  filter(!is.na(avg.bias)) %>% 
-  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
+  # filter(!is.na(avg.bias)) %>% 
+  # ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
+  filter(!is.na(avg.pct.bias)) %>% 
+  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75) +
   facet_grid(outcome ~ par,drop=TRUE,labeller = labeller(par=label_parsed),
              switch="y") +
-  xlab("average bias of posterior parameters") + ylab("sample size") +
+  xlab("average percent bias of posterior parameters") + ylab("sample size") +
   scale_shape_discrete(name=bquote(alpha)) +
   scale_color_discrete(name=bquote(alpha)) +
   theme(axis.title.x = element_text(size=fctsiz),
@@ -660,24 +625,6 @@ ggsave(file.path(figdir,"sim_d_pars.png"),width=pltw,height=plth)
 
 
 ### CDF ###
-
-# full outcome plot
-full_cdf_sim_dat %>% mutate(yin=factor(yin,labels=nlabs)) %>% 
-  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ yin, labeller=labeller(yin=label_parsed))+
-  xlab("average percent bias of posterior conditional CDF") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_cdf_full.png"),width=pltw,height=plth)
-
-# censored outcome plot
-cens_cdf_sim_dat %>% mutate(yin=factor(yin,labels=nlabs[3:5])) %>% 
-  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ yin, labeller=labeller(yin=label_parsed))+
-  xlab("average percent bias of posterior conditional CDF") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_cdf_cens.png"),width=pltw,height=plth)
 
 #combined plot
 pltw<-10; plth<-7; atxtsz<-10; fctsiz<-9
@@ -707,34 +654,6 @@ ggsave(file.path(figdir,"sim_d_cdf.png"),width=pltw,height=plth)
 
 
 ### Mean ###
-
-# full outcome plot
-full_mn_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "E(Y*'|'*~X[1]==1,X[2]==1)",
-                       "E(Y*'|'*~X[1]==1,X[2]==0)")) %>% 
-  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average percent bias of posterior conditional mean") + ylab("sample size")
-
-# +coord_cartesian(xlim=c(-4,4))
-
-ggsave(file.path(figdir,"sim_d_mn_full.png"),width=pltw,height=plth)
-
-# censored outcome plot
-# expected to be biased because of censored y vals, can't really get unbiased est.
-cens_mn_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "E(Y*'|'*~X[1]==1,X[2]==1)",
-                       "E(Y*'|'*~X[1]==1,X[2]==0)")) %>% 
-  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average percent bias of posterior conditional mean") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_mn_cens.png"),width=pltw,height=plth)
-
 
 #combined plot
 pltw<-10; plth<-7; atxtsz<-9; fctsiz<-13
@@ -766,32 +685,6 @@ ggsave(file.path(figdir,"sim_d_mn.png"),width=pltw,height=plth)
 
 ### Median ###
 
-# full outcome plot
-full_med_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "Q^{0.5}*'|'*list(X[1]==1,X[2]==1)",
-                       "Q^{0.5}*'|'*list(X[1]==1,X[2]==0)")) %>% 
-  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average percent bias of posterior conditional median") + ylab("sample size") +
-  coord_cartesian(xlim=c(-7.5,15))
-
-ggsave(file.path(figdir,"sim_d_med_full.png"),width=pltw,height=plth)
-
-# censored outcome plot
-cens_med_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "Q^{0.5}*'|'*list(X[1]==1,X[2]==1)",
-                       "Q^{0.5}*'|'*list(X[1]==1,X[2]==0)")) %>% 
-  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average percent bias of posterior conditional median") + ylab("sample size") +
-  coord_cartesian(xlim=c(-7.5,15))
-
-ggsave(file.path(figdir,"sim_d_med_cens.png"),width=pltw,height=plth)
-
 # combined plot
 full_med_sim_dat %<>% mutate(outcome="uncensored")
 cens_med_sim_dat %<>% mutate(outcome="censored")
@@ -821,33 +714,7 @@ ggsave(file.path(figdir,"sim_d_med.png"),width=pltw,height=plth)
 
 ### 20% quantile ###
 
-# full outcome plot
-full_q20_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==1)",
-                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==0)")) %>%
-  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average bias of posterior conditional 20th percentile") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_q20_full.png"),width=pltw,height=plth)
-
-# censored outcome plot
-# expected to be biased because of censored y vals, can't really get unbiased est.
-cens_q20_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==1)",
-                       "Q^{0.2}*'|'*list(X[1]==1,X[2]==0)")) %>% 
-  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average bias of posterior conditional 20th percentile") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_q20_cens.png"),width=pltw,height=plth)
-
-
-# use avg.bias instead of avg.pct.bias
+# use avg.bias instead of avg.pct.bias?
 #combined plot
 full_q20_sim_dat %<>% mutate(outcome="uncensored")
 cens_q20_sim_dat %<>% mutate(outcome="censored")
@@ -858,11 +725,12 @@ rbind(full_q20_sim_dat,cens_q20_sim_dat) %>%
                        "Q^{0.2}*'|'*list(X[1]==1,X[2]==0)"),
          outcome=factor(outcome,levels=c("uncensored","censored"),
                         labels=c("uncensored Y","censored Y"))) %>%
-  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
+#  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
+  ggplot(aes(x=avg.pct.bias,y=n,col=conc,shape=conc)) +
   geom_point(size=3,alpha=0.75)  +
   facet_grid(outcome ~ ndrow, labeller=labeller(ndrow=label_parsed),
              switch="y")+
-  xlab("average bias of posterior conditional 20th percentile") + 
+  xlab("average percent bias of posterior conditional 20th percentile") + 
   ylab("sample size") +
   scale_shape_discrete(name=bquote(alpha)) +
   scale_color_discrete(name=bquote(alpha)) +
@@ -875,32 +743,6 @@ rbind(full_q20_sim_dat,cens_q20_sim_dat) %>%
 ggsave(file.path(figdir,"sim_d_q20.png"),width=pltw,height=plth)
 
 ### 80% quantile ###
-
-# full outcome plot
-full_q80_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "Q^{0.8}*'|'*list(X[1]==1,X[2]==1)",
-                       "Q^{0.8}*'|'*list(X[1]==1,X[2]==0)")) %>%
-  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average bias of posterior conditional 80th percentile") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_q80_full.png"),width=pltw,height=plth)
-
-# censored outcome plot
-# expected to be biased because of censored y vals, can't really get unbiased est.
-cens_q80_sim_dat %>% 
-  mutate(ndrow=if_else(ndrow==1,
-                       "Q^{0.8}*'|'*list(X[1]==1,X[2]==1)",
-                       "Q^{0.8}*'|'*list(X[1]==1,X[2]==0)")) %>% 
-  ggplot(aes(x=avg.bias,y=n,col=conc,shape=conc)) +
-  geom_point(size=3,alpha=0.75)  +
-  facet_grid(. ~ ndrow, labeller=labeller(ndrow=label_parsed))+
-  xlab("average bias of posterior conditional 80th percentile") + ylab("sample size")
-
-ggsave(file.path(figdir,"sim_d_q80_cens.png"),width=pltw,height=plth)
-
 
 # combined plot
 full_q80_sim_dat %<>% mutate(outcome="uncensored")
