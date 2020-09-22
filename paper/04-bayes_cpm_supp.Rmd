@@ -22,7 +22,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_cdf.png"))
 knitr::include_graphics(file.path(wd,"fig","sim_c_med.png"))
 ```
 
-
+<!--
 ```{r simplt-q80-b, fig.cap="Bias in conditional 80th percentile for simulations using logit link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_c_q80.png"))
 ```
@@ -30,7 +30,7 @@ knitr::include_graphics(file.path(wd,"fig","sim_c_q80.png"))
 ```{r simplt-q80-c, fig.cap="Bias in conditional 80th percentile for simulations using loglog link", fig.align='center', out.width='90%'}
 knitr::include_graphics(file.path(wd,"fig","sim_d_q80.png"))
 ```
-
+-->
 
 ```{r il6-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-6 model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_post_ct.png"))

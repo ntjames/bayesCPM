@@ -1,6 +1,6 @@
 ---
 title: "Bayesian Cumulative Probability Models for Continuous and Mixed Outcomes"
-author: "Nathan T. James, Frank E. Harrell Jr., Bryan E. Shepherd, ..."
+author: "Nathan T. James, Frank E. Harrell Jr., Bryan E. Shepherd"
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 output: 
