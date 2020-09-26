@@ -32,26 +32,9 @@ knitr::include_graphics(file.path(wd,"fig","sim_d_q80.png"))
 ```
 -->
 
-```{r il6-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-6 model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_6_post_ct.png"))
-```
-
-```{r il-6-trans-1, fig.cap='Estimated transformation for IL-6 model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_6_trans.png"))
-```
-
 <!--
 ```{r il-6-trans-2, fig.cap='Estimated transformation for IL-6 model using uncentered covariates', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_trans_nocnt.png"))
 ```
 -->
-
-
-```{r il-1-beta-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_1_beta_post_ct.png"))
-```
-
-```{r il-1-beta-trans, fig.cap='Estimated transformation for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_1_beta_trans.png"))
-```
 
