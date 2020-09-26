@@ -8,7 +8,8 @@
 <!-- badges: end -->
 
 This package includes functions to fit a Bayesian Cumulative Probability
-Model (CPM) using the R interface to Stan.
+Model (CPM) using the R interface to Stan and to calculate several posterior
+quantities of interest.
 
 ## Installation
 
