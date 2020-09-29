@@ -83,7 +83,7 @@ DeYoreo & Kottas [@deyoreo_bayesian_2020] explore Bayesian nonparametric density
 -->
 
 In this paper, we develop Bayesian CPMs for continuous and mixed outcomes.
-They are distinguished from other Bayesian semiparametric approaches by their use of a simpler parametric prior specification. Bayesian CPMs inherit many of the properties of CPMs estimated using NPMLE and have additional benefits: interpretation using posterior probabilities, inference <!--when the log-likelihood is not well-approximated by a quadratic function [!! example where this is the case in simulations?]-->
+They are distinguished from other Bayesian semiparametric approaches by their use of a simpler parametric prior specification. Bayesian CPMs inherit many of the properties of CPMs estimated using NPMLE and have additional benefits: interpretation using posterior probabilities, inference <!--when the log-likelihood is not well-approximated by a quadratic function [add example where this is the case in simulations?]-->
 for quantities of interest without using asymptotic approximations, and the ability to incorporate available prior information.
 A primary challenge when implementing Bayesian CPMs for continuous outcomes is the specification of priors for the intercept parameters used to estimate $H(\cdot)$ and we describe several proposed strategies. Through simulations, we explore characteristics of Bayesian CPMs using several model specifications and prior combinations<!--and make comparisons to CPM estimates using NPMLE and Bayesian nonparametric (BNP) regression, another popular approach for flexibly modeling outcomes-->. A case study of HIV biomarker data with outcomes that are both right-skewed and censored at a lower limit of detection provides a real-world example. We conclude with a discussion -- including advantages, current limitations, and potential extensions -- and provide some recommendations for using Bayesian CPMs.
 
@@ -294,7 +294,7 @@ The simulation results for the conditional posterior median in scenario (1) are 
 Figure \@ref(fig:simplt-q20-a) presents the results for the posterior conditional 20th percentile in scenario (1). The uncensored outcome estimates are quite biased (between 25\% and 90\%) for the smaller sample sizes. The magnitude of the bias varies based on the values of the conditioning variables, $X_1$ and $X_2$, with larger bias when the conditional distribution is further from $\beta_1 = \beta_2 = 0$. The estimates of the conditional 20th percentile for the censored outcome in scenario (1) show a similar effect as the censored outcome. When $(X_1=1,X_2=1)$ the true conditional $Q^{0.2}$ falls below the censoring threshold so the estimated $Q^{0.2}$ is the value assigned to the censored category. This value is biased even with large sample size. For scenario (2) the estimates of the posterior conditional 20th percentile with the uncensored outcome are again positively biased for the smaller sample sizes with more bias for the $\boldsymbol{\alpha}=1/J$ concentration prior (figure \@ref(fig:simplt-q20-b)). The estimates of the conditional 20th percentile for the censored outcome show a similar pattern as the uncensored outcome. Under scenario (3) the uncensored outcome estimates of the conditional 20th percentile have reasonably small average percent bias for all the priors and sample sizes except at $(X_1=1,X_2=1)$ when $n=25$. Similar to scanerio (1), the censored outcome estimates show small average percent bias at $(X_1=1,X_2=0)$, but very large average percent bias at $(X_1=1,X_2=1)$ (fig. \@ref(fig:simplt-q20-c)).
 
 <!--
-Figure \@ref(fig:simplt-q80-b) presents the estimates of the conditional 80th percentile for the uncensored and censored outcomes in scenario 2. Similar to the 20th percentile estimates, the estimates are positively biased for smaller sample sizes. But in contrast, the estimates using the $\alpha=1/J$ concentration prior are *less* biased compared to the other priors. Figure \@ref(fig:simplt-q80-c) presents the estimates of the conditional 80th percentile for the uncensored and censored outcomes in scenario 3 (avg bias instead of pct bias - check!!).
+Figure \@ref(fig:simplt-q80-b) presents the estimates of the conditional 80th percentile for the uncensored and censored outcomes in scenario 2. Similar to the 20th percentile estimates, the estimates are positively biased for smaller sample sizes. But in contrast, the estimates using the $\alpha=1/J$ concentration prior are *less* biased compared to the other priors. Figure \@ref(fig:simplt-q80-c) presents the estimates of the conditional 80th percentile for the uncensored and censored outcomes in scenario 3 (avg bias instead of pct bias - check!).
 -->
 
 ```{r simplt-med-1, fig.cap="Bias in conditional median for simulations using probit link", fig.align='center', out.width='90%'}
@@ -384,17 +384,23 @@ colnames(ppp_il6) <- c("Test quantity","Posterior predictive p-value")
 kable(ppp_il6, caption="Posterior predictive p-values for IL-6 model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
 ```
 
-The median posterior estimates of the covariate parameters along with 50\% and 95\% credible intervals for the IL-6 model are shown in figure \@ref(fig:il6-par). Age and BMI are positively associated with increased IL-6, while CD4 count, male gender, and the Lipoatrophy and Neuropathy cohort are negatively associated with IL-6. The relationship between IL-6 and smoking and nonwhite race is more equivocal. Figure \@ref(fig:il6-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-6 values (fig. \@ref(fig:il-6-trans-1)) gives the estimated transformation, $\hat{H}$.
+The median posterior estimates of the covariate parameters along with 50\% and 95\% credible intervals for the IL-6 model are shown in figure <!--\@ref(fig:il6-par)-->\@ref(fig:il6-par00)a. Age and BMI are positively associated with increased IL-6, while CD4 count, male gender, and the Lipoatrophy and Neuropathy cohort are negatively associated with IL-6. The relationship between IL-6 and smoking and nonwhite race is more equivocal. Figure <!--\@ref(fig:il6-par-ct)-->\@ref(fig:il6-par00)b shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-6 values (fig. \@ref(fig:il-6-trans-1)) gives the estimated transformation, $\hat{H}$.
 
-```{r il6-par, fig.cap='Posterior $\\beta$ estimates and credible intervals for IL-6 model', fig.align='center', out.width='75%'}
+```{r il6-par00, fig.cap='(a) Posterior $\\beta$ estimates and (b) $\\gamma$ estimates with 50\\% and 95\\% credible intervals for IL-6 model', fig.show='hold', fig.align='center', out.width='49%'}
+knitr::include_graphics(c(file.path(wd,"fig","il_6_post.png"),
+                          file.path(wd,"fig","il_6_post_ct.png")))
+```
+<!--
+```{r il6-par, fig.cap='Posterior $\\beta$ estimates and credible intervals for IL-6 model', fig.align='center', out.width='75%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","il_6_post.png"))
 ```
-
+-->
 The estimated relationship between BMI and the posterior conditional mean, median, and 90th percentile of IL-6 (for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort) is shown in figure \@ref(fig:il6-bmi) along with 95% credible intervals. Higher BMI is associated with higher IL-6.
-
-```{r il6-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-6 model', fig.align='center', out.width='75%'}
+<!--
+```{r il6-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-6 model', fig.align='center', out.width='75%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","il_6_post_ct.png"))
 ```
+-->
 
 ```{r il-6-trans-1, fig.cap='Estimated transformation for IL-6 model. The log and square-root transformation are also shown for reference.', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_6_trans.png"))
@@ -425,18 +431,26 @@ colnames(ppp_il1beta) <- c("Test quantity","Posterior predictive p-value")
 kable(ppp_il1beta, caption="Posterior predictive p-values for IL-1-$\\beta$ model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
 ```
 
-The median posterior estimates of the covariate parameters along with 50\% and 95\% credible intervals for the IL-1-$\beta$ model are shown in \@ref(fig:il-1-beta-par). In contrast to IL-6, there is weak association between all covariates (except study cohort) and IL-1-$\beta$ level. Figure \@ref(fig:il-1-beta-par-ct) shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-1-$\beta$ values gives the estimated transformation, $\hat{H}$ (fig. \@ref(fig:il-1-beta-trans)). 
+The median posterior estimates of the covariate parameters along with 50\% and 95\% credible intervals for the IL-1-$\beta$ model are shown in \@ref(fig:il-1-beta-par00)a <!--\@ref(fig:il-1-beta-par)-->. In contrast to IL-6, there is weak association between all covariates (except study cohort) and IL-1-$\beta$ level. Figure \@ref(fig:il-1-beta-par00)b<!--\@ref(fig:il-1-beta-par-ct)--> shows the posterior median $\gamma$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\gamma$ estimates against the observed IL-1-$\beta$ values gives the estimated transformation, $\hat{H}$ (fig. \@ref(fig:il-1-beta-trans)). 
 
-```{r il-1-beta-par, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
+```{r il-1-beta-par00, fig.cap='(a) Posterior $\\beta$ estimates and (b) $\\gamma$ estimates with 50\\% and 95\\% credible intervals for IL-1-$\\beta$ model', fig.show='hold', fig.align='center', out.width='49%'}
+knitr::include_graphics(c(file.path(wd,"fig","il_1_beta_post.png"),
+                          file.path(wd,"fig","il_1_beta_post_ct.png")))
 ```
 
+<!--
+```{r il-1-beta-par, fig.cap='Posterior $\\beta$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%', eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","il_1_beta_post.png"))
+```
+-->
 
 Figure \@ref(fig:il-1-beta-bmi) displays the estimated relationship between BMI and the posterior conditional mean, median, and 90th percentile of IL-1-$\beta$ (for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort) along with 95% credible intervals. The plot confirms that there is little association between BMI and IL-1-$\beta$.
 
-```{r il-1-beta-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
+<!--
+```{r il-1-beta-par-ct, fig.cap='Posterior $\\gamma$ estimates for IL-1-$\\beta$ model', fig.align='center', out.width='75%', eval=FALSE}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_post_ct.png"))
 ```
+-->
 
 ```{r il-1-beta-trans, fig.cap='Estimated transformation for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
 knitr::include_graphics(file.path(wd,"fig","il_1_beta_trans.png"))
@@ -468,10 +482,10 @@ Although Bayesian CPM models have been frequently applied to ordinal data when t
 
 Our implementation of a Bayesian CPM performed reasonably well for the simple simulation scenarios considered. However, the model can produce very biased estimates 
 for quantiles far from the median and conditional quantities further from the model where $\boldsymbol{X}=0$ and this bias can be exacerbated by censoring<!--because, by design, we make no parametric assumptions that can provide information here-->.
-The model is best suited for cases when the data are fairly dense and are sufficient to describe the posterior CDF well. In our simulations, a sample size of 50 or 100 was required for reasonably unbiased estimates of parameters and other posterior quantities. The choice of Dirichlet prior concentration of magnitude $\approx \frac{1}{J}$ has minimal impact on posterior estimates, except with small sample sizes. Much larger concentration parameters (e.g., $\boldsymbol{\alpha}=1$) may be too informative. <!--Larger concentration parameters will shrink estimates heavily toward intercepts under assumption of equal probability --> <!-- Although the model can be used with mixed continuous/discrete data, care should be exercised when using mixed outcomes or estimating quantities based on the tails of the CDF-->
+The model is best suited for cases when the data are fairly dense and are sufficient to describe the posterior CDF well. In our simulations, a sample size of 50 or 100 was required for reasonably unbiased estimates of parameters and other posterior quantities. The choice of Dirichlet prior concentration of magnitude $\boldsymbol{\alpha} \approx \frac{1}{J}$ has minimal impact on the bias of posterior estimates, except with small sample sizes. Much larger concentration parameters (e.g., $\boldsymbol{\alpha}=1$) may be too informative. <!--Larger concentration parameters will shrink estimates heavily toward intercepts under assumption of equal probability --> <!-- Although the model can be used with mixed continuous/discrete data, care should be exercised when using mixed outcomes or estimating quantities based on the tails of the CDF-->
 As with all Bayesian models estimated with MCMC, checks of model convergence, model fit and the posterior distribution are important. This is especially true when modeling a mixed continuous/discrete or when interest lies in quantities conditional on covariates far from the observed mean values.
 
-Finally, there are several of limitations of the current model that present an opportunity for improvement. First, the number of distinct outcome values must be technically be known *a priori*, that is we condition on $J$ categories. In practice, the number of distinct continuous outcome values is unlikely to be known before data collection, so the prior cannot be specified without reference to the observed data. For the same reason, the model cannot accomodate new observations for an unobserved category; once the initial prior is set, there is no way to add categories and all predictions are assumed to come from one of the original categories. It may be possible to overcome this limitation by substituting the Dirichlet prior for a infinite-dimenisonal Bayesian nonparametric analog, such as a Dirichlet process prior at the expense of additional complexity and computation time. Next, the choice of link function, and the implied error distribution on the scale of the latent untransformed data is also assumed to be known. As was seen in the simulations, misspecification of the link function can lead to bias due to the mismatch between the assumed and latent error. This makes interpretation of the $\beta$ parameter estimates challenging because they are only estimated up to a constant of proportionality. If primary interest is not inference for the parameters, specification of the link could be avoided by either estimating the link nonparametrically [@mallick_bayesian_2003; @song_semiparametric_2012; @tang_semiparametric_2018] or using a more flexible mixture link function [@lang_bayesian_1999].
+Finally, there are several of limitations of the current model that present an opportunity for improvement. First, the number of distinct outcome values is assumed to be known *a priori*, that is we condition on $J$ categories. In practice, the number of distinct continuous outcome values is unlikely to be available before data collection, so the prior cannot be specified without reference to the observed data. Relatedly, because the number of categories is fixed, the model cannot accomodate new observations for an unobserved category; once the initial prior is set, there is no way to add categories and all predictions are assumed to fall into one of the original categories. It may be possible to overcome this limitation by substituting the Dirichlet prior for a infinite-dimensional Bayesian nonparametric analog, such as a Dirichlet process prior at the expense of additional complexity and computation time. Next, the choice of link function, and the implied error distribution on the scale of the latent untransformed data is also assumed to be known. As seen in the simulations, misspecification of the link function can lead to bias due to the mismatch between the assumed and latent error. This makes interpretation of the $\beta$ parameter estimates challenging because they are only estimated up to a constant of proportionality. If primary interest is not inference for the parameters, specification of the link could be avoided by either estimating the link nonparametrically [@mallick_bayesian_2003; @song_semiparametric_2012; @tang_semiparametric_2018] or using a more flexible mixture link function [@lang_bayesian_1999].
 
 
 <!--
