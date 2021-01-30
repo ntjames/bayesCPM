@@ -1,0 +1,24 @@
+\newpage
+
+# Supplemental Material {-}
+
+<!-- https://stackoverflow.com/questions/50223141/rmarkdown-bookdown-separate-figure-numbering-for-supplemental-section -->
+\beginsupplement
+
+```{r simplt-pars-3, fig.cap="Bias in parameters for simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_pars.png"))
+```
+
+
+```{r simplt-cdf-2, fig.cap="Bias in conditional CDF for simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_cdf.png"))
+```
+
+```{r simplt-cdf-3, fig.cap="Bias in conditional CDF for simulations using loglog link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_d_cdf.png"))
+```
+
+```{r simplt-med-2, fig.cap="Bias in conditional median for simulations using logit link", fig.align='center', out.width='90%'}
+knitr::include_graphics(file.path(wd,"fig","sim_c_med.png"))
+```
+
