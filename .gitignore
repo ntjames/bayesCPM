@@ -8,11 +8,15 @@
 /paper/output/
 /paper/zotero_library.bib
 /paper/_main.aux
+/paper/sims/out/
+/blrm_ex/plots_conc_fun/
+/blrm_ex/plots_conc/
 _bookdown_files/
 archive/
 *.rds
 *.zip
-
+*.tar.gz
+*.pdf
 
 # History files
 .Rhistory
