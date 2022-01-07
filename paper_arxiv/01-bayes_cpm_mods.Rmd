@@ -261,14 +261,14 @@ kable(ppp_il6, caption="Posterior predictive p-values for IL-6 model", escape=FA
 The median posterior estimates of the covariate parameters along with 50\% and 95\% credible intervals for the IL-6 model are shown in Figure \@ref(fig:il6-par00)a. Age and BMI are positively associated with increased IL-6, while CD4 count, male gender, and the Lipoatrophy and Neuropathy cohort are negatively associated with IL-6. The relationship between IL-6 and smoking and nonwhite race is more equivocal. Figure \@ref(fig:il6-par00)b shows the posterior median $\boldsymbol{\gamma}$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\boldsymbol{\gamma}$ estimates against the observed IL-6 values (Figure \@ref(fig:il-6-trans-1)) gives the estimated transformation, $\hat{H}$.
 
 ```{r il6-par00, fig.cap='(a) Posterior median $\\boldsymbol{\\beta}$ estimates and (b) posterior median $\\boldsymbol{\\gamma}$ estimates with 50\\% and 95\\% credible intervals for IL-6 model', fig.show='hold', fig.align='center', out.width='49%'}
-knitr::include_graphics(c(file.path(wd,"fig","il_6_post.png"),
+knitr::include_graphics(c(file.path(wd,"fig","il_6_post_v2.png"),
                           file.path(wd,"fig","il_6_post_ct.png")))
 ```
 
 The estimated relationship between BMI and the posterior conditional mean, median, and 90th percentile of IL-6 (for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort) is shown in Figure \@ref(fig:il6-bmi) along with 95% credible intervals. Higher BMI is associated with higher IL-6.
 
-```{r il-6-trans-1, fig.cap='Estimated transformation for IL-6 model. The log and square-root transformation are also shown for reference.', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_6_trans.png"))
+```{r il-6-trans-1, fig.cap='Estimated transformation for IL-6 model', fig.align='center', out.width='75%'}
+knitr::include_graphics(file.path(wd,"fig","il_6_trans_v2.png"))
 ```
 
 ```{r il6-bmi, fig.cap='Difference from mean BMI vs. IL-6 mean, median, and 90th percentile for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort', fig.align='center', out.width='75%'}
@@ -297,14 +297,14 @@ kable(ppp_il1beta, caption="Posterior predictive p-values for IL-1-$\\beta$ mode
 The median posterior estimates of the covariate parameters along with 50\% and 95\% credible intervals for the IL-1-$\beta$ model are shown in \@ref(fig:il-1-beta-par00)a. In contrast to IL-6, there is weak association between all covariates (except study cohort) and IL-1-$\beta$ level. Figure \@ref(fig:il-1-beta-par00)b shows the posterior median $\boldsymbol{\gamma}$ estimates along with the 50\% and 95\% credible intervals. Plotting the $\boldsymbol{\gamma}$ estimates against the observed IL-1-$\beta$ values gives the estimated transformation, $\hat{H}$ (Figure \@ref(fig:il-1-beta-trans)). 
 
 ```{r il-1-beta-par00, fig.cap='(a) Posterior median $\\boldsymbol{\\beta}$ estimates and (b) posterior median $\\boldsymbol{\\gamma}$ estimates with 50\\% and 95\\% credible intervals for IL-1-$\\beta$ model', fig.show='hold', fig.align='center', out.width='49%'}
-knitr::include_graphics(c(file.path(wd,"fig","il_1_beta_post.png"),
+knitr::include_graphics(c(file.path(wd,"fig","il_1_beta_post_v2.png"),
                           file.path(wd,"fig","il_1_beta_post_ct.png")))
 ```
 
 Figure \@ref(fig:il-1-beta-bmi) displays the estimated relationship between BMI and the posterior conditional mean, median, and 90th percentile of IL-1-$\beta$ (for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort) along with 95% credible intervals. The plot confirms that there is little association between BMI and IL-1-$\beta$.
 
 ```{r il-1-beta-trans, fig.cap='Estimated transformation for IL-1-$\\beta$ model', fig.align='center', out.width='75%'}
-knitr::include_graphics(file.path(wd,"fig","il_1_beta_trans.png"))
+knitr::include_graphics(file.path(wd,"fig","il_1_beta_trans_v2.png"))
 ```
 
 ```{r il-1-beta-bmi, fig.cap='Difference from mean BMI vs. IL-1-$\\beta$ mean, median, 90th percentile for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort', fig.align='center', out.width='75%'}

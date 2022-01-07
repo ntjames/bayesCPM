@@ -9,15 +9,13 @@ output:
     theme: paper
 ---
 
-<!-- 
-HIV Biomarker example 
--->
+<!-- HIV Biomarker example -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 rm(list=ls())
-libs <- c("rstan", "brms" ,"dplyr", "stringr", "readr", "tidyr", "magrittr", "bayesCPM","bayesplot","cowplot")
+libs <- c("rstan", "brms" ,"dplyr", "stringr", "readr", "tidyr", "magrittr", "bayesCPM","bayesplot","cowplot","loo")
 invisible(lapply(libs, library, character.only = TRUE))
 
 dir <- file.path("~/Dropbox/njames/school/PhD/orise_ra/bayes_cpm")
@@ -36,7 +34,7 @@ options(mc.cores=parallel::detectCores())
 
 ## HIV example using Stan and linear regression
 
-```{r}
+```{r hiv_dat}
 datdir <- file.path(dir,"data")
 hivdat0 <- read_csv(file.path(datdir,"koethe-biomarker-data.csv"))
 
@@ -143,31 +141,6 @@ brm_post<-as.data.frame(brm_fit_il_6)
 
 ## HIV example using Bayesian CPM model
 
-```{r hiv_stan_dat}
-
-#try different link functions & different conc params
-# 
-# hiv_dat_il_6 <- mkStanDat(hivdat, outcome="il_6", link = 2,
-#                           preds = c("bmi_c", "age_c", "male", "nonwhite",
-#                                  "study.linc", "cd4_100_c", "smoker"))
-# 
-# hiv_dat_il_6_nocnt <- mkStanDat(hivdat, outcome="il_6", link = 2,
-#                           preds = c("bmi", "age", "male", "nonwhite",
-#                                  "study.linc", "cd4", "smoker"))
-# hiv_dat_hscrp <- mkStanDat(hivdat, outcome="hscrp", link = 2,
-#                           preds = c("bmi_c", "age_c", "male", "nonwhite",
-#                                  "study.linc", "cd4_100_c", "smoker"))
-# hiv_dat_il_1_beta <- mkStanDat(hivdat, outcome="il_1_beta", link = 2,
-#                           preds = c("bmi_c", "age_c", "male", "nonwhite",
-#                                  "study.linc", "cd4_100_c", "smoker"))
-# hiv_dat_cd14 <- mkStanDat(hivdat, outcome="cd14", link = 2,
-#                           preds = c("bmi_c", "age_c", "male", "nonwhite",
-#                                  "study.linc", "cd4_100_c", "smoker"))
-# hiv_dat_leptin <- mkStanDat(hivdat, outcome="leptin", link = 2,
-#                           preds = c("bmi_c", "age_c", "male", "nonwhite",
-#                                  "study.linc", "cd4_100_c", "smoker"))
-```
-
 ### IL-6
 
 ```{r il_6_fit}
@@ -178,9 +151,39 @@ fit_il_6_probit <- bayes_cpm(il_6 ~ bmi_c + age_c + male +
                              iter=4000, warmup=2000, chains=2, init="0", 
                              control = list(adapt_delta = 0.95))
 
+fit_il_6_probit2 <- bayes_cpm(il_6 ~ bmi_c + age_c + male + 
+                               nonwhite + study.linc + cd4_100_c + smoker,
+                             data=hivdat, link="probit",
+                             dir_prior_conc = function(n) 1/(0.8 + 0.35*n),
+                             seed=77845,
+                             iter=4000, warmup=2000, chains=2, init="0", 
+                             control = list(adapt_delta = 0.95))
+
 fit_il_6_logit <- bayes_cpm(il_6 ~ bmi_c + age_c + male + 
                               nonwhite + study.linc + cd4_100_c + smoker,
                             data=hivdat, link="logistic", seed=77845,
+                            iter=4000, warmup=2000, chains=2, init="0", 
+                            control = list(adapt_delta = 0.95))
+
+fit_il_6_logit2 <- bayes_cpm(il_6 ~ bmi_c + age_c + male + 
+                              nonwhite + study.linc + cd4_100_c + smoker,
+                            data=hivdat, link="logistic",
+                            dir_prior_conc = function(n) 1/(0.8 + 0.35*n),
+                            seed=77845,
+                            iter=4000, warmup=2000, chains=2, init="0", 
+                            control = list(adapt_delta = 0.95))
+
+fit_il_6_loglog <- bayes_cpm(il_6 ~ bmi_c + age_c + male + 
+                              nonwhite + study.linc + cd4_100_c + smoker,
+                            data=hivdat, link="loglog", seed=77845,
+                            iter=4000, warmup=2000, chains=2, init="0", 
+                            control = list(adapt_delta = 0.95))
+
+fit_il_6_loglog2 <- bayes_cpm(il_6 ~ bmi_c + age_c + male + 
+                              nonwhite + study.linc + cd4_100_c + smoker,
+                            data=hivdat, link="loglog",
+                            dir_prior_conc = function(n) 1/(0.8 + 0.35*n),
+                            seed=77845,
                             iter=4000, warmup=2000, chains=2, init="0", 
                             control = list(adapt_delta = 0.95))
 
@@ -194,18 +197,28 @@ fit_il_6_nocnt <- bayes_cpm(il_6 ~ bmi + age + male + nonwhite + study.linc +
 
 ```{r il_6_mcmc_chk}
 qplot(summary(fit_il_6_probit$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_6_probit2$stanfit)$summary[,"Rhat"])
 qplot(summary(fit_il_6_logit$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_6_logit2$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_6_loglog$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_6_loglog2$stanfit)$summary[,"Rhat"])
 
 main_pars <- c("b[1]","b[2]","b[3]","b[4]","b[5]","b[6]","b[7]")
 main_pars_labs <-c("bmi_c", "age_c", "male", "nonwhite", "study.linc", "cd4_100_c", "smoker")
-main_pars_labs2 <-c("BMI", "Age", "Male", "Nonwhite", "Study.linc", "CD4/100", "Smoker")
+#main_pars_labs2 <-c("BMI", "Age", "Male", "Nonwhite", "Study.linc", "CD4/100", "Smoker")
+main_pars_labs2 <-c("BMI~(per~kg/m^2)", "Age~(per~1~year)", "Male~(vs.~Female)", "Non-white~(vs.~White)", "LiNC~study~(vs.~AIAC~study)", "CD4~(per~100~cells/mm^3)", "Smoker~(vs.~non-smoker)")
+
 
 summary(fit_il_6_probit$stanfit, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
 
 summary(fit_il_6_logit$stanfit, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
 
 rstan::traceplot(fit_il_6_probit$stanfit, pars=main_pars) 
+rstan::traceplot(fit_il_6_probit2$stanfit, pars=main_pars) 
 rstan::traceplot(fit_il_6_logit$stanfit, pars=main_pars) 
+rstan::traceplot(fit_il_6_logit2$stanfit, pars=main_pars) 
+rstan::traceplot(fit_il_6_loglog$stanfit, pars=main_pars) 
+rstan::traceplot(fit_il_6_loglog2$stanfit, pars=main_pars) 
 # https://stackoverflow.com/questions/57411900/changing-the-title-of-individual-plots-within-a-panel-of-traceplots-in-ggplot-st
 ```
 
@@ -214,41 +227,55 @@ rstan::traceplot(fit_il_6_logit$stanfit, pars=main_pars)
 # use updated model w/ output compatible with loo & ppc
 #https://cloud.r-project.org/web/packages/loo/vignettes/loo2-example.html
 
-library(loo)
-
 ll_il6_probit<-extract_log_lik(fit_il_6_probit$stanfit)
+ll_il6_probit2<-extract_log_lik(fit_il_6_probit2$stanfit)
 ll_il6_logit<-extract_log_lik(fit_il_6_logit$stanfit)
+ll_il6_logit2<-extract_log_lik(fit_il_6_logit2$stanfit)
+ll_il6_loglog<-extract_log_lik(fit_il_6_loglog$stanfit)
+ll_il6_loglog2<-extract_log_lik(fit_il_6_loglog2$stanfit)
 
-# logit is preferred model
-loo_compare(loo(ll_il6_logit), loo(ll_il6_probit))
+# loglog w/ 1/(0.8 + 0.35*J) is preferred model
+loo_comp1<-loo_compare(loo(ll_il6_probit), loo(ll_il6_probit2), loo(ll_il6_logit), loo(ll_il6_logit2),
+ loo(ll_il6_loglog), loo(ll_il6_loglog2))
 
-plot(loo(ll_il6_probit))
 plot(loo(ll_il6_logit))
+plot(loo(ll_il6_probit))
 ```
 
 
 ```{r il_6_pars}
-il_6_posta <- as.matrix(fit_il_6_logit$stanfit, pars=main_pars[c(1,2,6)])  %>%
-mcmc_intervals() + scale_y_discrete(labels =main_pars_labs2[c(1,2,6)] )
+# il_6_posta <- as.matrix(fit_il_6_loglog2$stanfit, pars=main_pars[c(1,2,6)])  %>%
+# mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels =main_pars_labs2[c(1,2,6)] )
+# 
+# il_6_postb <- as.matrix(fit_il_6_loglog2$stanfit, pars=main_pars[c(3,4,5,7)])  %>%
+# mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels = main_pars_labs2[c(3,4,5,7)])
+# 
+# plot_grid(il_6_posta,il_6_postb,ncol=1)
+# 
+# ggsave(file.path(figdir,"il_6_post.png"),width=6,height=4)
 
-il_6_postb <- as.matrix(fit_il_6_logit$stanfit, pars=main_pars[c(3,4,5,7)])  %>%
-mcmc_intervals() + scale_y_discrete(labels = main_pars_labs2[c(3,4,5,7)])
 
+il_6_posta <- as.matrix(fit_il_6_loglog2$stanfit, pars=main_pars[c(1,2,6)]) %>%
+mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels =parse(text=main_pars_labs2[c(1,2,6)]))
+
+il_6_postb <- as.matrix(fit_il_6_loglog2$stanfit, pars=main_pars[c(3,4,5,7)])  %>%
+mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels = parse(text=main_pars_labs2[c(3,4,5,7)]))
 
 plot_grid(il_6_posta,il_6_postb,ncol=1)
 
-ggsave(file.path(figdir,"il_6_post.png"),width=6,height=4)
+ggsave(file.path(figdir,"il_6_post_v2.png"),width=6,height=4)
 
-stan_plot(fit_il_6_logit$stanfit, pars=main_pars) + 
-  scale_y_discrete(breaks=paste0("b[",1:7,"]"),
-        labels=letters[1:7])
+
+# stan_plot(fit_il_6_loglog2$stanfit, pars=main_pars) + 
+#   scale_y_discrete(breaks=paste0("b[",1:7,"]"),
+#         labels=letters[1:7])
 
 # cutpoints
-il_6_ct_plt<-plot(fit_il_6_logit$stanfit,pars=c(paste0("cutpoints[",1:173,"]")),
+il_6_ct_plt<-plot(fit_il_6_loglog2$stanfit,pars=c(paste0("cutpoints[",1:173,"]")),
                   ci_level = 0.5)
 
-il_6_ct_plt$data %>% mutate(y_rev=rev(y)) %>% 
-  ggplot(aes(x=y_rev,y=m)) + geom_point()
+# il_6_ct_plt$data %>% mutate(y_rev=rev(y)) %>% 
+#   ggplot(aes(x=y_rev,y=m)) + geom_point()
 
 il_6_ct_plt$data %>% mutate(y_rev=rev(y)) %>% 
   ggplot(aes(x=y_rev,y=m)) + geom_line(aes(color='median')) +
@@ -271,35 +298,35 @@ ggsave(file.path(figdir,"il_6_post_ct.png"),width=6,height=4)
 #         legend.text = element_text(size=fctsiz))
 
 if(0){
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",1:20,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",21:40,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",41:60,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",61:80,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",81:100,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",101:120,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",121:140,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",141:160,"]")))
-traceplot(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",161:173,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",1:20,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",21:40,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",41:60,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",61:80,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",81:100,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",101:120,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",121:140,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",141:160,"]")))
+traceplot(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",161:173,"]")))
 }
 
 # cell probs
 if(0){
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",1:20,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",21:40,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",41:60,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",61:80,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",81:100,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",101:120,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",121:140,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",141:160,"]")))
-plot(fit_il_6_logit$stanfit,pars=c(paste0("pi[",161:174,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",1:20,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",21:40,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",41:60,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",61:80,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",81:100,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",101:120,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",121:140,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",141:160,"]")))
+plot(fit_il_6_loglog2$stanfit,pars=c(paste0("pi[",161:174,"]")))
 }
 
 ```
 
 ```{r il_6_postpred}
 dr <- 750
-il_6_ppd <- getPostPred(fit_il_6_logit,newdata=hivdat[,main_pars_labs],draws=dr)
+il_6_ppd <- getPostPred(fit_il_6_loglog2,newdata=hivdat[,main_pars_labs],draws=dr)
 
 il_6_ppd_df <- il_6_ppd %>% as_tibble() %>% mutate(samp=1:n()) %>% 
   rename_with(~ gsub("V", "", .x,)) %>% pivot_longer(1:dr,names_to="rep")
@@ -310,7 +337,7 @@ y_reps_il_6 <- rbind(il_6_ppd_df,il_6_dat_df) %>% mutate(rep=as.numeric(rep))
 
 ndr_plt <- 10
 y_reps_il_6 %>% filter(rep<=ndr_plt|rep>998) %>% ggplot(aes(x=value, group=rep, col = if_else(rep>998,'y','yrep'))) + geom_density() + 
-scale_colour_manual(name = 'ppc', values = setNames(c('blue','lightblue'), c('y', 'yrep')))
+scale_color_manual(name = '', values = setNames(c('blue','lightblue'), c('y', 'yrep'))) + ylab('') + xlab('IL-6')
 
 ggsave(file.path(figdir,"il_6_postpred.png"),width=6,height=4)
 ```
@@ -344,19 +371,20 @@ ppp_cens_il_6 <- y_reps_il_6 %>% group_by(rep) %>%
          pp_ind=ppp_v>true_v) %>% 
   filter(rep<998) %>% pull(pp_ind) %>% mean()
 
+c(ppp_var_il_6,ppp_skew_il_6,ppp_cens_il_6)
 ```
 
 
 
 <!-- estimated transformation -->
 ```{r il_6_trans}
-cp_il_6 <- summary(fit_il_6_logit$stanfit, pars=c(paste0("cutpoints[",1:173,"]")))$summary[,"50%"]
+cp_il_6 <- summary(fit_il_6_loglog2$stanfit, pars=c(paste0("cutpoints[",1:173,"]")))$summary[,"50%"]
 
-cp_il_6_nocnt <- summary(fit_il_6_nocnt$stanfit, pars=c(paste0("cutpoints[",1:173,"]")))$summary[,"50%"]
+# cp_il_6_nocnt <- summary(fit_il_6_nocnt$stanfit, pars=c(paste0("cutpoints[",1:173,"]")))$summary[,"50%"]
 
-il_6_trans_dat <- cbind(fit_il_6_logit$standata$truey0[2:174], cp_il_6) %>% as.data.frame() %>% rename(`IL-6`=V1)
+il_6_trans_dat <- cbind(fit_il_6_loglog2$standata$truey0[2:174], cp_il_6) %>% as.data.frame() %>% rename(`IL-6`=V1)
 
-il_6_trans_dat_nocnt <- cbind(fit_il_6_nocnt$standata$truey0[2:174], cp_il_6_nocnt) %>% as.data.frame() %>% rename(`IL-6`=V1)
+# il_6_trans_dat_nocnt <- cbind(fit_il_6_nocnt$standata$truey0[2:174], cp_il_6_nocnt) %>% as.data.frame() %>% rename(`IL-6`=V1)
 
 qplot(hivdat0$il_6,bins=35)+xlab("IL-6") + 
   annotate(geom="text", x=18, y=32, 
@@ -370,25 +398,39 @@ ggplot(data=il_6_trans_dat, aes(x=`IL-6`,y=cp_il_6, color="est")) + geom_step() 
                        values = c("black", "blue", "red"), # Color specification
                        labels = c("Bayes CPM estimate","log", "sqrt"))
   
+# take log transform and then is distributed as Gumbel ?
+# take sqrt transform and then is distributed as Gumbel ?
+
 ggsave(file.path(figdir,"il_6_trans.png"),width=6,height=4)
 
 
-ggplot(data=il_6_trans_dat_nocnt, aes(x=`IL-6`,y=cp_il_6_nocnt, color="est")) + geom_step() + ylab(expression(gamma[j])) + xlim(c(1,10)) + 
-  stat_function(fun=log, mapping = aes(color = "log")) + 
-  stat_function(fun=sqrt, mapping = aes(color = "sqrt")) +
-  scale_color_manual(name = "transformation",
-                       values = c("black", "blue", "red"), # Color specification
-                       labels = c("Bayes CPM estimate","log", "sqrt"))
+ggplot(data=il_6_trans_dat, aes(x=`IL-6`,y=cp_il_6)) + geom_step() + ylab(expression(gamma[j])) + xlim(c(1,15)) + ylim(c(-2.5,4)) #+ 
+ # scale_color_manual(name = "transformation",
+ #                      values = c("black", "blue", "red"), # Color specification
+ #                      labels = c("Bayes CPM estimate","log", "sqrt"))
+  
+# take log transform and then is distributed as Gumbel ?
+# take sqrt transform and then is distributed as Gumbel ?
 
-ggsave(file.path(figdir,"il_6_trans_nocnt.png"),width=6,height=4)
+ggsave(file.path(figdir,"il_6_trans_v2.png"),width=6,height=4)
+
+
+# ggplot(data=il_6_trans_dat_nocnt, aes(x=`IL-6`,y=cp_il_6_nocnt, color="est")) + geom_step() + ylab(expression(gamma[j])) + xlim(c(1,10)) + 
+#   stat_function(fun=log, mapping = aes(color = "log")) + 
+#   stat_function(fun=sqrt, mapping = aes(color = "sqrt")) +
+#   scale_color_manual(name = "transformation",
+#                        values = c("black", "blue", "red"), # Color specification
+#                        labels = c("Bayes CPM estimate","log", "sqrt"))
+# 
+# ggsave(file.path(figdir,"il_6_trans_nocnt.png"),width=6,height=4)
 
 ```
 
 ```{r il_6_bmi_dat}
-mn_summ_il_6 <- getMean(fit_il_6_logit, newdat1)
-#mn_vals_il_6 <- getMean(fit_il_6_logit, newdat1, summ=FALSE)
-med_summ_il_6 <- getQuantile(fit_il_6_logit, newdat1, q=0.5)
-q90_summ_il_6 <- getQuantile(fit_il_6_logit, newdat1, q=0.9)
+mn_summ_il_6 <- getMean(fit_il_6_loglog2, newdat1)
+#mn_vals_il_6 <- getMean(fit_il_6_loglog2, newdat1, summ=FALSE)
+med_summ_il_6 <- getQuantile(fit_il_6_loglog2, newdat1, q=0.5)
+q90_summ_il_6 <- getQuantile(fit_il_6_loglog2, newdat1, q=0.9)
 ```
 
 ```{r il_6_bmi_plt}
@@ -440,7 +482,6 @@ med_summ_il_6 %>%
 
 ### IL-1-beta 
 
-!! Start here
 
 ```{r il_1_beta_fit}
 fit_il_1_beta_probit <- bayes_cpm(il_1_beta ~ bmi_c + age_c + male + 
@@ -449,57 +490,245 @@ fit_il_1_beta_probit <- bayes_cpm(il_1_beta ~ bmi_c + age_c + male +
                              iter=4000, warmup=2000, chains=2, init="0", 
                              control = list(adapt_delta = 0.95))
 
+fit_il_1_beta_probit2 <- bayes_cpm(il_1_beta ~ bmi_c + age_c + male + 
+                               nonwhite + study.linc + cd4_100_c + smoker,
+                             data=hivdat, link="probit",
+                             dir_prior_conc = function(n) 1/(0.8 + 0.35*n),
+                             seed=3845,
+                             iter=4000, warmup=2000, chains=2, init="0", 
+                             control = list(adapt_delta = 0.95))
+
 fit_il_1_beta_logit <- bayes_cpm(il_1_beta ~ bmi_c + age_c + male + 
                               nonwhite + study.linc + cd4_100_c + smoker,
                             data=hivdat, link="logistic", seed=6734,
                             iter=4000, warmup=2000, chains=2, init="0", 
                             control = list(adapt_delta = 0.95))
+
+
+fit_il_1_beta_logit2 <- bayes_cpm(il_1_beta ~ bmi_c + age_c + male + 
+                              nonwhite + study.linc + cd4_100_c + smoker,
+                            data=hivdat, link="logistic", 
+                            dir_prior_conc = function(n) 1/(0.8 + 0.35*n),
+                            seed=6734,
+                            iter=4000, warmup=2000, chains=2, init="0", 
+                            control = list(adapt_delta = 0.95))
+
+
+fit_il_1_beta_loglog <- bayes_cpm(il_1_beta ~ bmi_c + age_c + male + 
+                              nonwhite + study.linc + cd4_100_c + smoker,
+                            data=hivdat, link="loglog", seed=6734,
+                            iter=4000, warmup=2000, chains=2, init="0", 
+                            control = list(adapt_delta = 0.95))
+
+
+fit_il_1_beta_loglog2 <- bayes_cpm(il_1_beta ~ bmi_c + age_c + male + 
+                              nonwhite + study.linc + cd4_100_c + smoker,
+                            data=hivdat, link="loglog", 
+                            dir_prior_conc = function(n) 1/(0.8 + 0.35*n),
+                            seed=6734,
+                            iter=4000, warmup=2000, chains=2, init="0", 
+                            control = list(adapt_delta = 0.95))
+
+
 ```
 
 
 ```{r il_1_beta_mcmc_chk}
-qplot(summary(fit_il_1_beta)$summary[,"Rhat"])
+qplot(summary(fit_il_1_beta_probit$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_1_beta_probit2$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_1_beta_logit$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_1_beta_logit2$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_1_beta_loglog$stanfit)$summary[,"Rhat"])
+qplot(summary(fit_il_1_beta_loglog2$stanfit)$summary[,"Rhat"])
 
-traceplot(fit_il_1_beta, pars=main_pars)
+main_pars <- c("b[1]","b[2]","b[3]","b[4]","b[5]","b[6]","b[7]")
+main_pars_labs <-c("bmi_c", "age_c", "male", "nonwhite", "study.linc", "cd4_100_c", "smoker")
+main_pars_labs2 <-c("BMI~(per~kg/m^2)", "Age~(per~1~year)", "Male~(vs.~Female)", "Non-white~(vs.~White)", "LiNC~study~(vs.~AIAC~study)", "CD4~(per~100~cells/mm^3)", "Smoker~(vs.~non-smoker)")
+
+summary(fit_il_1_beta_probit$stanfit, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
+
+summary(fit_il_1_beta_logit$stanfit, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
+
+rstan::traceplot(fit_il_1_beta_probit$stanfit, pars=main_pars) 
+rstan::traceplot(fit_il_1_beta_probit2$stanfit, pars=main_pars) 
+rstan::traceplot(fit_il_1_beta_logit$stanfit, pars=main_pars)
+rstan::traceplot(fit_il_1_beta_logit2$stanfit, pars=main_pars)
+rstan::traceplot(fit_il_1_beta_loglog$stanfit, pars=main_pars)
+rstan::traceplot(fit_il_1_beta_loglog2$stanfit, pars=main_pars)
+
 ```
 
 
 ```{r il_1_beta_loo}
+ll_il_1_beta_logit<-extract_log_lik(fit_il_1_beta_logit$stanfit)
+ll_il_1_beta_logit2<-extract_log_lik(fit_il_1_beta_logit2$stanfit)
+ll_il_1_beta_probit<-extract_log_lik(fit_il_1_beta_probit$stanfit)
+ll_il_1_beta_probit2<-extract_log_lik(fit_il_1_beta_probit2$stanfit)
+ll_il_1_beta_loglog<-extract_log_lik(fit_il_1_beta_loglog$stanfit)
+ll_il_1_beta_loglog2<-extract_log_lik(fit_il_1_beta_loglog2$stanfit)
+
+
+# loglog2 is preferred model
+loo_comp2<-loo_compare(loo(ll_il_1_beta_logit), loo(ll_il_1_beta_logit2), loo(ll_il_1_beta_probit),loo(ll_il_1_beta_probit2),
+                       loo(ll_il_1_beta_loglog),loo(ll_il_1_beta_loglog2))
+
+plot(loo(ll_il_1_beta_logit))
+plot(loo(ll_il_1_beta_logit2))
+plot(loo(ll_il_1_beta_probit))
+plot(loo(ll_il_1_beta_loglog))
 
 ```
 
 
 ```{r il_1_beta_pars}
-summary(fit_il_1_beta, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
+# il_1_beta_posta <- as.matrix(fit_il_1_beta_loglog2$stanfit, pars=main_pars[c(1,2,6)]) %>%
+# mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels = main_pars_labs2[c(1,2,6)])
+# 
+# il_1_beta_postb <- as.matrix(fit_il_1_beta_loglog2$stanfit, pars=main_pars[c(3,4,5,7)])  %>%
+# mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels = main_pars_labs2[c(3,4,5,7)])
+# 
+# plot_grid(il_1_beta_posta,il_1_beta_postb,ncol=1)
+# 
+# ggsave(file.path(figdir,"il_1_beta_post.png"),width=6,height=4)
 
-plot(fit_il_1_beta, pars=main_pars)
+il_1_beta_posta <- as.matrix(fit_il_1_beta_loglog2$stanfit, pars=main_pars[c(1,2,6)]) %>%
+mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels = parse(text=main_pars_labs2[c(1,2,6)]))
 
-as.matrix(fit_il_1_beta, pars=main_pars)  %>%
-mcmc_intervals() + scale_y_discrete(labels = c("bmi_c", "age_c", "male", "nonwhite",
-                                 "study.linc", "cd4_100_c", "smoker"))
+il_1_beta_postb <- as.matrix(fit_il_1_beta_loglog2$stanfit, pars=main_pars[c(3,4,5,7)])  %>%
+mcmc_intervals(prob_outer = 0.95) + scale_y_discrete(labels = parse(text=main_pars_labs2[c(3,4,5,7)]))
 
-fit_il_1_betaa<-as.matrix(fit_il_1_beta, pars=main_pars[c(1,2,6)])  %>%
-mcmc_intervals() + scale_y_discrete(labels =main_pars_labs2[c(1,2,6)] )
+plot_grid(il_1_beta_posta,il_1_beta_postb,ncol=1)
 
-fit_il_1_betab<-as.matrix(fit_il_1_beta, pars=main_pars[c(3,4,5,7)])  %>%
-mcmc_intervals() + scale_y_discrete(labels = main_pars_labs2[c(3,4,5,7)])
-plot_grid(fit_il_1_betaa,fit_il_1_betab,ncol=1)
+ggsave(file.path(figdir,"il_1_beta_post_v2.png"),width=6,height=4)
 
-ggsave(file.path(figdir,"il_1_beta_post.png"),width=6,height=4)
+# stan_plot(fit_il_1_beta_loglog2$stanfit, pars=main_pars) + 
+#   scale_y_discrete(breaks=paste0("b[",1:7,"]"),
+#         labels=letters[1:7])
+
+# cutpoints
+il_1_beta_ct_plt<-plot(fit_il_1_beta_loglog2$stanfit,pars=c(paste0("cutpoints[",1:113,"]")),
+                  ci_level = 0.5)
+
+# il_1_beta_ct_plt$data %>% mutate(y_rev=rev(y)) %>% 
+#   ggplot(aes(x=y_rev,y=m)) + geom_point()
+
+il_1_beta_ct_plt$data %>% mutate(y_rev=rev(y)) %>% 
+  ggplot(aes(x=y_rev,y=m)) + geom_line(aes(color='median')) +
+  geom_ribbon(aes(ymin=l,ymax=h,fill='50% int'))+
+  geom_ribbon(aes(ymin=ll,ymax=hh,fill='95% int'))+
+  scale_color_manual(labels = c('median'),
+                     values = c('blue')) +
+  scale_fill_manual(labels= c('50% int','95% int'),
+                    values = alpha('blue',c(0.4,0.2))) +
+  labs(color='', fill='') +
+  ylab(expression(hat(gamma)[j]))+xlab("j")
+
+ggsave(file.path(figdir,"il_1_beta_post_ct.png"),width=6,height=4)
+
+
+if(0){
+traceplot(fit_il_1_beta_loglog2$stanfit, pars=c(paste0("cutpoints[",1:20,"]")))
+traceplot(fit_il_1_beta_loglog2$stanfit, pars=c(paste0("cutpoints[",21:40,"]")))
+traceplot(fit_il_1_beta_loglog2$stanfit, pars=c(paste0("cutpoints[",41:60,"]")))
+traceplot(fit_il_1_beta_loglog2$stanfit, pars=c(paste0("cutpoints[",61:80,"]")))
+traceplot(fit_il_1_beta_loglog2$stanfit, pars=c(paste0("cutpoints[",81:100,"]")))
+traceplot(fit_il_1_beta_loglog2$stanfit, pars=c(paste0("cutpoints[",101:113,"]")))
+}
+
+# cell probs
+if(0){
+plot(fit_il_1_beta_loglog2$stanfit,pars=c(paste0("pi[",1:20,"]")))
+plot(fit_il_1_beta_loglog2$stanfit,pars=c(paste0("pi[",21:40,"]")))
+plot(fit_il_1_beta_loglog2$stanfit,pars=c(paste0("pi[",41:60,"]")))
+plot(fit_il_1_beta_loglog2$stanfit,pars=c(paste0("pi[",61:80,"]")))
+plot(fit_il_1_beta_loglog2$stanfit,pars=c(paste0("pi[",81:100,"]")))
+plot(fit_il_1_beta_loglog2$stanfit,pars=c(paste0("pi[",101:114,"]")))
+}
+
+
+# summary(fit_il_1_beta, pars=main_pars)$summary %>% round(3) %>% set_rownames(main_pars_labs)
+# plot(fit_il_1_beta, pars=main_pars)
+# 
+# as.matrix(fit_il_1_beta, pars=main_pars)  %>%
+# mcmc_intervals() + scale_y_discrete(labels = c("bmi_c", "age_c", "male", "nonwhite",
+#                                  "study.linc", "cd4_100_c", "smoker"))
+# 
+# fit_il_1_betaa<-as.matrix(fit_il_1_beta, pars=main_pars[c(1,2,6)])  %>%
+# mcmc_intervals() + scale_y_discrete(labels =main_pars_labs2[c(1,2,6)] )
+# 
+# fit_il_1_betab<-as.matrix(fit_il_1_beta, pars=main_pars[c(3,4,5,7)])  %>%
+# mcmc_intervals() + scale_y_discrete(labels = main_pars_labs2[c(3,4,5,7)])
+# plot_grid(fit_il_1_betaa,fit_il_1_betab,ncol=1)
+# 
+# ggsave(file.path(figdir,"il_1_beta_post.png"),width=6,height=4)
 ```
 
 ```{r il_1_beta_postpred}
+dr <- 750
+il_1_beta_ppd <- getPostPred(fit_il_1_beta_loglog2,newdata=hivdat[,main_pars_labs],draws=dr)
 
+il_1_beta_ppd_df <- il_1_beta_ppd %>% as_tibble() %>% mutate(samp=1:n()) %>% 
+  rename_with(~ gsub("V", "", .x,)) %>% pivot_longer(1:dr,names_to="rep")
+
+il_1_beta_dat_df<-hivdat0 %>% select(il_1_beta) %>% mutate(rep=999,samp=1:n()) %>% rename(value=il_1_beta)
+
+y_reps_il_1_beta <- rbind(il_1_beta_ppd_df,il_1_beta_dat_df) %>% mutate(rep=as.numeric(rep))
+
+ndr_plt <- 10
+y_reps_il_1_beta %>% filter(rep<=ndr_plt|rep>998) %>% ggplot(aes(x=value, group=rep, col = if_else(rep>998,'y','yrep'))) + geom_density() +
+scale_color_manual(name = '', values = setNames(c('blue','lightblue'), c('y', 'yrep'))) + ylab('') + xlab(expression("IL-1-"*beta))
+
+ggsave(file.path(figdir,"il_1_beta_postpred.png"),width=6,height=4)
+
+```
+
+```{r}
+# see https://cloud.r-project.org/web/packages/loo/vignettes/loo2-example.html
+il_1_beta_ppd2 <- getPostPred(fit_il_1_beta_loglog2,newdata=hivdat[,main_pars_labs],draws=4000)
+
+loo_il_1_beta_loglog2 <- loo(fit_il_1_beta_loglog2, save_psis = TRUE)
+ppc_loo_pit_overlay(
+  y = as.numeric(as.character(hivdat$il_1_beta)),
+  yrep = t(il_1_beta_ppd2),
+  lw = weights(loo_il_1_beta_probit2$psis_object)
+)
 ```
 
 ```{r il_1_beta_ppp}
+# posterior predictive p-values (aka Bayesian p-values)
 
+# variance
+ppp_var_il_1_beta <- y_reps_il_1_beta %>% group_by(rep) %>%
+  summarize(ppp_v=var(value),.groups="drop") %>% 
+  mutate(true_v=ifelse(rep>998,ppp_v,NA),
+         true_v=max(true_v,na.rm=TRUE),
+         pp_ind=ppp_v>true_v) %>% 
+  filter(rep<998) %>% pull(pp_ind) %>% mean()
+  
+# skewness
+library(e1071)  
+ppp_skew_il_1_beta <- y_reps_il_1_beta %>% group_by(rep) %>%
+  summarize(ppp_v=skewness(value),.groups="drop") %>% 
+  mutate(true_v=ifelse(rep>998,ppp_v,NA),
+         true_v=max(true_v,na.rm=TRUE),
+         pp_ind=ppp_v>true_v) %>% 
+  filter(rep<998) %>% pull(pp_ind) %>% mean()
+
+# proportion censored
+ppp_cens_il_1_beta <- y_reps_il_1_beta %>% group_by(rep) %>%
+  summarize(ppp_v=mean(value==0),.groups="drop") %>% 
+  mutate(true_v=ifelse(rep>998,ppp_v,NA),
+         true_v=max(true_v,na.rm=TRUE),
+         pp_ind=ppp_v>true_v) %>% 
+  filter(rep<998) %>% pull(pp_ind) %>% mean()
+
+c(ppp_var_il_1_beta, ppp_skew_il_1_beta, ppp_cens_il_1_beta)
 ```
 
 ```{r il_1_beta_trans}
-cp_il_1_beta <- summary(fit_il_1_beta, pars=c(paste0("cutpoints[",1:113,"]")))$summary[,"mean"]
+cp_il_1_beta <- summary(fit_il_1_beta_loglog2$stanfit, pars=c(paste0("cutpoints[",1:113,"]")))$summary[,"mean"]
 
-il_1_beta_trans_dat <- cbind(hiv_dat_il_1_beta$truey0[2:114], cp_il_1_beta) %>% as.data.frame() %>%
+il_1_beta_trans_dat <- cbind(fit_il_1_beta_loglog2$standata$truey0[2:114], cp_il_1_beta) %>% as.data.frame() %>%
   rename(`IL-1-beta`=V1)
 
 qplot(hivdat0$il_1_beta,bins=35)+xlab(expression(IL-1-beta)) + 
@@ -514,16 +743,20 @@ ggplot(data=il_1_beta_trans_dat,aes(x=`IL-1-beta`,y=cp_il_1_beta,color = "est"))
                        labels = c("Bayes CPM estimate","log", "sqrt"))
 
 ggsave(file.path(figdir,"il_1_beta_trans.png"),width=6,height=4)
+
+
+ggplot(data=il_1_beta_trans_dat,aes(x=`IL-1-beta`,y=cp_il_1_beta)) + geom_step() + ylab(expression(gamma[j])) + ylim(c(-0.5,2.5)) + xlim(c(0,3.0)) + xlab(expression(IL-1-beta))
+
+ggsave(file.path(figdir,"il_1_beta_trans_v2.png"),width=6,height=4)
 ```
 
-```{r il_1_beta_dat}
-mn_summ_il_1_beta <- getMean(fit_il_1_beta, hiv_dat_il_1_beta, newdat1)
-med_summ_il_1_beta <- getQuantile(fit_il_1_beta, hiv_dat_il_1_beta, newdat1, q=0.5)
-q90_summ_il_1_beta <- getQuantile(fit_il_1_beta, hiv_dat_il_1_beta, newdat1, q=0.9)
-
+```{r il_1_beta_bmi_dat}
+mn_summ_il_1_beta <- getMean(fit_il_1_beta_loglog2, newdat1)
+med_summ_il_1_beta <- getQuantile(fit_il_1_beta_loglog2, newdat1, q=0.5)
+q90_summ_il_1_beta <- getQuantile(fit_il_1_beta_loglog2, newdat1, q=0.9)
 ```
 
-```{r il_1_beta_plt}
+```{r il_1_beta_bmi_plt}
 il_1_beta_mn_dat <- mn_summ_il_1_beta %>% 
   select(med_mn, mn_q2.5, mn_q97.5, bmi_c) %>% 
   mutate(statistic="mean") %>% 
