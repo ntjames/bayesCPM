@@ -1,5 +1,5 @@
 rm(list=ls())
-libs <- c("dplyr", "stringr", "readr", "tidyr", "purrr", "ggplot2")
+libs <- c("dplyr", "stringr", "readr", "tidyr", "purrr", "ggplot2","magrittr")
 invisible(lapply(libs, library, character.only = TRUE))
 
 #paper directory (sims for other functions)
@@ -435,7 +435,9 @@ ggsave(file.path(figdir,"sim_b_med.png"),width=pltw,height=plth)
 full_q20_sim_dat %<>% mutate(outcome="uncensored")
 cens_q20_sim_dat %<>% mutate(outcome="censored")
 
-rbind(full_q20_sim_dat,cens_q20_sim_dat) %>% 
+cens_q20_sim_dat_mod <- cens_q20_sim_dat %>% filter(ndrow==2)
+
+rbind(full_q20_sim_dat,cens_q20_sim_dat_mod) %>% 
   mutate(ndrow=if_else(ndrow==1,
                        "Q^{0.2}*'|'*list(X[1]==1,X[2]==1)",
                        "Q^{0.2}*'|'*list(X[1]==1,X[2]==0)"),
@@ -453,6 +455,9 @@ rbind(full_q20_sim_dat,cens_q20_sim_dat) %>%
         axis.title.y = element_text(size=fctsiz),
         axis.text =  element_text(size=atxtsz),
         strip.text = element_text(size=fctsiz),
-        strip.text.y = element_text(angle=0))
+        strip.text.y = element_text(angle=0))+
+  geom_text(aes(x=62.5,y=3,label="Q^{0.2}*'|'*list(X[1]==1,X[2]==1)~censored"),parse=TRUE,
+            data=data.frame(outcome=factor("censored Y"),ndrow="Q^{0.2}*'|'*list(X[1]==1,X[2]==1)"),
+            inherit.aes=FALSE)
 
 ggsave(file.path(figdir,"sim_b_q20.png"),width=pltw,height=plth)
