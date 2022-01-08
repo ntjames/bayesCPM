@@ -403,7 +403,7 @@ rbind(sim_a_mod,sim_c_mod,sim_d_mod) %>%
 
 
 ggsave(file.path(figdir,"sim_MCMC_sample_times.png"),width=pltw,height=plth)
-
+ggsave(file.path(figdir,"sim_MCMC_sample_times.tiff"),width=pltw,height=plth,dpi=600)
 
 
 ## summarize processors used 

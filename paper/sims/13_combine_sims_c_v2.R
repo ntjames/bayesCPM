@@ -647,6 +647,7 @@ rbind(full_par,cens_par) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_c_pars_scaled.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_c_pars_scaled.tiff"),width=pltw,height=plth,dpi=600)
 
 ### CDF ###
 
@@ -675,6 +676,7 @@ rbind(full_cdf_sim_dat,cens_cdf_sim_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_c_cdf.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_c_cdf.tiff"),width=pltw,height=plth,dpi=600)
 
 ### Mean ###
 
@@ -704,6 +706,7 @@ rbind(full_mn_sim_dat, cens_mn_sim_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_c_mn.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_c_mn.tiff"),width=pltw,height=plth,dpi=600)
 
 
 ### Median ###
@@ -733,6 +736,7 @@ rbind(full_med_sim_dat,cens_med_sim_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_c_med.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_c_med.tiff"),width=pltw,height=plth,dpi=600)
 
 ### 20% quantile ###
 
@@ -761,6 +765,7 @@ rbind(full_q20_sim_dat,cens_q20_sim_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_c_q20.png"),width=pltw,height=plth)
+ggsave(file.path(figdir,"sim_c_q20.tiff"),width=pltw,height=plth,dpi=600)
 
 ### 80% quantile ###
 

@@ -91,7 +91,13 @@ plot_induced_full_gg_dat <- function(conc_fun, cats, link=qlogis,
                                  prbs=c(0.025,0.25,0.5,0.75,0.975),
                                  yl=c(-15,15)){
   cnc <- conc_fun(cats)
-  ddraws <- rdirichlet(n,rep(cnc,cats))
+  if (identical(length(cnc),1L)){
+    ddraws <- rdirichlet(n,rep(cnc,cats))
+  } else if (identical(length(cnc),cats)) {
+    ddraws <- rdirichlet(n,cnc)
+  } else {
+    stop("conc. parameter must be either length 1L or cats")
+  }
   cdraws <- apply(ddraws,1,cumsum) # cdf
   
   ctpt <- apply(cdraws,1,link)[,1:(cats-1)] # cutpoints
@@ -103,13 +109,15 @@ plot_induced_full_gg_dat <- function(conc_fun, cats, link=qlogis,
     mutate(cpt=as.numeric(cpt),ncats=cats,fun=deparse(conc_fun)[2])
   
   if(mleplt){
-  # ctpoints based on MLE when beta_x is 0
+  # ctpoints based on equal probs when beta_x is 0
   mlectpt <- link(cumsum(rep(1/cats,cats)))[1:(cats-1)]
   dt <- dt %>% mutate(mlectpt=mlectpt)
   }
   
 dt
 }
+
+
 
 #plot_induced_full_gg_dat(funb,cats=100,n=10)
 
@@ -191,6 +199,82 @@ ggsave(file.path(ppr_fig_dir,'probit_induced_mle.png'),width=pltw,height=plth)
 
 
 
+pltdt2 <- pltdt %>% pivot_longer(cols=c(`50%`,mlectpt)) %>% 
+  mutate(ncats=paste("number~of~categories:",ncats),
+         ncats=factor(ncats,levels=c("number~of~categories: 25",
+                                     "number~of~categories: 50",
+                                     "number~of~categories: 100")),
+         conc=paste("concentration: alpha==",conc),
+         conc=factor(conc,levels=c("concentration: alpha== 1/J",
+                                   "concentration: alpha== 1/(2 + (J/3))",
+                                   "concentration: alpha== 1/(0.8 + 0.35 * J)",
+                                   "concentration: alpha== 1/2",
+                                   "concentration: alpha== 1"))) 
+
+pltw<-12
+plth<-9
+atxtsz<-9
+fctsiz<-10
+lsiz <- 13
+
+pltdt2 %>% 
+  ggplot(aes(x=cpt,y=value)) + 
+  geom_ribbon(aes(ymin=`25%`,ymax=`75%`,fill='50% int'))+
+  geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`,fill='95% int'))+
+  geom_line(aes(color=name, linetype = name)) +
+  scale_color_manual(name='',labels=c('prior median',expression('equal probability estimate,'~hat(gamma)[j]*'|'[X==0])), values = c('blue','red')) +
+  scale_linetype_manual(name='',labels=c('prior median',expression('equal probability estimate,'~hat(gamma)[j]*'|'[X==0])),values = c('solid','dashed')) +
+  scale_fill_manual(labels= c('prior 50% interval','prior 95% interval'),
+                    values = alpha('blue',c(0.4,0.2))) +
+  facet_wrap(~ncats+conc, labeller=label_parsed, scales = "free_x", nrow=4, ncol=5) +
+  labs(color='', fill='') +
+  coord_cartesian(ylim=c(-10,10))+
+  ylab(expression(gamma[j]))+xlab("j")+
+  theme(axis.title.x=element_text(size=fctsiz),
+        axis.title.y = element_text(size=fctsiz),
+        axis.text =  element_text(size=atxtsz),
+        strip.text = element_text(size=fctsiz),
+        legend.text = element_text(size=lsiz),
+        legend.position="bottom") 
+
+ggsave(file.path(ppr_fig_dir,'probit_induced_cln.png'),width=pltw,height=plth)
+ggsave(file.path(ppr_fig_dir,'probit_induced_cln.tiff'),width=pltw,height=plth,dpi=600)
+
+### with different concentration params, i.e. nonsymmetric Dirichlet?
+diff_conc_fun <- function(n) {
+  conc <- 1/n
+  scale <- dlogis( qlogis((1:(n+1))/(n+1)) )
+  # scale <- rep(10,n)
+  conc*scale[1:n]
+}
+
+diff_conc_fun(25)
+plot(rdirichlet(1,diff_conc_fun(25))[1,], type="h")
+
+plot_induced_full_gg_dat(funb,cats=25L,n=2e4) %>% 
+  ggplot(aes(x=cpt,y=`50%`)) + 
+  geom_line(aes(color='median')) +
+  geom_ribbon(aes(ymin=`25%`,ymax=`75%`,fill='50% int'))+
+  geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`,fill='95% int'))+
+  scale_color_manual(labels = c('median'),
+                     values = c('blue')) +
+  scale_fill_manual(labels= c('50% int','95% int'),
+                    values = alpha('blue',c(0.4,0.2)))
+
++
+  coord_cartesian(ylim=c(-15,15))
+
+
+plot_induced_full_gg_dat(diff_conc_fun,cats=25L,n=2e4) %>% 
+  ggplot(aes(x=cpt,y=`50%`)) + 
+  geom_line(aes(color='median')) +
+  geom_ribbon(aes(ymin=`25%`,ymax=`75%`,fill='50% int'))+
+  geom_ribbon(aes(ymin=`2.5%`,ymax=`97.5%`,fill='95% int'))+
+  scale_color_manual(labels = c('median'),
+                     values = c('blue')) +
+  scale_fill_manual(labels= c('50% int','95% int'),
+                    values = alpha('blue',c(0.4,0.2)))+
+  coord_cartesian(ylim=c(-15,15))
 
 
 
@@ -198,6 +282,8 @@ ggsave(file.path(ppr_fig_dir,'probit_induced_mle.png'),width=pltw,height=plth)
 
 
 
+
+###
 pltdt %>% 
   ggplot(aes(x=cpt,y=`50%`)) + 
   geom_line(color='blue') +
@@ -264,13 +350,47 @@ plot_grid(d1,d2,d3,d4,
 
 
 library(rms)
-x<-runif(100)
-y1<-rlogis(100)+0*x
-orm_logit1<-orm(y1~x)
+library(evd)
 
-par(mfrow=c(1,1))
-plot_induced_full(funb,cats=100,mleplt=T)
-lines(1:99,-coef(orm_logit1)[1:99],col="blue")
+# function to make intercepts assuming equal prob for n cells
+ints <- function(n,link){
+#  link(cumsum(rep(1/n,n))[1:(n-1)])
+  link((1:n/n)[1:(n-1)])
+}
+ints <- function(n,link){ link((1:n/n)[1:(n-1)]) }
+
+require(rms)
+ints <- function(n,link) link( (1:(n-1)/n) )
+y <- rlogis(100); x <- rep(0,100)
+orm_logit1 <- orm(y~x) # throws error, can still get ints
+ints_a <- ints(100,qlogis)
+orm_a <- -coef(orm_logit1)[1:99]
+all.equal(ints_a, orm_a, check.attributes = FALSE)
+
+
+x2 <- rep(0,132)
+y2 <- rlogis(132)
+orm_logit2 <- orm(y2~x2)
+ints_b <- ints(132,qlogis)
+orm_b <- -coef(orm_logit2)[1:131]
+all.equal(ints_b, orm_b, check.attributes = FALSE)
+
+
+y3<-rnorm(100)
+orm_probit<-orm(y3~x,family=probit)
+ints_c <- ints(100,qnorm)
+orm_c <- -coef(orm_probit)[1:99]
+all.equal(ints_c, orm_c, check.attributes = FALSE)
+
+
+y4<-evd::rgumbel(100)
+orm_cloglog<-orm(y4~x,family=cloglog)
+ints_d <- ints(100,qgumbel)
+orm_d <- -coef(orm_cloglog)[1:99]
+all.equal(ints_d, orm_d, check.attributes = FALSE)
+
+
+
 
 library(bayesCPM)
 library(dplyr)
@@ -287,8 +407,8 @@ data.frame(bcpm_logit1)
 
 y2<-rlogis(100)+2.5*x
 orm_logit2<-orm(y2~x)
-plot_induced_full(funb,cats=100,mleplt=T)
-lines(1:99,-coef(orm_logit2)[1:99],col="blue")
+plot_induced_full_gg_dat(funb,cats=100,mleplt=T)
+-coef(orm_logit2)[1:99]
 
 
 

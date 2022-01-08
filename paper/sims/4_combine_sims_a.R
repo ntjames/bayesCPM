@@ -283,3 +283,5 @@ rbind(full_plt_dat,cens_plt_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_a_pars.png"),width=pltw,height=plth)
+
+ggsave(file.path(figdir,"sim_a_pars.tiff"),width=pltw,height=plth,dpi=600)
