@@ -284,4 +284,4 @@ rbind(full_plt_dat,cens_plt_dat) %>%
 
 ggsave(file.path(figdir,"sim_a_pars.png"),width=pltw,height=plth)
 
-ggsave(file.path(figdir,"sim_a_pars.tiff"),width=pltw,height=plth,dpi=600)
+ggsave(file.path(figdir,"sim_a_pars.tiff"),width=pltw,height=plth,dpi=600, compression = "lzw")

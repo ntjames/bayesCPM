@@ -622,7 +622,7 @@ rbind(full_par,cens_par) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_d_pars.png"),width=pltw,height=plth)
-ggsave(file.path(figdir,"sim_d_pars.tiff"),width=pltw,height=plth,dpi=600)
+ggsave(file.path(figdir,"sim_d_pars.tiff"),width=pltw,height=plth,dpi=600, compression = "lzw")
 
 ### CDF ###
 
@@ -651,7 +651,7 @@ rbind(full_cdf_sim_dat,cens_cdf_sim_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_d_cdf.png"),width=pltw,height=plth)
-ggsave(file.path(figdir,"sim_d_cdf.tiff"),width=pltw,height=plth,dpi=600)
+ggsave(file.path(figdir,"sim_d_cdf.tiff"),width=pltw,height=plth,dpi=600, compression = "lzw")
 
 ### Mean ###
 
@@ -681,7 +681,7 @@ rbind(full_mn_sim_dat, cens_mn_sim_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_d_mn.png"),width=pltw,height=plth)
-ggsave(file.path(figdir,"sim_d_mn.tiff"),width=pltw,height=plth,dpi=600)
+ggsave(file.path(figdir,"sim_d_mn.tiff"),width=pltw,height=plth,dpi=600, compression = "lzw")
 
 ### Median ###
 
@@ -710,7 +710,7 @@ rbind(full_med_sim_dat,cens_med_sim_dat) %>%
         strip.text.y = element_text(angle=0))
 
 ggsave(file.path(figdir,"sim_d_med.png"),width=pltw,height=plth)
-ggsave(file.path(figdir,"sim_d_med.tiff"),width=pltw,height=plth,dpi=600)
+ggsave(file.path(figdir,"sim_d_med.tiff"),width=pltw,height=plth,dpi=600, compression = "lzw")
 
 ### 20% quantile ###
 
@@ -746,7 +746,7 @@ rbind(full_q20_sim_dat,cens_q20_sim_dat_mod) %>%
           inherit.aes=FALSE)
 
 ggsave(file.path(figdir,"sim_d_q20.png"),width=pltw,height=plth)
-ggsave(file.path(figdir,"sim_d_q20.tiff"),width=pltw,height=plth,dpi=600)
+ggsave(file.path(figdir,"sim_d_q20.tiff"),width=pltw,height=plth,dpi=600, compression = "lzw")
 
 
 ### 80% quantile ###

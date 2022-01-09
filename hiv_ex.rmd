@@ -266,7 +266,7 @@ pg_il_6_a<-plot_grid(il_6_posta,il_6_postb,ncol=1)
 pg_il_6_a
 
 ggsave(file.path(figdir,"il_6_post_v2.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_6_post_v2.tiff"),width=6,height=4,bg='white',dpi=600)
+ggsave(file.path(figdir,"il_6_post_v2.tiff"),width=6,height=4,bg='white',dpi=600, compression = "lzw")
 
 # stan_plot(fit_il_6_loglog2$stanfit, pars=main_pars) + 
 #   scale_y_discrete(breaks=paste0("b[",1:7,"]"),
@@ -293,10 +293,10 @@ pg_il_6_b <- il_6_ct_plt$data %>% mutate(y_rev=rev(y)) %>%
 pg_il_6_b
 
 ggsave(file.path(figdir,"il_6_post_ct.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_6_post_ct.tiff"),width=6,height=4,bg='white',dpi=600)
+ggsave(file.path(figdir,"il_6_post_ct.tiff"),width=6,height=4,bg='white',dpi=600, compression = "lzw")
 
 plot_grid(pg_il_6_a,pg_il_6_b,nrow=1)
-ggsave(file.path(figdir,"il_6_post_est_ct.tiff"),width=8,height=4,bg='white',dpi=600)
+ggsave(file.path(figdir,"il_6_post_est_ct.tiff"),width=8,height=4,bg='white',dpi=600, compression = "lzw")
 
 # +
 #   theme(axis.title.x=element_text(size=fctsiz),
@@ -348,7 +348,7 @@ y_reps_il_6 %>% filter(rep<=ndr_plt|rep>998) %>% ggplot(aes(x=value, group=rep, 
 scale_color_manual(name = '', values = setNames(c('blue','lightblue'), c('y', 'yrep'))) + ylab('') + xlab('IL-6')
 
 ggsave(file.path(figdir,"il_6_postpred.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_6_postpred.tiff"),width=6,height=4,dpi=600)
+ggsave(file.path(figdir,"il_6_postpred.tiff"),width=6,height=4,dpi=600, compression = "lzw")
 ```
 
 
@@ -422,7 +422,7 @@ ggplot(data=il_6_trans_dat, aes(x=`IL-6`,y=cp_il_6)) + geom_step() + ylab(expres
 # take sqrt transform and then is distributed as Gumbel ?
 
 ggsave(file.path(figdir,"il_6_trans_v2.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_6_trans_v2.tiff"),width=6,height=4,dpi=600)
+ggsave(file.path(figdir,"il_6_trans_v2.tiff"),width=6,height=4,dpi=600, compression = "lzw")
 
 # ggplot(data=il_6_trans_dat_nocnt, aes(x=`IL-6`,y=cp_il_6_nocnt, color="est")) + geom_step() + ylab(expression(gamma[j])) + xlim(c(1,10)) + 
 #   stat_function(fun=log, mapping = aes(color = "log")) + 
@@ -464,7 +464,7 @@ ggplot(il_6_plt_dat) + geom_line(aes(x=bmi_c,y=`il-6`,color=statistic)) +
 geom_ribbon(aes(x=bmi_c,ymin=q2.5,ymax=q97.5,fill=statistic),alpha=0.2)+ylab("IL-6")+xlab("difference from mean BMI")
 
 ggsave(file.path(figdir,"il_6_bmi.png"),width=6,height=3.5)
-ggsave(file.path(figdir,"il_6_bmi.tiff"),width=6,height=3.5,dpi=600)
+ggsave(file.path(figdir,"il_6_bmi.tiff"),width=6,height=3.5,dpi=600, compression = "lzw")
 ```
 
 ```{r, eval=FALSE}
@@ -611,7 +611,7 @@ pg_il_1_beta_a <- plot_grid(il_1_beta_posta,il_1_beta_postb,ncol=1)
 
 pg_il_1_beta_a
 ggsave(file.path(figdir,"il_1_beta_post_v2.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_1_beta_post_v2.tiff"),width=6,height=4,bg='white',dpi=600)
+ggsave(file.path(figdir,"il_1_beta_post_v2.tiff"),width=6,height=4,bg='white',dpi=600, compression = "lzw")
 
 # stan_plot(fit_il_1_beta_loglog2$stanfit, pars=main_pars) + 
 #   scale_y_discrete(breaks=paste0("b[",1:7,"]"),
@@ -637,10 +637,10 @@ pg_il_1_beta_b <- il_1_beta_ct_plt$data %>% mutate(y_rev=rev(y)) %>%
 
 pg_il_1_beta_b
 ggsave(file.path(figdir,"il_1_beta_post_ct.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_1_beta_post_ct.tiff"),width=6,height=4,bg='white',dpi=600)
+ggsave(file.path(figdir,"il_1_beta_post_ct.tiff"),width=6,height=4,bg='white',dpi=600, compression = "lzw")
 
 plot_grid(pg_il_1_beta_a,pg_il_1_beta_b,nrow=1)
-ggsave(file.path(figdir,"il_1_beta_post_est_ct.tiff"),width=8,height=4,bg='white',dpi=600)
+ggsave(file.path(figdir,"il_1_beta_post_est_ct.tiff"),width=8,height=4,bg='white',dpi=600, compression = "lzw")
 
 
 if(0){
@@ -696,7 +696,7 @@ y_reps_il_1_beta %>% filter(rep<=ndr_plt|rep>998) %>% ggplot(aes(x=value, group=
 scale_color_manual(name = '', values = setNames(c('blue','lightblue'), c('y', 'yrep'))) + ylab('') + xlab(expression("IL-1-"*beta))
 
 ggsave(file.path(figdir,"il_1_beta_postpred.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_1_beta_postpred.tiff"),width=6,height=4,dpi=600)
+ggsave(file.path(figdir,"il_1_beta_postpred.tiff"),width=6,height=4,dpi=600, compression = "lzw")
 ```
 
 ```{r}
@@ -765,7 +765,7 @@ ggsave(file.path(figdir,"il_1_beta_trans.png"),width=6,height=4)
 ggplot(data=il_1_beta_trans_dat,aes(x=`IL-1-beta`,y=cp_il_1_beta)) + geom_step() + ylab(expression(gamma[j])) + ylim(c(-0.5,2.5)) + xlim(c(0,3.0)) + xlab(expression(IL-1-beta))
 
 ggsave(file.path(figdir,"il_1_beta_trans_v2.png"),width=6,height=4)
-ggsave(file.path(figdir,"il_1_beta_trans_v2.tiff"),width=6,height=4,dpi=600)
+ggsave(file.path(figdir,"il_1_beta_trans_v2.tiff"),width=6,height=4,dpi=600, compression = "lzw")
 ```
 
 ```{r il_1_beta_bmi_dat}
@@ -797,6 +797,6 @@ geom_ribbon(aes(x=bmi_c,ymin=q2.5,ymax=q97.5,fill=statistic),alpha=0.2)+
   xlab("difference from mean BMI")+ylab(expression(IL-1-beta))
 
 ggsave(file.path(figdir,"il_1_beta_bmi.png"),width=6,height=3.5)
-ggsave(file.path(figdir,"il_1_beta_bmi.tiff"),width=6,height=3.5,dpi=600)
+ggsave(file.path(figdir,"il_1_beta_bmi.tiff"),width=6,height=3.5,dpi=600, compression = "lzw")
 ```
 

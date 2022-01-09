@@ -238,7 +238,7 @@ pltdt2 %>%
         legend.position="bottom") 
 
 ggsave(file.path(ppr_fig_dir,'probit_induced_cln.png'),width=pltw,height=plth)
-ggsave(file.path(ppr_fig_dir,'probit_induced_cln.tiff'),width=pltw,height=plth,dpi=600)
+ggsave(file.path(ppr_fig_dir,'probit_induced_cln.tiff'),width=pltw,height=plth,dpi=600, compression = "lzw")
 
 ### with different concentration params, i.e. nonsymmetric Dirichlet?
 diff_conc_fun <- function(n) {
