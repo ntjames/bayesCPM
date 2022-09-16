@@ -1,0 +1,121 @@
+---
+title: "Bayesian Cumulative Probability Models for Continuous and Mixed Outcomes"
+author: "Nathan T. James, Frank E. Harrell Jr., Bryan E. Shepherd"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+output: 
+  bookdown::gitbook:
+    split_by: chapter
+    number_sections: FALSE
+    includes:
+      in_header: header.html
+    config:
+      toc:
+        before: <li> &nbsp; Bayesian Cumulative Probability Models for Continuous and Mixed Outcomes </li>
+        collapse: section
+      download: null
+      sharing: no    
+  bookdown::pdf_book:
+    toc: no
+    number_sections: FALSE
+    includes:
+      in_header: preamble.tex
+    keep_tex: yes
+subparagraph: true
+documentclass: article 
+bibliography: ["zotero_library.bib"]
+linestretch: 1.5
+biblio-style: apalike
+link-citations: yes
+csl: american-medical-association.csl
+---
+
+```{r setup0, include=FALSE}
+#For code block want echo=TRUE if (knitr::is_html_output())
+# echo=FALSE otherwise (e.g. echo = FALSE if (knitr::is_latex_output()))
+knitr::opts_chunk$set(echo = knitr::is_html_output())
+wd<-getwd()
+
+# load packages
+libs<-c("knitr", "kableExtra", "magrittr", "ggplot2", "rstan", "plotly", "bayesplot", "ggExtra", "xtable")
+invisible(lapply(libs, library, character.only = TRUE))
+```
+
+```{r htmlTemp3, echo=FALSE, eval=TRUE}
+# code-folding solution from https://stackoverflow.com/questions/45360998/code-folding-in-bookdown
+
+codejs <- readr::read_lines("js/codefolding.js")
+collapsejs <- readr::read_lines("js/collapse.js")
+transitionjs <- readr::read_lines("js/transition.js")
+dropdownjs <- readr::read_lines("js/dropdown.js")
+
+htmlhead <- c(
+  paste('
+<script>',
+paste(transitionjs, collapse = "\n"),
+'</script>
+<script>',
+paste(collapsejs, collapse = "\n"),
+'</script>
+<script>',
+paste(codejs, collapse = "\n"),
+'</script>
+<script>',
+paste(dropdownjs, collapse = "\n"),
+'</script>
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+.row { display: flex; }
+.collapse { display: none; }
+.in { display:block }
+.pull-right > .dropdown-menu {
+    right: 0;
+    left: auto;
+}
+.open > .dropdown-menu {
+    display: block;
+}
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    float: left;
+    min-width: 160px;
+    padding: 5px 0;
+    margin: 2px 0 0;
+    font-size: 14px;
+    text-align: left;
+    list-style: none;
+    background-color: #fff;
+    -webkit-background-clip: padding-box;
+    background-clip: padding-box;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: 4px;
+    -webkit-box-shadow: 0 6px 12px rgba(0,0,0,.175);
+    box-shadow: 0 6px 12px rgba(0,0,0,.175);
+}
+</style>
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "hide");
+});
+</script>
+', sep = "\n"),
+  paste0('
+<script>
+document.write(\'<div class="btn-group pull-right" style="position: absolute; top: 20%; right: 2%; z-index: 200"><button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-_extension-text-contrast=""><span>Toggle All Code</span> <span class="caret"></span></button><ul class="dropdown-menu" style="min-width: 70px;"><li><a id="rmd-show-all-code" href="#">Show All</a></li><li><a id="rmd-hide-all-code" href="#">Hide All</a></li></ul></div>\')
+</script>
+')
+)
+
+readr::write_lines(htmlhead, path = "header.html")
+```
+
+## Abstract
+
+Ordinal cumulative probability models (CPMs) -- also known as cumulative link models -- such as the proportional odds regression model are typically used for discrete ordered outcomes, but can accommodate both continuous and mixed discrete/continuous outcomes since these are also ordered. Recent papers describe ordinal CPMs in this setting using non-parametric maximum likelihood estimation. We formulate a Bayesian CPM for continuous or mixed outcome data. Bayesian CPMs inherit many of the benefits of frequentist CPMs and have advantages with regard to interpretation, flexibility, and exact inference (within simulation error) for parameters and functions of parameters. We explore characteristics of the Bayesian CPM through simulations and a case study using HIV biomarker data. In addition, we provide the package `bayesCPM` which implements Bayesian CPM models using the `R` interface to the Stan probabilistic programing language. The Bayesian CPM for continuous outcomes can be implemented with only minor modifications to the prior specification and, despite some limitations, has generally good statistical performance with moderate or large sample sizes.
+
+# 1. Introduction

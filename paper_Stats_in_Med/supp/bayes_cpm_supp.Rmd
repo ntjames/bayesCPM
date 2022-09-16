@@ -1,0 +1,70 @@
+---
+title: "Bayesian Cumulative Probability Models for Continuous and Mixed Outcomes"
+author: "Nathan T. James, Frank E. Harrell Jr., Bryan E. Shepherd"
+date: "`r Sys.Date()`"
+output: pdf_document
+documentclass: article 
+---
+
+```{r setup0, include=FALSE}
+#For code block want echo=TRUE if (knitr::is_html_output())
+# echo=FALSE otherwise (e.g. echo = FALSE if (knitr::is_latex_output()))
+knitr::opts_chunk$set(echo = knitr::is_html_output())
+wd<-file.path('/home/nathan/Dropbox/njames/school/PhD/orise_ra/bayes_cpm/paper_Stats_in_Med/supp')
+
+# load packages
+libs<-c("knitr", "kableExtra", "magrittr", "ggplot2", "rstan", "plotly", "bayesplot", "ggExtra", "xtable")
+invisible(lapply(libs, library, character.only = TRUE))
+```
+
+# Supplemental Material {-}
+
+<!-- https://stackoverflow.com/questions/50223141/rmarkdown-bookdown-separate-figure-numbering-for-supplemental-section 
+\beginsupplement -->
+
+```{r simplt-pars-2, fig.cap="Bias in parameters for simulations using logit link. Note: because $\gamma_{y_2}$=0, calculating percent bias results in division by zero; therefore, the estimates for $\gamma_{y_2}$ are not shown", fig.align='center', out.width='65%', eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_c_pars_scaled.png"))
+```
+
+
+```{r simplt-pars-3, fig.cap="Bias in parameters for simulations using loglog link", fig.align='center', out.width='65%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_d_pars.png"))
+```
+
+
+```{r simplt-cdf-2, fig.cap="Percent bias in conditional CDF for simulations using logit link", fig.align='center', out.width='65%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_c_cdf.png"))
+```
+
+```{r simplt-cdf-3, fig.cap="Percent bias in conditional CDF for simulations using loglog link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_d_cdf.png"))
+```
+
+```{r simplt-mn-2, fig.cap="Percent bias in conditional mean for simulations using logit link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_c_mn.png"))
+```
+
+```{r simplt-mn-3, fig.cap="Percent bias in conditional mean for simulations using loglog link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_d_mn.png"))
+```
+
+
+```{r simplt-med-2, fig.cap="Percent bias in conditional median for simulations using logit link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_c_med.png"))
+```
+
+```{r simplt-med-3, fig.cap="Percent bias in conditional median for simulations using loglog link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_d_med.png"))
+```
+
+```{r simplt-q20-a, fig.cap="Bias in conditional 20th percentile for simulations using probit link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_b_q20.png"))
+```
+
+```{r simplt-q20-b, fig.cap="Bias in conditional 20th percentile for simulations using logit link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_c_q20.png"))
+```
+
+```{r simplt-q20-c, fig.cap="Bias in conditional 20th percentile for simulations using loglog link", fig.align='center', out.width='75%',eval=FALSE}
+knitr::include_graphics(file.path(wd,"fig","sim_d_q20.png"))
+```

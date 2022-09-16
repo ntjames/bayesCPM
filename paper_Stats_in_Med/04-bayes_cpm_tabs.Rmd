@@ -1,0 +1,19 @@
+\break
+
+# Tables {-}
+
+
+
+```{r elpdtab, results = 'asis'}
+kable(elpdtab, caption="Difference in expected log pointwise predictive density for IL-6 models and IL-1-$\\beta$ models", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position")) %>% 
+  pack_rows("IL-6",1,6) %>% 
+  pack_rows("IL-1-$\\\\beta$",7,12,escape=FALSE) 
+```
+
+```{r ppptab1, results = 'asis'}
+kable(ppp_il6, caption="Posterior predictive p-values for IL-6 model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
+```
+
+```{r ppptab2, results = 'asis'}
+kable(ppp_il1beta, caption="Posterior predictive p-values for IL-1-$\\beta$ model", escape=FALSE, booktabs =T) %>% kable_styling(latex_options =c("hold_position"))
+```

@@ -1,0 +1,37 @@
+\newpage
+
+# Figure Legends {-}
+
+Figure 1. Induced $\boldsymbol{\gamma}$ priors under probit link, $G^{-1}(\cdot)=\Phi^{-1}(\cdot)$. Each subplot displays the median and credible intervals of $\gamma_j$ for $j=1,\ldots,J-1$
+
+Figure 2. Percent bias in parameters for simulations using probit link
+
+Figure 3. Percent bias in parameters for simulations using logit link. Note: because $\gamma_{y_2}$=0, calculating percent bias results in division by zero; therefore, the estimates for $\gamma_{y_2}$ are not shown
+
+Figure 4. Percent bias in conditional CDF for simulations using probit link
+
+Figure 5. Percent bias in conditional mean for simulations using probit link
+
+Figure 6. Percent bias in conditional mean for simulations using loglog link
+
+Figure 7. Percent bias in conditional median for simulations using probit link
+
+Figure 8. Percent bias in conditional 20th percentile for simulations using probit link
+
+Figure 9. Per chain MCMC sampling time for three simulation scenarios. Each boxplot shows the sampling times required to produce 4000 posterior draws under the specified model/prior/sample size combination for 1000 simulation datasets
+
+Figure 10. Observed outcome ($y$) and 10 posterior predictive distribution draws ($y_{rep}$) for IL-6 model
+
+Figure 11. (a) Posterior median $\boldsymbol{\beta}$ estimates and (b) posterior median $\boldsymbol{\gamma}$ estimates with 50\% and 95\% credible intervals for IL-6 model
+
+Figure 12. Estimated transformation for IL-6 model
+
+Figure 13. Difference from mean BMI vs. IL-6 mean, median, and 90th percentile for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort
+
+Figure 14. Observed outcome ($y$) and 10 posterior predictive distribution draws ($y_{rep}$) for IL-1-$\beta$ model
+
+Figure 15. (a) Posterior median $\boldsymbol{\beta}$ estimates and (b) posterior median $\boldsymbol{\gamma}$ estimates with 50\% and 95\% credible intervals for IL-1-$\beta$ model
+
+Figure 16. Estimated transformation for IL-1-$\beta$ model
+
+Figure 17. Difference from mean BMI vs. IL-1-$\beta$ mean, median, 90th percentile for a white, male, nonsmoker with average age and CD4 count in the Lipoatrophy and Neuropathy cohort
